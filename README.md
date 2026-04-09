@@ -72,8 +72,8 @@ print(f"API Version: {result['api_version']}")
 ### Single Fight Mode
 Detailed analysis of individual fights for debugging and design:
 ```bash
-python main.py single configs/default_single.json     # Release logging
-python main.py single configs/debug_single.json      # Debug logging
+python main.py single configs/default_single.json     # Debug logging (default)
+python main.py single configs/release_single.json    # Human-readable logging
 ```
 
 ### Build Analysis Mode
@@ -92,8 +92,8 @@ python main.py benchmark                             # 5000 fights + validation
 ## ⚙️ Configuration System
 
 ### JSON Configuration Files
-- `configs/default_single.json` - Standard single fight setup
-- `configs/debug_single.json` - Single fight with debug logging
+- `configs/default_single.json` - Single fight with debug logging (default)
+- `configs/release_single.json` - Single fight with human-readable logging
 - `configs/default_build.json` - Build analysis configuration
 - `configs/tank_build.json` - Example tank build analysis
 

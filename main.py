@@ -6,17 +6,17 @@ Fight Logic V15 - Production CLI Interface
 Usage:
   python main.py                    # Default: benchmark mode
   python main.py benchmark          # Mass simulation (5000 fights)
-  python main.py single             # Single fight (release log)
-  python main.py single debug       # Single fight (debug log)
+  python main.py single             # Single fight (debug log - default)
+  python main.py single configs/release_single.json  # Human-readable log
   python main.py single configs/custom_single.json
   python main.py build              # Build analysis (default config)
   python main.py build configs/custom_build.json
 
 Examples:
-  python main.py single                           # Quick single fight
-  python main.py single debug                     # Debug single fight
-  python main.py build                           # Test default build
-  python main.py build configs/tank_build.json   # Test custom build
+  python main.py single                               # Debug single fight (default)
+  python main.py single configs/release_single.json  # Human-readable fight
+  python main.py build                               # Test default build
+  python main.py build configs/tank_build.json       # Test custom build
 """
 
 import sys
