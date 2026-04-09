@@ -6,6 +6,15 @@ Single fight mode for debugging and analysis
 import json
 from game.run_fight import run_fight
 
+def format_fatigue_level(level):
+    """Format fatigue level with color indicators"""
+    if level == 0:
+        return "🟢 FRESH"
+    elif level == 1:
+        return "🟡 TIRED"
+    else:
+        return "🔴 EXHAUSTED"
+
 def run_single(config_path):
     """
     Run single fight with configurable logging
@@ -109,8 +118,18 @@ def print_debug_log(log_events):
         attacks = event["attacks"]
 
         print(f"\n[Round {round_num}]")
-        print("-" * 40)
+        print("-" * 60)
 
+        # Show fighter states at start of round
+        if "fighters_pre_round" in event:
+            fighters = event["fighters_pre_round"]
+            print("Fighter States:")
+            for fighter_id, state in fighters.items():
+                fatigue_str = format_fatigue_level(state["fatigue_level"])
+                print(f"  {fighter_id}: HP={state['hp']:.1f} | Stamina={state['stamina']} | {fatigue_str}")
+            print()
+
+        # Show attacks
         for i, attack in enumerate(attacks):
             attacker = attack["attacker"]
             defender = attack["defender"]

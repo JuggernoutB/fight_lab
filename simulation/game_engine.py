@@ -3,7 +3,7 @@
 
 import random
 import copy
-from core.api import process_attack, apply_stamina, get_config
+from core.api import process_attack, apply_stamina, get_config, get_stamina_level
 from state.meta_layer import update_meta
 from ai.role_engine import choose_action
 
@@ -126,10 +126,22 @@ def process_round(state, rng):
             "event": attack_data["event"]
         })
 
-    # Add round event
+    # Add round event with fighter states
     round_event = {
         "round": state.round_id,
-        "attacks": round_attacks
+        "attacks": round_attacks,
+        "fighters_pre_round": {
+            "A": {
+                "hp": a.hp,
+                "stamina": a.stamina,
+                "fatigue_level": get_stamina_level(a.stamina)
+            },
+            "B": {
+                "hp": b.hp,
+                "stamina": b.stamina,
+                "fatigue_level": get_stamina_level(b.stamina)
+            }
+        }
     }
     events.append(round_event)
 
