@@ -1,0 +1,37 @@
+{
+  "seed": 42,
+  "iterations": 20,
+
+  "fighter_a": {
+    "type": "custom",
+    "role": "BRUISER",
+    "stats": {
+      "hp": 16,
+      "attack": 14,
+      "defense": 12,
+      "agility": 10
+    }
+  },
+  "opponents": [
+    {
+      "name": "BRUISER",
+      "type": "balanced",
+      "role": "BRUISER"
+    },
+    {
+      "name": "ASSASSIN",
+      "type": "balanced",
+      "role": "ASSASSIN"
+    },
+    {
+      "name": "TANK",
+      "type": "balanced",
+      "role": "TANK"
+    },
+    {
+      "name": "SKIRMISHER",
+      "type": "balanced",
+      "role": "SKIRMISHER"
+    }
+  ]
+}

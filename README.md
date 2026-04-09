@@ -1,122 +1,225 @@
-# Fight Logic V15 - Modular Combat Simulation System
+# Fight Logic V15 - Production Combat Simulation System
 
 ## 🎯 Overview
 
-V15 представляет собой полный архитектурный рефакторинг боевой системы с четким разделением ответственности между модулями.
+V15 - производственная боевая система с CLI интерфейсом, JSON конфигурациями и стабильным API.
 
 ## 🏗️ Architecture
 
 ```
 fight_logicV15/
-├── core/          # Pure mathematics and game rules
-├── ai/            # Decision making and strategy
-├── state/         # State management and tracking
-├── simulation/    # Fight orchestration
-├── telemetry/     # Data collection and analytics
-├── config/        # Balance configuration
+├── core/          # Core combat mechanics and API
+├── state/         # Fighter state management
+├── simulation/    # Fight orchestration and game engine
+├── telemetry/     # Analytics and metrics
+├── game/          # Game API layer for frontends
+├── modes/         # CLI simulation modes
+├── configs/       # JSON configuration files
+├── balance/       # Balance validation system
 └── docs/          # Documentation
 ```
 
 ## 🚀 Quick Start
 
+### CLI Interface
+
+```bash
+# Single fight with detailed analysis
+python main.py single configs/default_single.json
+
+# Debug mode with technical details
+python main.py single configs/debug_single.json
+
+# Build analysis against multiple opponents
+python main.py build configs/default_build.json
+
+# Mass simulation for balance validation
+python main.py benchmark
+
+# Help and available commands
+python main.py --help
+```
+
+### API Integration
+
 ```python
-from simulation.simulator import simulate_fight
-from simulation.fight_runner import generate_random_player
+from game.run_fight import run_fight
 
-# Generate two players
-player_a = generate_random_player()
-player_b = generate_random_player()
+# Quick frontend integration
+result = run_fight(
+    {"type": "balanced", "role": "BRUISER"},
+    {"type": "balanced", "role": "ASSASSIN"},
+    {"seed": 42, "include_detailed_log": True}
+)
 
-# Run a fight
-result = simulate_fight(player_a, player_b)
-
-print(f"Winner: {result.winner}")
-print(f"Rounds: {result.rounds}")
-print(f"Metrics: {result.metrics}")
+print(f"Winner: {result['winner']}")
+print(f"Rounds: {result['rounds']}")
+print(f"API Version: {result['api_version']}")
 ```
 
 ## 📊 Key Features
 
-- **Clean Architecture**: Strict separation of concerns
-- **Modular Design**: Easy to extend and test
-- **Rich Analytics**: Comprehensive telemetry and metrics
-- **Configurable Balance**: Centralized balance configuration
-- **Role-based AI**: Advanced role classification and strategies
+- **CLI Interface**: Production-ready command line interface
+- **JSON Configuration**: Flexible, version-controlled configuration files
+- **Dual Logging**: Release mode for designers, debug mode for developers
+- **Build Analysis**: Test custom builds against multiple archetypes
+- **Balance Validation**: Automated balance testing with PASS/FAIL reporting
+- **Game API**: Clean frontend integration for Telegram Mini Apps
+- **Deterministic Testing**: Seed-based reproducible fights
 
-## 🔧 Core Principles
+## 🎮 Simulation Modes
 
-1. **Single Responsibility**: Each module has one clear purpose
-2. **No Cross-Dependencies**: Modules communicate through simulation layer
-3. **Pure Functions**: Deterministic and testable
-4. **Data Contracts**: Structured interfaces between layers
-
-## 📋 Modules
-
-### Core Layer
-- `combat_core.py` - Pure damage mathematics
-- `stamina_core.py` - Stamina and fatigue system
-- `damage_model.py` - EHP damage model
-- `resolution_engine.py` - Combat mechanics (crit, dodge, block)
-
-### AI Layer
-- `role_engine.py` - Role classification and basic strategy
-- `action_selector.py` - Advanced action selection algorithms
-
-### State Layer
-- `meta_layer.py` - Momentum and phase management
-- `fight_state.py` - Complete fight state tracking
-
-### Simulation Layer
-- `simulator.py` - Main fight orchestration
-- `fight_runner.py` - Utilities and benchmarking
-
-### Telemetry Layer
-- `telemetry.py` - Data collection during fights
-- `metrics.py` - Analytics and metric calculations
-
-## 🎮 Migration from V14
-
-V15 maintains API compatibility while providing enhanced modularity. See `docs/migration_guide.md` for detailed migration instructions.
-
-## 📚 Documentation
-
-- `docs/architecture.md` - Detailed architecture overview
-- `docs/migration_guide.md` - V14 → V15 migration guide
-
-## 🧪 Testing
-
-Each module can be tested independently:
-
-```python
-# Test combat core in isolation
-from core.combat_core import process_combat_action
-
-result = process_combat_action(...)
-assert result.damage_dealt > 0
+### Single Fight Mode
+Detailed analysis of individual fights for debugging and design:
+```bash
+python main.py single configs/default_single.json     # Release logging
+python main.py single configs/debug_single.json      # Debug logging
 ```
 
-## ⚖️ Balance Configuration
-
-All balance constants are centralized in `config/balance.py`:
-
-```python
-from config.balance import get_config
-
-stamina_config = get_config('stamina')
-damage_config = get_config('damage')
+### Build Analysis Mode
+Test custom fighter builds against all archetypes:
+```bash
+python main.py build configs/default_build.json      # Standard build
+python main.py build configs/tank_build.json         # Tank specialist
 ```
 
-## 🎯 Version 15 Goals
+### Benchmark Mode
+Mass simulation for balance validation:
+```bash
+python main.py benchmark                             # 5000 fights + validation
+```
 
-- [x] Complete architectural separation
-- [x] Eliminate cross-module dependencies
-- [x] Create comprehensive telemetry system
-- [x] Centralize balance configuration
-- [ ] Implement all TODO functions
-- [ ] Complete migration from V14
-- [ ] Performance optimization
-- [ ] Advanced AI strategies
+## ⚙️ Configuration System
+
+### JSON Configuration Files
+- `configs/default_single.json` - Standard single fight setup
+- `configs/debug_single.json` - Single fight with debug logging
+- `configs/default_build.json` - Build analysis configuration
+- `configs/tank_build.json` - Example tank build analysis
+
+### Custom Fighter Configuration
+```json
+{
+  "fighter_a": {
+    "type": "custom",
+    "role": "BRUISER",
+    "stats": {
+      "hp": 16,
+      "attack": 14,
+      "defense": 12,
+      "agility": 10
+    }
+  }
+}
+```
+
+## 🎯 Production Architecture
+
+### Core API (`core/api.py`)
+```python
+from core.api import process_attack, get_config, CORE_VERSION
+
+# Stable combat engine with version tracking
+result = process_attack(attacker, defender, ...)
+config = get_config()  # Read-only configuration access
+```
+
+### Game Layer (`game/run_fight.py`)
+```python
+from game.run_fight import run_fight, run_quick_fight
+
+# Frontend-ready JSON responses
+result = run_fight(fighter_a, fighter_b, options)
+# Returns: {"winner": "A", "rounds": 12, "api_version": "1.0", ...}
+```
+
+### Balance System (`balance/`)
+- `balance/targets.py` - Expected metrics ranges
+- `balance/validator.py` - Automated validation with PASS/FAIL
+
+## 🔬 Testing & Validation
+
+### Manual Testing
+```bash
+# Test single fight mode
+python main.py single configs/default_single.json
+
+# Test build analysis
+python main.py build configs/default_build.json
+
+# Test balance validation
+python main.py benchmark
+```
+
+### API Testing
+```python
+# Test game API stability
+python test_api_stability.py
+
+# Test deterministic behavior
+python test_determinism.py
+
+# Test event system
+python test_event_system.py
+```
+
+## 🏗️ Development
+
+### Creating Custom Configurations
+```json
+{
+  "seed": 42,
+  "iterations": 20,
+  "fighter_a": {
+    "type": "custom",
+    "role": "ASSASSIN",
+    "stats": {"hp": 12, "attack": 18, "defense": 8, "agility": 16}
+  },
+  "opponents": [
+    {"name": "BRUISER", "type": "balanced", "role": "BRUISER"},
+    {"name": "TANK", "type": "balanced", "role": "TANK"}
+  ]
+}
+```
+
+### Extension Points
+- Add new simulation modes in `modes/`
+- Create custom configurations in `configs/`
+- Extend balance targets in `balance/targets.py`
+- Add frontend integrations using `game/run_fight.py`
+
+## 📊 Balance Validation System
+
+Automated PASS/FAIL validation for:
+- ✅ Fight length distribution (rounds)
+- ✅ DPS balance (damage per round)
+- ✅ Draw rates (stamina exhaustion vs mutual death)
+- ✅ Combat mechanics (crit/dodge/block rates)
+- ✅ Stamina state distribution (fresh/tired/exhausted)
+
+```bash
+python main.py benchmark
+# Output: ✅ ALL TESTS PASSING - Combat system balanced
+```
+
+## 🎯 Production Status
+
+### ✅ Completed Features
+- [x] Production-ready CLI interface
+- [x] JSON configuration system
+- [x] Dual logging modes (release/debug)
+- [x] Build analysis system
+- [x] Balance validation framework
+- [x] Game API for frontend integration
+- [x] Deterministic testing support
+- [x] Comprehensive documentation
+
+### 🚀 Ready for Production
+- ✅ Telegram Mini App integration
+- ✅ Backend API deployment
+- ✅ Automated balance testing
+- ✅ Version tracking and compatibility
 
 ---
 
-**Fight Logic V15** - Professional, scalable combat simulation architecture ready for production use.
+**Fight Logic V15** - Production-ready combat simulation system with enterprise-grade CLI interface and JSON configuration management.

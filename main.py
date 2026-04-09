@@ -1,66 +1,41 @@
-# main.py
+#!/usr/bin/env python3
+# main.py - Fight Logic V15 CLI Entry Point
+"""
+Fight Logic V15 - Production CLI Interface
 
-from state.fight_state import FightState
-from state.fighter_factory import create_fighter_balanced, print_fighter_stats
-from simulation.simulator import simulate_fight
-from simulation.benchmark import run_benchmark
+Usage:
+  python main.py                    # Default: benchmark mode
+  python main.py benchmark          # Mass simulation (5000 fights)
+  python main.py single             # Single fight (release log)
+  python main.py single debug       # Single fight (debug log)
+  python main.py single configs/custom_single.json
+  python main.py build              # Build analysis (default config)
+  python main.py build configs/custom_build.json
 
+Examples:
+  python main.py single                           # Quick single fight
+  python main.py single debug                     # Debug single fight
+  python main.py build                           # Test default build
+  python main.py build configs/tank_build.json   # Test custom build
+"""
 
-# ============================================================
-# MODE SWITCH
-# ============================================================
+import sys
+import os
 
-MODE = "BENCHMARK"   # "SINGLE" or "BENCHMARK"
+def print_usage():
+    """Print usage information"""
+    print(__doc__)
 
-
-# ============================================================
-# SINGLE FIGHT
-# ============================================================
-
-def run_single():
-
-    # Create fighters using proper stat-based system
-    a = create_fighter_balanced("BRUISER")
-    b = create_fighter_balanced("ASSASSIN")
-
-    state = FightState(
-        round_id=0,
-        fighter_a=a,
-        fighter_b=b
-    )
-
-    # Deterministic fight for testing/debugging (seed=42)
-    result_state, telemetry = simulate_fight(state, max_rounds=25, seed=42)
-
-    print("\n===== V15 SINGLE RESULT =====")
-    print("=== Fighter A (BRUISER) ===")
-    print_fighter_stats(a)
-    print(f"Final: HP={result_state.fighter_a.hp:.1f}, Stamina={result_state.fighter_a.stamina}")
-
-    print("\n=== Fighter B (ASSASSIN) ===")
-    print_fighter_stats(b)
-    print(f"Final: HP={result_state.fighter_b.hp:.1f}, Stamina={result_state.fighter_b.stamina}")
-
-    print(f"\nRounds: {result_state.round_id}")
-
-    print("\n===== META =====")
-    print("Momentum:", result_state.momentum)
-    print("Deadlock:", result_state.deadlock_pressure)
-
-    print("\n===== TELEMETRY =====")
-    print("Events:", len(telemetry.events))
-    print("Summary:", telemetry.summary())
-
-
-# ============================================================
-# BENCHMARK
-# ============================================================
-
-def run_mass_sim():
+def run_benchmark():
+    """Run benchmark mode (5000 fights)"""
+    from simulation.benchmark import run_benchmark as benchmark
     from balance.validator import validate
 
+    print("📊 BENCHMARK MODE - Mass Simulation")
+    print("=" * 50)
+
     # Run benchmark (outputs all sections: BUILD, ROLE, ROUNDS, DRAW, DPS)
-    results, summary, rounds_list = run_benchmark(5000)
+    results, summary, rounds_list = benchmark(5000)
 
     # Final section: BALANCE VALIDATION (most important)
     failed, report = validate(results, summary, rounds_list, n=5000)
@@ -70,23 +45,116 @@ def run_mass_sim():
 
     if failed:
         print("\n❌ BALANCE TEST FAILED")
-        exit(1)
+        sys.exit(1)
     else:
         print("\n✅ BALANCE TEST PASSED")
 
+def run_single_mode(config_path=None, debug=False):
+    """Run single fight mode"""
+    from modes.run_single import run_single
 
-# ============================================================
-# ENTRY
-# ============================================================
+    # Determine config path
+    if config_path is None:
+        if debug:
+            config_path = "configs/debug_single.json"
+        else:
+            config_path = "configs/default_single.json"
 
-def run():
-    if MODE == "SINGLE":
-        run_single()
-    elif MODE == "BENCHMARK":
-        run_mass_sim()
-    else:
-        print("Unknown MODE")
+    # Validate config file exists
+    if not os.path.exists(config_path):
+        print(f"❌ Config file not found: {config_path}")
+        sys.exit(1)
 
+    print(f"⚔️ SINGLE MODE - {config_path}")
+    print("=" * 50)
+
+    run_single(config_path)
+
+def run_build_mode(config_path=None):
+    """Run build analysis mode"""
+    from modes.run_build import run_build
+
+    # Determine config path
+    if config_path is None:
+        config_path = "configs/default_build.json"
+
+    # Validate config file exists
+    if not os.path.exists(config_path):
+        print(f"❌ Config file not found: {config_path}")
+        sys.exit(1)
+
+    print(f"🛠️ BUILD MODE - {config_path}")
+    print("=" * 50)
+
+    run_build(config_path)
+
+def main():
+    """Main CLI router"""
+    args = sys.argv[1:] if len(sys.argv) > 1 else ["benchmark"]
+
+    if not args or args[0] in ["-h", "--help", "help"]:
+        print_usage()
+        return
+
+    mode = args[0].lower()
+
+    try:
+        if mode == "benchmark":
+            run_benchmark()
+
+        elif mode == "single":
+            # Parse single mode arguments
+            if len(args) == 1:
+                # Default single mode
+                run_single_mode()
+            elif len(args) == 2:
+                if args[1] == "debug":
+                    # Debug single mode
+                    run_single_mode(debug=True)
+                elif args[1].endswith('.json'):
+                    # Custom config
+                    run_single_mode(args[1])
+                else:
+                    print(f"❌ Unknown single mode argument: {args[1]}")
+                    print("Valid options: debug, or path to .json config")
+                    sys.exit(1)
+            elif len(args) == 3 and args[1] == "debug":
+                # Debug mode with custom config
+                run_single_mode(args[2], debug=True)
+            else:
+                print("❌ Too many arguments for single mode")
+                print("Usage: single [debug] [config.json]")
+                sys.exit(1)
+
+        elif mode == "build":
+            # Parse build mode arguments
+            if len(args) == 1:
+                # Default build mode
+                run_build_mode()
+            elif len(args) == 2:
+                if args[1].endswith('.json'):
+                    # Custom config
+                    run_build_mode(args[1])
+                else:
+                    print(f"❌ Build config must be a .json file: {args[1]}")
+                    sys.exit(1)
+            else:
+                print("❌ Too many arguments for build mode")
+                print("Usage: build [config.json]")
+                sys.exit(1)
+
+        else:
+            print(f"❌ Unknown mode: {mode}")
+            print("Available modes: benchmark, single, build")
+            print("Use --help for more information")
+            sys.exit(1)
+
+    except KeyboardInterrupt:
+        print("\n\n🛑 Interrupted by user")
+        sys.exit(0)
+    except Exception as e:
+        print(f"\n❌ Error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
-    run()
+    main()

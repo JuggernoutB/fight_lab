@@ -1,0 +1,14 @@
+{
+  "seed": 42,
+  "mode": "standard",
+  "log_level": "release",
+
+  "fighter_a": {
+    "type": "balanced",
+    "role": "BRUISER"
+  },
+  "fighter_b": {
+    "type": "balanced",
+    "role": "ASSASSIN"
+  }
+}
