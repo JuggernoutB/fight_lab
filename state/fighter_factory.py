@@ -7,13 +7,13 @@ from core.modules.ehp import EHPDamageCalculator  # Direct import for internal u
 
 def create_fighter(hp_stat: int, attack_stat: int, defense_stat: int, agility_stat: int, role: str) -> FighterState:
     """
-    Create fighter from base stats (8-18 range)
+    Create fighter from base stats (3-18 range)
 
     Args:
-        hp_stat: Base HP stat (8-18)
-        attack_stat: Base attack stat (8-18)
-        defense_stat: Base defense stat (8-18)
-        agility_stat: Base agility stat (8-18)
+        hp_stat: Base HP stat (3-18)
+        attack_stat: Base attack stat (3-18)
+        defense_stat: Base defense stat (3-18)
+        agility_stat: Base agility stat (3-18)
         role: Fighter role (BRUISER, ASSASSIN, etc.)
 
     Returns:
@@ -65,7 +65,7 @@ def create_fighter_balanced(role: str) -> FighterState:
 
 def create_fighter_random(role: str) -> FighterState:
     """
-    Create fighter with random stats in proper 8-18 range
+    Create fighter with random stats in proper 3-18 range
 
     Args:
         role: Fighter role
@@ -76,10 +76,10 @@ def create_fighter_random(role: str) -> FighterState:
     import random
 
     return create_fighter(
-        hp_stat=random.randint(8, 18),
-        attack_stat=random.randint(8, 18),
-        defense_stat=random.randint(8, 18),
-        agility_stat=random.randint(8, 18),
+        hp_stat=random.randint(3, 18),
+        attack_stat=random.randint(3, 18),
+        defense_stat=random.randint(3, 18),
+        agility_stat=random.randint(3, 18),
         role=role
     )
 

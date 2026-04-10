@@ -153,8 +153,8 @@ def _validate_stats(stats):
             raise ValueError(f"Missing required stat: {stat_name}")
 
         stat_value = stats[stat_name]
-        if not isinstance(stat_value, int) or not (8 <= stat_value <= 18):
-            raise ValueError(f"Invalid {stat_name}: {stat_value}. Must be integer between 8-18")
+        if not isinstance(stat_value, int) or not (3 <= stat_value <= 18):
+            raise ValueError(f"Invalid {stat_name}: {stat_value}. Must be integer between 3-18")
 
 
 def run_quick_fight(role_a="BRUISER", role_b="ASSASSIN", seed=None):
