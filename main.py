@@ -8,6 +8,7 @@ Usage:
   python main.py benchmark          # Mass simulation (5000 fights)
   python main.py single             # Single fight (debug log - default)
   python main.py single configs/release_single.json  # Human-readable log
+  python main.py single configs/compact_single.json  # Compact analysis log
   python main.py single configs/custom_single.json
   python main.py build              # Build analysis (default config)
   python main.py build configs/custom_build.json
@@ -15,6 +16,7 @@ Usage:
 Examples:
   python main.py single                               # Debug single fight (default)
   python main.py single configs/release_single.json  # Human-readable fight
+  python main.py single configs/compact_single.json  # Compact analysis
   python main.py build                               # Test default build
   python main.py build configs/tank_build.json       # Test custom build
 """

@@ -15,6 +15,19 @@ def format_fatigue_level(level):
     else:
         return "🔴 EXHAUSTED"
 
+def format_event(event_type, damage):
+    """Format event with visual highlights for key moments"""
+    if event_type == "crit":
+        return f"💥 CRIT {damage:.1f}"
+    elif event_type == "block_break":
+        return f"🧱❌ BREAK {damage:.1f}"
+    elif event_type == "dodge":
+        return "💨 DODGE"
+    elif event_type == "block":
+        return f"🛡️ BLOCK {damage:.1f}"
+    else:
+        return f"⚔️ HIT {damage:.1f}"
+
 def run_single(config_path):
     """
     Run single fight with configurable logging
@@ -53,6 +66,8 @@ def run_single(config_path):
 
         if log_level == "debug":
             print_debug_log(result["log"])
+        elif log_level == "compact":
+            print_compact_log(result["log"])
         else:
             print_release_log(result["log"])
 
@@ -137,11 +152,40 @@ def print_debug_log(log_events):
             damage = attack["damage"]
             event_type = attack["event"]
 
-            print(f"Attack {i+1}: {attacker} → {defender}")
-            print(f"  zone: {zone}")
-            print(f"  damage: {damage:.2f}")
-            print(f"  event: {event_type}")
+            event_str = format_event(event_type, damage)
+            print(f"Attack {i+1}: {attacker} → {defender} ({zone}) → {event_str}")
             print()
+
+def print_compact_log(log_events):
+    """Print compact debug log for quick analysis"""
+    for event in log_events:
+        round_num = event["round"]
+        attacks = event["attacks"]
+
+        # Show fighter states compactly
+        if "fighters_pre_round" in event:
+            fighters = event["fighters_pre_round"]
+            a_state = fighters["A"]
+            b_state = fighters["B"]
+            a_fatigue = format_fatigue_level(a_state["fatigue_level"])
+            b_fatigue = format_fatigue_level(b_state["fatigue_level"])
+            print(f"R{round_num}: A[{a_state['hp']:.0f}HP {a_state['stamina']}ST {a_fatigue}] B[{b_state['hp']:.0f}HP {b_state['stamina']}ST {b_fatigue}]")
+
+        # Show attacks in one line
+        attack_strs = []
+        for attack in attacks:
+            attacker = attack["attacker"]
+            defender = attack["defender"]
+            zone = attack["zone"]
+            damage = attack["damage"]
+            event_type = attack["event"]
+
+            event_str = format_event(event_type, damage)
+            attack_strs.append(f"{attacker}→{defender}({zone}) {event_str}")
+
+        attacks_line = " | ".join(attack_strs)
+        print(f"     {attacks_line}")
+        print()
 
 def print_fight_analysis(result):
     """Print detailed fight analysis"""

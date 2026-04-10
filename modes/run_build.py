@@ -45,7 +45,7 @@ def run_build(config_path):
         total_damage_taken = 0
 
         for i in range(iterations):
-            # Use incremental seed for each fight
+            # Use incremental seed for reproducibility
             fight_seed = seed + i if seed else None
 
             options = {
@@ -91,12 +91,23 @@ def run_build(config_path):
             "avg_damage_taken": avg_damage_taken
         }
 
-        # Print matchup results
+        # Calculate DPS
+        dps_dealt = avg_damage_dealt / avg_rounds if avg_rounds > 0 else 0
+        dps_taken = avg_damage_taken / avg_rounds if avg_rounds > 0 else 0
+
+        # Store enhanced metrics
+        matchup_results[opponent_name].update({
+            "dps_dealt": dps_dealt,
+            "dps_taken": dps_taken
+        })
+
+        # Print enhanced matchup results
         status_emoji = get_matchup_emoji(win_rate)
-        print(f"{status_emoji} Win Rate: {win_rate:5.1f}% ({wins}W/{draws}D/{losses}L)")
+        print(f"{status_emoji} vs {opponent_name}:")
+        print(f"   Winrate: {win_rate:5.1f}% ({wins}W/{draws}D/{losses}L)")
         print(f"   Avg Rounds: {avg_rounds:4.1f}")
-        print(f"   Damage Dealt: {avg_damage_dealt:5.0f}")
-        print(f"   Damage Taken: {avg_damage_taken:5.0f}")
+        print(f"   Damage: {avg_damage_dealt:5.0f} dealt | {avg_damage_taken:5.0f} taken")
+        print(f"   DPS: {dps_dealt:5.1f} dealt | {dps_taken:5.1f} taken")
 
         overall_wins += wins
         overall_fights += iterations
@@ -132,11 +143,31 @@ def get_matchup_emoji(win_rate):
 
 def print_build_analysis(results, total_wins, total_fights, fighter_config):
     """Print comprehensive build analysis"""
-    print(f"\n📈 OVERALL ANALYSIS:")
+    print(f"\n📈 BUILD RESULT:")
     print("=" * 50)
 
     overall_win_rate = (total_wins / total_fights) * 100 if total_fights > 0 else 0
-    print(f"Overall Win Rate: {overall_win_rate:.1f}% ({total_wins}/{total_fights})")
+    overall_draw_rate = sum(r["draw_rate"] for r in results.values()) / len(results) if results else 0
+    overall_loss_rate = 100 - overall_win_rate - overall_draw_rate
+
+    # Calculate averages
+    avg_rounds = sum(r["avg_rounds"] for r in results.values()) / len(results) if results else 0
+    avg_dps_dealt = sum(r["dps_dealt"] for r in results.values()) / len(results) if results else 0
+    avg_dps_taken = sum(r["dps_taken"] for r in results.values()) / len(results) if results else 0
+    avg_damage_dealt = sum(r["avg_damage_dealt"] for r in results.values()) / len(results) if results else 0
+    avg_damage_taken = sum(r["avg_damage_taken"] for r in results.values()) / len(results) if results else 0
+
+    print(f"\nWinrate:")
+    print(f"  A: {overall_win_rate:.1f}%")
+    print(f"  B: {overall_loss_rate:.1f}%")
+    print(f"  Draw: {overall_draw_rate:.1f}%")
+
+    print(f"\nAvg rounds: {avg_rounds:.1f}")
+    print(f"Avg DPS: {avg_dps_dealt:.1f}")
+
+    print(f"\nDamage:")
+    print(f"  A → B: {avg_damage_dealt:.0f} avg")
+    print(f"  B → A: {avg_damage_taken:.0f} avg")
 
     # Find best/worst matchups
     if results:
