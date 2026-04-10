@@ -1,6 +1,6 @@
 # modes/run_build.py - Build analysis mode
 """
-Build analysis mode for testing custom fighter builds
+Build comparison mode for testing two builds against each other
 """
 
 import json
@@ -8,7 +8,7 @@ from game.run_fight import run_fight
 
 def run_build(config_path):
     """
-    Run build analysis against multiple opponents
+    Run build comparison between two custom builds
 
     Args:
         config_path: Path to JSON config file
@@ -19,232 +19,154 @@ def run_build(config_path):
 
     # Extract configuration
     seed = cfg.get("seed", 42)
-    iterations = cfg.get("iterations", 20)
+    iterations = cfg.get("iterations", 5000)
     fighter_a = cfg["fighter_a"]
-    opponents = cfg.get("opponents", [])
+    fighter_b = cfg["fighter_b"]
 
-    # Print build info
-    print_build_info(fighter_a, iterations, seed)
+    # Print build comparison info
+    print_build_comparison_info(fighter_a, fighter_b, iterations, seed)
 
-    # Test against each opponent
-    overall_wins = 0
-    overall_fights = 0
-    matchup_results = {}
+    print(f"\n🥊 RUNNING {iterations:,} SIMULATIONS")
+    print("=" * 60)
 
-    for opponent in opponents:
-        opponent_name = opponent["name"]
-        print(f"\n🥊 TESTING VS {opponent_name}")
-        print("-" * 40)
+    # Run multiple fights between the two builds
+    wins_a = 0
+    wins_b = 0
+    draws = 0
+    total_rounds = 0
+    total_damage_to_a = 0
+    total_damage_to_b = 0
 
-        # Run multiple fights
-        wins = 0
-        draws = 0
-        losses = 0
-        total_rounds = 0
-        total_damage_dealt = 0
-        total_damage_taken = 0
+    # Progress tracking
+    progress_milestones = [i for i in range(0, iterations + 1, max(1, iterations // 10))]
 
-        for i in range(iterations):
-            # Use incremental seed for reproducibility
-            fight_seed = seed + i if seed else None
+    for i in range(iterations):
+        # Show progress
+        if i in progress_milestones:
+            progress_pct = (i / iterations) * 100
+            print(f"Progress: {i:,}/{iterations:,} ({progress_pct:.1f}%)")
 
-            options = {
-                "seed": fight_seed,
-                "include_detailed_log": False
-            }
+        # Use incremental seed for reproducibility
+        fight_seed = seed + i if seed else None
 
-            result = run_fight(fighter_a, opponent, options)
-
-            # Track results
-            winner = result["winner"]
-            rounds = result["rounds"]
-            damage_to_a = result["summary"]["total_damage_to_a"]
-            damage_to_b = result["summary"]["total_damage_to_b"]
-
-            total_rounds += rounds
-            total_damage_dealt += damage_to_b
-            total_damage_taken += damage_to_a
-
-            # Count outcomes
-            if winner == "A":
-                wins += 1
-            elif winner == "B":
-                losses += 1
-            else:
-                draws += 1
-
-        # Calculate statistics
-        win_rate = (wins / iterations) * 100
-        draw_rate = (draws / iterations) * 100
-        loss_rate = (losses / iterations) * 100
-        avg_rounds = total_rounds / iterations
-        avg_damage_dealt = total_damage_dealt / iterations
-        avg_damage_taken = total_damage_taken / iterations
-
-        # Store results
-        matchup_results[opponent_name] = {
-            "win_rate": win_rate,
-            "draw_rate": draw_rate,
-            "loss_rate": loss_rate,
-            "avg_rounds": avg_rounds,
-            "avg_damage_dealt": avg_damage_dealt,
-            "avg_damage_taken": avg_damage_taken
+        options = {
+            "seed": fight_seed,
+            "include_detailed_log": False
         }
 
-        # Calculate DPS
-        dps_dealt = avg_damage_dealt / avg_rounds if avg_rounds > 0 else 0
-        dps_taken = avg_damage_taken / avg_rounds if avg_rounds > 0 else 0
+        result = run_fight(fighter_a, fighter_b, options)
 
-        # Store enhanced metrics
-        matchup_results[opponent_name].update({
-            "dps_dealt": dps_dealt,
-            "dps_taken": dps_taken
-        })
+        # Track results
+        winner = result["winner"]
+        rounds = result["rounds"]
+        damage_to_a = result["summary"]["total_damage_to_a"]
+        damage_to_b = result["summary"]["total_damage_to_b"]
 
-        # Print enhanced matchup results
-        status_emoji = get_matchup_emoji(win_rate)
-        print(f"{status_emoji} vs {opponent_name}:")
-        print(f"   Winrate: {win_rate:5.1f}% ({wins}W/{draws}D/{losses}L)")
-        print(f"   Avg Rounds: {avg_rounds:4.1f}")
-        print(f"   Damage: {avg_damage_dealt:5.0f} dealt | {avg_damage_taken:5.0f} taken")
-        print(f"   DPS: {dps_dealt:5.1f} dealt | {dps_taken:5.1f} taken")
+        total_rounds += rounds
+        total_damage_to_a += damage_to_a
+        total_damage_to_b += damage_to_b
 
-        overall_wins += wins
-        overall_fights += iterations
+        # Count outcomes
+        if winner == "A":
+            wins_a += 1
+        elif winner == "B":
+            wins_b += 1
+        else:
+            draws += 1
 
-    # Print overall analysis
-    print_build_analysis(matchup_results, overall_wins, overall_fights, fighter_a)
+    # Show final progress
+    print(f"Progress: {iterations:,}/{iterations:,} (100.0%)")
 
-def print_build_info(fighter_config, iterations, seed):
-    """Print build configuration info"""
-    print(f"🛠️ BUILD CONFIGURATION:")
+    # Calculate final statistics
+    win_rate_a = (wins_a / iterations) * 100
+    win_rate_b = (wins_b / iterations) * 100
+    draw_rate = (draws / iterations) * 100
+    avg_rounds = total_rounds / iterations
+    avg_damage_to_a = total_damage_to_a / iterations
+    avg_damage_to_b = total_damage_to_b / iterations
 
-    if fighter_config["type"] == "custom":
-        stats = fighter_config["stats"]
-        print(f"Custom Build: HP={stats['hp']} | ATK={stats['attack']} | DEF={stats['defense']} | AGI={stats['agility']}")
-    else:
-        print(f"Preset Build: {fighter_config['type']} {fighter_config['role']}")
+    # Calculate DPS
+    dps_by_a = avg_damage_to_b / avg_rounds if avg_rounds > 0 else 0
+    dps_by_b = avg_damage_to_a / avg_rounds if avg_rounds > 0 else 0
 
-    print(f"Iterations per matchup: {iterations}")
-    print(f"Base seed: {seed if seed else 'Random'}")
+    # Print build comparison results
+    print_build_comparison_results(
+        fighter_a, fighter_b, iterations,
+        wins_a, wins_b, draws,
+        avg_rounds, avg_damage_to_a, avg_damage_to_b,
+        dps_by_a, dps_by_b
+    )
 
-def get_matchup_emoji(win_rate):
-    """Get emoji based on win rate"""
-    if win_rate >= 70:
-        return "🔥"  # Dominating
-    elif win_rate >= 60:
-        return "✅"  # Favorable
-    elif win_rate >= 50:
-        return "⚖️"  # Even
-    elif win_rate >= 40:
-        return "⚠️"  # Unfavorable
-    else:
-        return "❌"  # Bad matchup
-
-def print_build_analysis(results, total_wins, total_fights, fighter_config):
-    """Print comprehensive build analysis"""
-    print(f"\n📈 BUILD RESULT:")
+def print_build_comparison_info(fighter_a, fighter_b, iterations, seed):
+    """Print build comparison configuration info"""
+    print(f"🛠️ BUILD COMPARISON:")
     print("=" * 50)
 
-    overall_win_rate = (total_wins / total_fights) * 100 if total_fights > 0 else 0
-    overall_draw_rate = sum(r["draw_rate"] for r in results.values()) / len(results) if results else 0
-    overall_loss_rate = 100 - overall_win_rate - overall_draw_rate
-
-    # Calculate averages
-    avg_rounds = sum(r["avg_rounds"] for r in results.values()) / len(results) if results else 0
-    avg_dps_dealt = sum(r["dps_dealt"] for r in results.values()) / len(results) if results else 0
-    avg_dps_taken = sum(r["dps_taken"] for r in results.values()) / len(results) if results else 0
-    avg_damage_dealt = sum(r["avg_damage_dealt"] for r in results.values()) / len(results) if results else 0
-    avg_damage_taken = sum(r["avg_damage_taken"] for r in results.values()) / len(results) if results else 0
-
-    print(f"\nWinrate:")
-    print(f"  A: {overall_win_rate:.1f}%")
-    print(f"  B: {overall_loss_rate:.1f}%")
-    print(f"  Draw: {overall_draw_rate:.1f}%")
-
-    print(f"\nAvg rounds: {avg_rounds:.1f}")
-    print(f"Avg DPS: {avg_dps_dealt:.1f}")
-
-    print(f"\nDamage:")
-    print(f"  A → B: {avg_damage_dealt:.0f} avg")
-    print(f"  B → A: {avg_damage_taken:.0f} avg")
-
-    # Find best/worst matchups
-    if results:
-        best_matchup = max(results.items(), key=lambda x: x[1]["win_rate"])
-        worst_matchup = min(results.items(), key=lambda x: x[1]["win_rate"])
-
-        print(f"Best Matchup: {best_matchup[0]} ({best_matchup[1]['win_rate']:.1f}%)")
-        print(f"Worst Matchup: {worst_matchup[0]} ({worst_matchup[1]['win_rate']:.1f}%)")
-
-        # Calculate matchup spread
-        win_rates = [r["win_rate"] for r in results.values()]
-        spread = max(win_rates) - min(win_rates)
-        print(f"Matchup Spread: {spread:.1f}%")
-
-    # Build power assessment
-    print(f"\n🎯 BUILD ASSESSMENT:")
-    if overall_win_rate >= 75:
-        print("  🔥 OVERPOWERED - Consider nerfs")
-        print("  This build dominates most matchups")
-    elif overall_win_rate >= 65:
-        print("  💪 VERY STRONG - Top tier competitive")
-        print("  Excellent performance across most matchups")
-    elif overall_win_rate >= 55:
-        print("  ✅ STRONG - Good competitive viability")
-        print("  Above average with some favorable matchups")
-    elif overall_win_rate >= 45:
-        print("  ⚖️ BALANCED - Fair competitive standing")
-        print("  Even matchups, skill-dependent outcomes")
-    elif overall_win_rate >= 35:
-        print("  ⚠️ WEAK - Needs improvements")
-        print("  Below average, limited competitive viability")
+    # Fighter A info
+    if fighter_a["type"] == "custom":
+        stats_a = fighter_a["stats"]
+        print(f"Fighter A ({fighter_a['role']}):")
+        print(f"  HP={stats_a['hp']} | ATK={stats_a['attack']} | DEF={stats_a['defense']} | AGI={stats_a['agility']}")
     else:
-        print("  💀 UNDERPOWERED - Major rework needed")
-        print("  Struggles in most matchups")
+        print(f"Fighter A: {fighter_a['type']} {fighter_a['role']}")
 
-    # Tactical recommendations
-    print(f"\n💡 RECOMMENDATIONS:")
-    if fighter_config["type"] == "custom":
-        stats = fighter_config["stats"]
-        print_stat_recommendations(stats, overall_win_rate, results)
+    # Fighter B info
+    if fighter_b["type"] == "custom":
+        stats_b = fighter_b["stats"]
+        print(f"Fighter B ({fighter_b['role']}):")
+        print(f"  HP={stats_b['hp']} | ATK={stats_b['attack']} | DEF={stats_b['defense']} | AGI={stats_b['agility']}")
     else:
-        print("  Use custom builds to test specific stat allocations")
+        print(f"Fighter B: {fighter_b['type']} {fighter_b['role']}")
 
-def print_stat_recommendations(stats, win_rate, results):
-    """Print recommendations based on stats and performance"""
-    hp = stats["hp"]
-    attack = stats["attack"]
-    defense = stats["defense"]
-    agility = stats["agility"]
+    print(f"\nSimulations: {iterations:,}")
+    print(f"Base seed: {seed if seed else 'Random'}")
 
-    if win_rate < 45:
-        # Underperforming build
-        if hp < 12:
-            print("  • Consider increasing HP for survivability")
-        if attack < 12:
-            print("  • Consider increasing Attack for damage output")
-        if defense < 12 and attack >= 14:
-            print("  • Consider balancing with more Defense")
-        if agility < 10:
-            print("  • Consider increasing Agility for dodge/crit")
+def print_build_comparison_results(fighter_a, fighter_b, iterations, wins_a, wins_b, draws,
+                                   avg_rounds, avg_damage_to_a, avg_damage_to_b, dps_by_a, dps_by_b):
+    """Print comprehensive build comparison results"""
 
-    elif win_rate > 65:
-        # Overperforming build
-        if attack > 15:
-            print("  • Attack might be too high, consider reducing")
-        if hp > 16:
-            print("  • HP might be excessive, consider reallocation")
+    win_rate_a = (wins_a / iterations) * 100
+    win_rate_b = (wins_b / iterations) * 100
+    draw_rate = (draws / iterations) * 100
 
-    # Specific tactical advice
-    total_stats = hp + attack + defense + agility
-    if total_stats > 60:
-        print("  • High total stats - consider more balanced allocation")
-    elif total_stats < 50:
-        print("  • Low total stats - build has room for improvement")
+    print(f"\n📈 BUILD COMPARISON RESULTS:")
+    print("=" * 50)
 
-    # Analyze stat distribution
-    max_stat = max(hp, attack, defense, agility)
-    min_stat = min(hp, attack, defense, agility)
-    if max_stat - min_stat > 8:
-        print("  • Very specialized build - vulnerable to counter-builds")
+    # Overall Results
+    print(f"\n🏆 FIGHT OUTCOMES ({iterations:,} simulations):")
+    print(f"  Fighter A wins: {wins_a:,} ({win_rate_a:.1f}%)")
+    print(f"  Fighter B wins: {wins_b:,} ({win_rate_b:.1f}%)")
+    print(f"  Draws: {draws:,} ({draw_rate:.1f}%)")
+
+    # Performance Metrics
+    print(f"\n⚔️ COMBAT METRICS:")
+    print(f"  Average fight length: {avg_rounds:.1f} rounds")
+    print(f"  DPS by A: {dps_by_a:.1f}")
+    print(f"  DPS by B: {dps_by_b:.1f}")
+
+    # Damage Analysis
+    print(f"\n💥 DAMAGE ANALYSIS:")
+    print(f"  Damage to A: {avg_damage_to_a:.1f} avg")
+    print(f"  Damage to B: {avg_damage_to_b:.1f} avg")
+
+    # Determine winner and advantage
+    if win_rate_a > win_rate_b:
+        advantage = win_rate_a - win_rate_b
+        print(f"\n🎯 RESULT: Fighter A dominates with {advantage:.1f}% advantage")
+        if advantage > 20:
+            print(f"  💪 STRONG ADVANTAGE - Fighter A significantly superior")
+        elif advantage > 10:
+            print(f"  ✅ MODERATE ADVANTAGE - Fighter A clearly better")
+        else:
+            print(f"  ⚖️ SLIGHT ADVANTAGE - Close but Fighter A edges out")
+    elif win_rate_b > win_rate_a:
+        advantage = win_rate_b - win_rate_a
+        print(f"\n🎯 RESULT: Fighter B dominates with {advantage:.1f}% advantage")
+        if advantage > 20:
+            print(f"  💪 STRONG ADVANTAGE - Fighter B significantly superior")
+        elif advantage > 10:
+            print(f"  ✅ MODERATE ADVANTAGE - Fighter B clearly better")
+        else:
+            print(f"  ⚖️ SLIGHT ADVANTAGE - Close but Fighter B edges out")
+    else:
+        print(f"\n🎯 RESULT: Perfect balance - both builds equally strong")

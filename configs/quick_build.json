@@ -1,6 +1,6 @@
 {
   "seed": 42,
-  "iterations": 5000,
+  "iterations": 100,
 
   "fighter_a": {
     "type": "custom",
