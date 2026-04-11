@@ -9,6 +9,7 @@ from .fatigue import get_fatigue_multiplier
 from .crit import calc_crit
 from .dodge import apply_dodge
 from .block import apply_block, block_break
+from .rounding import round_damage_probabilistic
 
 
 def process_attack(
@@ -77,7 +78,7 @@ def process_attack(
 
             if dodge_state == "dodge":
                 result = {
-                    "damage": 0.0,
+                    "damage": 0,
                     "event": "dodge"
                 }
                 if debug_mode:
@@ -107,8 +108,11 @@ def process_attack(
         # =========================
         # FINAL OUTPUT - Stable API Contract
         # =========================
+        # Round damage using probabilistic rounding
+        final_damage = round_damage_probabilistic(dmg)
+
         result = {
-            "damage": dmg,
+            "damage": final_damage,
             "event": event
         }
 
@@ -117,6 +121,7 @@ def process_attack(
             result.update({
                 "raw": raw,
                 "mitigated": max(0.0, raw - dmg),
+                "damage_before_rounding": dmg,  # Show damage before probabilistic rounding
                 "is_crit": is_crit,
                 "is_blocked": event in ("block", "block_break"),
                 "is_dodged": False

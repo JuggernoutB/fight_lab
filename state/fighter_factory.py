@@ -3,6 +3,7 @@
 from .fight_state import FighterState
 from core.api import get_initial_stamina
 from core.modules.ehp import EHPDamageCalculator  # Direct import for internal use
+from core.modules.rounding import round_hp_to_int
 
 
 def create_fighter(hp_stat: int, attack_stat: int, defense_stat: int, agility_stat: int, role: str) -> FighterState:
@@ -21,8 +22,9 @@ def create_fighter(hp_stat: int, attack_stat: int, defense_stat: int, agility_st
     """
     calculator = EHPDamageCalculator()
 
-    # Compute actual HP from stat using EHP formula
-    actual_hp = calculator.calculate_base_hp(hp_stat)
+    # Compute actual HP from stat using EHP formula and round to integer
+    actual_hp_float = calculator.calculate_base_hp(hp_stat)
+    actual_hp = round_hp_to_int(actual_hp_float)
 
     # Create fighter with computed values
     fighter = FighterState(
