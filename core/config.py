@@ -11,16 +11,16 @@ CONFIG = {
     # ============================================================
     # CRITICAL HITS
     # ============================================================
-    "base_crit_chance": 0.06,         # Base crit chance (6%)
+    "base_crit_chance": 0.08,         # Base crit chance (8%)
     "agi_diff_crit_scale": 0.015,     # Agility difference scaling for crit
-    "crit_damage_multiplier": 1.8,    # Damage multiplier for crits
+    "crit_damage_multiplier": 1.6,    # Damage multiplier for crits
     "min_crit_chance": 0.005,         # Minimum possible crit chance (0.5%)
     "max_crit_chance": 0.35,          # Maximum possible crit chance (35%)
 
     # ============================================================
     # DODGE
     # ============================================================
-    "base_dodge_chance": 0.18,        # Base dodge chance (18%)
+    "base_dodge_chance": 0.22,        # Base dodge chance (22%)
     "agi_diff_dodge_scale": 0.04,     # Agility difference scaling for dodge
     "min_dodge_chance": 0.02,         # Minimum possible dodge chance (2%)
     "max_dodge_chance": 0.4,          # Maximum possible dodge chance (40%)
