@@ -81,6 +81,17 @@ def validate(results, summary, rounds_list, n):
                     failed = True
 
     # =========================
+    # ROLE BALANCE
+    # =========================
+    if "role_balance_spread" in summary and "role_balance_spread" in TARGETS:
+        role_spread = summary["role_balance_spread"]
+        low, high = TARGETS["role_balance_spread"]
+        msg = check_range("role_balance_spread", role_spread, low, high)
+        report.append(msg)
+        if "[FAIL]" in msg:
+            failed = True
+
+    # =========================
     # RETURN RESULT
     # =========================
     final_report = "\n".join(report)

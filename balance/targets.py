@@ -39,4 +39,9 @@ TARGETS = {
     "stamina_high": (0.30, 0.45),
     "stamina_mid": (0.40, 0.55),
     "stamina_low": (0.10, 0.20),
+
+    # =========================
+    # ROLE BALANCE
+    # =========================
+    "role_balance_spread": (0.0, 0.03),  # Max 3% spread between best and worst role
 }

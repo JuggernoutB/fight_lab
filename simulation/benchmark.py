@@ -86,6 +86,9 @@ def run_benchmark(n=NUM_FIGHTS):
     role_a = []
     role_b = []
 
+    # Role winrate tracking
+    role_results = defaultdict(lambda: {"wins": 0, "losses": 0, "draws": 0, "total": 0})
+
     # Build tracking (HP, ATK, DEF, AGI stats)
     builds_used = defaultdict(int)
 
@@ -141,6 +144,20 @@ def run_benchmark(n=NUM_FIGHTS):
 
         role_a.append(a.role)
         role_b.append(b.role)
+
+        # Track role winrates
+        role_results[a.role]["total"] += 1
+        role_results[b.role]["total"] += 1
+
+        if winner == "A":
+            role_results[a.role]["wins"] += 1
+            role_results[b.role]["losses"] += 1
+        elif winner == "B":
+            role_results[a.role]["losses"] += 1
+            role_results[b.role]["wins"] += 1
+        else:  # Draw
+            role_results[a.role]["draws"] += 1
+            role_results[b.role]["draws"] += 1
 
         summary = telemetry.summary()
         for k, v in summary["mechanics"].items():
@@ -206,6 +223,32 @@ def run_benchmark(n=NUM_FIGHTS):
         percentage = (count / total_fighters_b) * 100
         print(f"  {role}: {count:4d} times ({percentage:5.1f}%)")
 
+    print("\n===== ROLE WINRATE ANALYSIS =====")
+    # Calculate winrates for each role (wins + half draws)
+    role_winrates = {}
+    for role, stats in role_results.items():
+        if stats["total"] > 0:
+            winrate = (stats["wins"] + 0.5 * stats["draws"]) / stats["total"]
+            role_winrates[role] = {
+                "winrate": winrate,
+                "wins": stats["wins"],
+                "losses": stats["losses"],
+                "draws": stats["draws"],
+                "total": stats["total"]
+            }
+
+    # Sort roles by winrate (highest first)
+    sorted_roles = sorted(role_winrates.items(), key=lambda x: x[1]["winrate"], reverse=True)
+
+    print("Role performance (winrate = wins + 0.5 * draws):")
+    for role, data in sorted_roles:
+        winrate = data["winrate"] * 100
+        wins = data["wins"]
+        losses = data["losses"]
+        draws = data["draws"]
+        total = data["total"]
+        print(f"  {role:11s}: {winrate:5.1f}% ({wins:4d}W/{losses:4d}L/{draws:3d}D) from {total:4d} fights")
+
     print("\n===== ROUNDS DISTRIBUTION =====")
     avg_rounds = sum(rounds_list) / n
     print(f"Average fight length: {avg_rounds:.1f} rounds")
@@ -262,12 +305,24 @@ def run_benchmark(n=NUM_FIGHTS):
     avg_total_damage = sum(total_damage_list) / n
     avg_dps_calculated = sum(dps_list) / n
 
+    # Calculate role balance spread for validation
+    role_winrates_for_validation = []
+    for role, stats in role_results.items():
+        if stats["total"] > 0:
+            winrate = (stats["wins"] + 0.5 * stats["draws"]) / stats["total"]
+            role_winrates_for_validation.append(winrate)
+
+    role_balance_spread = 0.0
+    if len(role_winrates_for_validation) >= 2:
+        role_balance_spread = max(role_winrates_for_validation) - min(role_winrates_for_validation)
+
     summary_data = {
         "mechanics": {k: v / n for k, v in global_mechanics.items()},
         "damage_split": {k: v / n for k, v in global_damage.items()},
         "stamina_distribution": {k: v / n for k, v in global_stamina_distribution.items()},
         "avg_total_damage": avg_total_damage,
-        "avg_dps": avg_dps_calculated
+        "avg_dps": avg_dps_calculated,
+        "role_balance_spread": role_balance_spread
     }
 
     return results, summary_data, rounds_list
