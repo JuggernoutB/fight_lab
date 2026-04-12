@@ -116,7 +116,7 @@ def _create_fighter(config):
     role = config.get("role", "BRUISER")
 
     # Validate role
-    valid_roles = ["BRUISER", "ASSASSIN", "TANK", "SKIRMISHER"]
+    valid_roles = ["BRUISER", "ASSASSIN", "TANK", "SKIRMISHER", "UNIVERSAL"]
     if role not in valid_roles:
         raise ValueError(f"Invalid role '{role}'. Must be one of: {valid_roles}")
 

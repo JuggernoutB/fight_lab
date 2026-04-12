@@ -43,5 +43,14 @@ TARGETS = {
     # =========================
     # ROLE BALANCE
     # =========================
-    "role_balance_spread": (0.0, 0.03),  # Max 3% spread between best and worst role
+    "role_balance_spread": (0.0, 0.15),  # Max 15% spread (relaxed for new scoring system)
+
+    # Role distribution targets (percentage of total fights)
+    "role_distribution": {
+        "TANK": (0.18, 0.30),        # 18-30% of builds
+        "BRUISER": (0.10, 0.20),     # 10-20% of builds
+        "SKIRMISHER": (0.12, 0.22),  # 12-22% of builds
+        "ASSASSIN": (0.15, 0.25),    # 15-25% of builds
+        "UNIVERSAL": (0.20, 0.35),   # 20-35% of builds (balanced builds common)
+    },
 }

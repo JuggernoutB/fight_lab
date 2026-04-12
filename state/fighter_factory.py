@@ -60,28 +60,99 @@ def create_fighter_balanced(role: str) -> FighterState:
         return create_fighter(hp_stat=18, attack_stat=8, defense_stat=18, agility_stat=8, role=role)
     elif role == "SKIRMISHER":
         return create_fighter(hp_stat=12, attack_stat=14, defense_stat=12, agility_stat=14, role=role)
+    elif role == "UNIVERSAL":
+        return create_fighter(hp_stat=12, attack_stat=12, defense_stat=12, agility_stat=12, role=role)
     else:
         # Default balanced
         return create_fighter(hp_stat=12, attack_stat=12, defense_stat=12, agility_stat=12, role=role)
 
 
-def create_fighter_random(role: str) -> FighterState:
+def classify_build_role(hp_stat: int, attack_stat: int, defense_stat: int, agility_stat: int) -> tuple[str, float]:
     """
-    Create fighter with random stats in proper 3-18 range
+    Classify build into role using scoring system for smooth transitions
 
     Args:
-        role: Fighter role
+        hp_stat, attack_stat, defense_stat, agility_stat: Fighter stats
 
     Returns:
-        FighterState with randomized stats
+        Tuple of (role_name, confidence) where confidence indicates role purity
+    """
+    # Normalize stats to prevent stat inflation bias
+    total = hp_stat + attack_stat + defense_stat + agility_stat
+    hp_n = hp_stat / total
+    atk_n = attack_stat / total
+    def_n = defense_stat / total
+    agi_n = agility_stat / total
+
+    # Calculate role scores using weighted combinations
+    scores = {}
+
+    # TANK: HP + Defense focused
+    scores["TANK"] = (
+        hp_n * 0.5 +
+        def_n * 0.5
+    )
+
+    # BRUISER: Attack + moderate survivability
+    scores["BRUISER"] = (
+        atk_n * 0.5 +
+        hp_n * 0.25 +
+        def_n * 0.25
+    )
+
+    # ASSASSIN: Attack + Agility combination
+    scores["ASSASSIN"] = (
+        atk_n * 0.5 +
+        agi_n * 0.5
+    )
+
+    # SKIRMISHER: Agility focused with some offense
+    scores["SKIRMISHER"] = (
+        agi_n * 0.6 +
+        atk_n * 0.2 +
+        def_n * 0.2
+    )
+
+    # UNIVERSAL: Balanced builds (high when stats are even)
+    stat_range = max([hp_n, atk_n, def_n, agi_n]) - min([hp_n, atk_n, def_n, agi_n])
+    scores["UNIVERSAL"] = 1.0 - stat_range * 4  # Scale range penalty
+
+    # Find best role and calculate confidence
+    best_role = max(scores, key=scores.get)
+    sorted_scores = sorted(scores.values(), reverse=True)
+    confidence = sorted_scores[0] - sorted_scores[1]  # Gap between 1st and 2nd place
+
+    return best_role, confidence
+
+
+def create_fighter_random(role: str = None) -> FighterState:
+    """
+    Create fighter with random stats in proper 3-18 range
+    If role is None, classify based on generated stats
+
+    Args:
+        role: Fighter role (optional - will be classified if None)
+
+    Returns:
+        FighterState with randomized stats and appropriate role
     """
     import random
 
+    # Generate random stats
+    hp_stat = random.randint(3, 18)
+    attack_stat = random.randint(3, 18)
+    defense_stat = random.randint(3, 18)
+    agility_stat = random.randint(3, 18)
+
+    # Classify role based on stats if not provided
+    if role is None:
+        role, confidence = classify_build_role(hp_stat, attack_stat, defense_stat, agility_stat)
+
     return create_fighter(
-        hp_stat=random.randint(3, 18),
-        attack_stat=random.randint(3, 18),
-        defense_stat=random.randint(3, 18),
-        agility_stat=random.randint(3, 18),
+        hp_stat=hp_stat,
+        attack_stat=attack_stat,
+        defense_stat=defense_stat,
+        agility_stat=agility_stat,
         role=role
     )
 

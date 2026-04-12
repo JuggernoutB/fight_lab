@@ -17,13 +17,69 @@ NUM_FIGHTS = 5000
 # BUILD GENERATION
 # ============================================================
 
-ROLES = ["ASSASSIN", "BRUISER", "TANK", "SKIRMISHER"]
+ROLES = ["ASSASSIN", "BRUISER", "TANK", "SKIRMISHER", "UNIVERSAL"]
 
 
 def generate_fighter():
-    """Generate fighter with proper stat-based system"""
-    role = random.choice(ROLES)
-    return create_fighter_random(role)
+    """Generate fighter with automatic role classification based on stats"""
+    return create_fighter_random(role=None)  # Auto-classify based on generated stats
+
+
+def generate_matched_fighters():
+    """Generate two fighters with equal stat totals for fair comparison"""
+    from state.fighter_factory import create_fighter, classify_build_role
+    import random
+
+    # Generate first fighter normally
+    hp_a = random.randint(3, 18)
+    atk_a = random.randint(3, 18)
+    def_a = random.randint(3, 18)
+    agi_a = random.randint(3, 18)
+
+    total_stats = hp_a + atk_a + def_a + agi_a
+
+    # Generate second fighter with same total stats
+    # Distribute total_stats randomly but ensure each stat is 3-18
+    attempts = 0
+    while attempts < 100:  # Safety limit
+        # Start with minimum values
+        hp_b = random.randint(3, min(18, total_stats - 9))  # Leave room for other stats
+        remaining = total_stats - hp_b
+
+        atk_b = random.randint(3, min(18, remaining - 6))
+        remaining -= atk_b
+
+        def_b = random.randint(3, min(18, remaining - 3))
+        remaining -= def_b
+
+        agi_b = remaining
+
+        # Check if agi_b is valid
+        if 3 <= agi_b <= 18:
+            break
+
+        attempts += 1
+
+    # Fallback to ensure valid stats
+    if not (3 <= agi_b <= 18):
+        # Use simple balanced distribution as fallback
+        quarter = total_stats // 4
+        remainder = total_stats % 4
+        hp_b = atk_b = def_b = agi_b = quarter
+        # Distribute remainder
+        if remainder >= 1: hp_b += 1
+        if remainder >= 2: atk_b += 1
+        if remainder >= 3: def_b += 1
+
+    # Classify roles
+    role_a, _ = classify_build_role(hp_a, atk_a, def_a, agi_a)
+    role_b, _ = classify_build_role(hp_b, atk_b, def_b, agi_b)
+
+    # Create fighters
+    fighter_a = create_fighter(hp_a, atk_a, def_a, agi_a, role_a)
+    fighter_b = create_fighter(hp_b, atk_b, def_b, agi_b, role_b)
+
+    return fighter_a, fighter_b
 
 
 # ============================================================
@@ -85,6 +141,8 @@ def run_benchmark(n=NUM_FIGHTS):
 
     role_a = []
     role_b = []
+    role_confidence_a = []
+    role_confidence_b = []
 
     # Role winrate tracking
     role_results = defaultdict(lambda: {"wins": 0, "losses": 0, "draws": 0, "total": 0})
@@ -95,21 +153,31 @@ def run_benchmark(n=NUM_FIGHTS):
     # Track builds by fight length
     builds_by_rounds = defaultdict(list)  # rounds -> [(build_a, build_b), ...]
 
+    # Track stat total fairness
+    stat_total_differences = []
+
     for i in range(n):
         if i % 1000 == 0:
             print(f"Progress: {i}/{n}")
 
         # ------------------------
-        # generate fighters
+        # generate matched fighters (equal stat totals for fairness)
         # ------------------------
-        a = generate_fighter()
-        b = generate_fighter()
+        a, b = generate_matched_fighters()
 
         # Track builds (stat combinations)
         build_a = (getattr(a, 'hp_stat', '?'), a.attack, a.defense, a.agility)
         build_b = (getattr(b, 'hp_stat', '?'), b.attack, b.defense, b.agility)
         builds_used[build_a] += 1
         builds_used[build_b] += 1
+
+        # Track stat total fairness
+        total_a = sum(build_a[1:]) if build_a[0] != '?' else sum(build_a[1:]) + (a.hp // 10)
+        total_b = sum(build_b[1:]) if build_b[0] != '?' else sum(build_b[1:]) + (b.hp // 10)
+        if build_a[0] != '?' and build_b[0] != '?':
+            total_a += build_a[0]
+            total_b += build_b[0]
+        stat_total_differences.append(abs(total_a - total_b))
 
         state = FightState(
             round_id=0,
@@ -142,8 +210,21 @@ def run_benchmark(n=NUM_FIGHTS):
         # Track builds by fight length
         builds_by_rounds[rounds].append((build_a, build_b))
 
+        # Get role and confidence for analysis
+        from state.fighter_factory import classify_build_role
+        role_a_classified, confidence_a = classify_build_role(
+            getattr(a, 'hp_stat', a.hp // 10),  # Estimate hp_stat if not available
+            a.attack, a.defense, a.agility
+        )
+        role_b_classified, confidence_b = classify_build_role(
+            getattr(b, 'hp_stat', b.hp // 10),  # Estimate hp_stat if not available
+            b.attack, b.defense, b.agility
+        )
+
         role_a.append(a.role)
         role_b.append(b.role)
+        role_confidence_a.append(confidence_a)
+        role_confidence_b.append(confidence_b)
 
         # Track role winrates
         role_results[a.role]["total"] += 1
@@ -181,6 +262,17 @@ def run_benchmark(n=NUM_FIGHTS):
     total_fighters = sum(builds_used.values())
     print(f"Unique builds tested: {unique_builds}")
     print(f"Total fighters generated: {total_fighters}")
+
+    # Stat total fairness analysis
+    avg_stat_diff = sum(stat_total_differences) / len(stat_total_differences) if stat_total_differences else 0
+    max_stat_diff = max(stat_total_differences) if stat_total_differences else 0
+    perfect_matches = len([d for d in stat_total_differences if d == 0])
+    perfect_percentage = (perfect_matches / len(stat_total_differences)) * 100 if stat_total_differences else 0
+
+    print(f"\nStat Total Fairness:")
+    print(f"  Perfect matches (0 difference): {perfect_matches} ({perfect_percentage:.1f}%)")
+    print(f"  Average stat total difference: {avg_stat_diff:.1f}")
+    print(f"  Maximum stat total difference: {max_stat_diff}")
 
     # Find shortest and longest fights
     min_rounds = min(rounds_list)
@@ -248,6 +340,23 @@ def run_benchmark(n=NUM_FIGHTS):
         draws = data["draws"]
         total = data["total"]
         print(f"  {role:11s}: {winrate:5.1f}% ({wins:4d}W/{losses:4d}L/{draws:3d}D) from {total:4d} fights")
+
+    print("\n===== ROLE QUALITY ANALYSIS =====")
+    all_confidences = role_confidence_a + role_confidence_b
+    avg_confidence = sum(all_confidences) / len(all_confidences) if all_confidences else 0
+
+    # Categorize builds by confidence
+    pure_builds = len([c for c in all_confidences if c > 0.15])  # Clear role identity
+    hybrid_builds = len([c for c in all_confidences if c < 0.05])  # Ambiguous role
+    total_builds = len(all_confidences)
+
+    pure_percentage = (pure_builds / total_builds) * 100 if total_builds > 0 else 0
+    hybrid_percentage = (hybrid_builds / total_builds) * 100 if total_builds > 0 else 0
+
+    print(f"Average confidence: {avg_confidence:.3f}")
+    print(f"Pure builds (confidence > 0.15): {pure_builds:4d} ({pure_percentage:5.1f}%)")
+    print(f"Hybrid builds (confidence < 0.05): {hybrid_builds:4d} ({hybrid_percentage:5.1f}%)")
+    print(f"Confidence range: {min(all_confidences):.3f} - {max(all_confidences):.3f}")
 
     print("\n===== ROUNDS DISTRIBUTION =====")
     avg_rounds = sum(rounds_list) / n
