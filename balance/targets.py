@@ -53,4 +53,20 @@ TARGETS = {
         "ASSASSIN": (0.15, 0.25),    # 15-25% of builds
         "UNIVERSAL": (0.20, 0.35),   # 20-35% of builds (balanced builds common)
     },
+
+    # =========================
+    # ARCHETYPE BALANCE
+    # =========================
+    "archetype_balance_spread": (0.0, 0.10),  # Max 10% spread - tighter control than roles
+
+    # Archetype winrate targets
+    "archetype_winrates": {
+        "EXTREME": (0.45, 0.55),     # Should NOT dominate - prevent min/max exploitation
+        "SPECIALIZED": (0.45, 0.55), # Standard archetype
+        "BALANCED": (0.45, 0.55),    # Should be viable but not overpowered
+        "HYBRID": (0.45, 0.55),      # Should be competitive
+    },
+
+    # Critical archetype validation
+    "extreme_dominance_check": (0.0, 0.60),  # EXTREME builds must not exceed 60% winrate
 }

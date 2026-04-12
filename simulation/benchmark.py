@@ -27,7 +27,7 @@ def generate_fighter():
 
 def generate_matched_fighters():
     """Generate two fighters with equal stat totals for fair comparison"""
-    from state.fighter_factory import create_fighter, classify_build_role
+    from state.fighter_factory import create_fighter, classify_build_role, classify_build_archetype
     import random
 
     # Generate first fighter normally
@@ -71,13 +71,20 @@ def generate_matched_fighters():
         if remainder >= 2: atk_b += 1
         if remainder >= 3: def_b += 1
 
-    # Classify roles
+    # Classify roles and archetypes
     role_a, _ = classify_build_role(hp_a, atk_a, def_a, agi_a)
     role_b, _ = classify_build_role(hp_b, atk_b, def_b, agi_b)
+
+    archetype_a = classify_build_archetype(hp_a, atk_a, def_a, agi_a)
+    archetype_b = classify_build_archetype(hp_b, atk_b, def_b, agi_b)
 
     # Create fighters
     fighter_a = create_fighter(hp_a, atk_a, def_a, agi_a, role_a)
     fighter_b = create_fighter(hp_b, atk_b, def_b, agi_b, role_b)
+
+    # Add archetype metadata
+    fighter_a.archetype = archetype_a
+    fighter_b.archetype = archetype_b
 
     return fighter_a, fighter_b
 
@@ -146,6 +153,12 @@ def run_benchmark(n=NUM_FIGHTS):
 
     # Role winrate tracking
     role_results = defaultdict(lambda: {"wins": 0, "losses": 0, "draws": 0, "total": 0})
+
+    # Archetype winrate tracking
+    archetype_results = defaultdict(lambda: {"wins": 0, "losses": 0, "draws": 0, "total": 0})
+
+    # Role + Archetype combination tracking
+    role_archetype_results = defaultdict(lambda: {"wins": 0, "losses": 0, "draws": 0, "total": 0})
 
     # Build tracking (HP, ATK, DEF, AGI stats)
     builds_used = defaultdict(int)
@@ -230,15 +243,40 @@ def run_benchmark(n=NUM_FIGHTS):
         role_results[a.role]["total"] += 1
         role_results[b.role]["total"] += 1
 
+        # Track archetype winrates
+        archetype_a = getattr(a, 'archetype', 'Unknown')
+        archetype_b = getattr(b, 'archetype', 'Unknown')
+
+        archetype_results[archetype_a]["total"] += 1
+        archetype_results[archetype_b]["total"] += 1
+
+        # Track role + archetype combinations
+        combo_a = f"{a.role}+{archetype_a}"
+        combo_b = f"{b.role}+{archetype_b}"
+        role_archetype_results[combo_a]["total"] += 1
+        role_archetype_results[combo_b]["total"] += 1
+
         if winner == "A":
             role_results[a.role]["wins"] += 1
             role_results[b.role]["losses"] += 1
+            archetype_results[archetype_a]["wins"] += 1
+            archetype_results[archetype_b]["losses"] += 1
+            role_archetype_results[combo_a]["wins"] += 1
+            role_archetype_results[combo_b]["losses"] += 1
         elif winner == "B":
             role_results[a.role]["losses"] += 1
             role_results[b.role]["wins"] += 1
+            archetype_results[archetype_a]["losses"] += 1
+            archetype_results[archetype_b]["wins"] += 1
+            role_archetype_results[combo_a]["losses"] += 1
+            role_archetype_results[combo_b]["wins"] += 1
         else:  # Draw
             role_results[a.role]["draws"] += 1
             role_results[b.role]["draws"] += 1
+            archetype_results[archetype_a]["draws"] += 1
+            archetype_results[archetype_b]["draws"] += 1
+            role_archetype_results[combo_a]["draws"] += 1
+            role_archetype_results[combo_b]["draws"] += 1
 
         summary = telemetry.summary()
         for k, v in summary["mechanics"].items():
@@ -358,6 +396,58 @@ def run_benchmark(n=NUM_FIGHTS):
     print(f"Hybrid builds (confidence < 0.05): {hybrid_builds:4d} ({hybrid_percentage:5.1f}%)")
     print(f"Confidence range: {min(all_confidences):.3f} - {max(all_confidences):.3f}")
 
+    print("\n===== ARCHETYPE WINRATE ANALYSIS =====")
+    # Calculate winrates for each archetype
+    archetype_winrates = {}
+    for archetype, stats in archetype_results.items():
+        if stats["total"] > 0:
+            winrate = (stats["wins"] + 0.5 * stats["draws"]) / stats["total"]
+            archetype_winrates[archetype] = {
+                "winrate": winrate,
+                "wins": stats["wins"],
+                "losses": stats["losses"],
+                "draws": stats["draws"],
+                "total": stats["total"]
+            }
+
+    # Sort archetypes by winrate (highest first)
+    sorted_archetypes = sorted(archetype_winrates.items(), key=lambda x: x[1]["winrate"], reverse=True)
+
+    print("Archetype performance (winrate = wins + 0.5 * draws):")
+    for archetype, data in sorted_archetypes:
+        winrate = data["winrate"] * 100
+        wins = data["wins"]
+        losses = data["losses"]
+        draws = data["draws"]
+        total = data["total"]
+        print(f"  {archetype:11s}: {winrate:5.1f}% ({wins:4d}W/{losses:4d}L/{draws:3d}D) from {total:4d} fights")
+
+    print("\n===== ROLE + ARCHETYPE COMBINATIONS =====")
+    # Calculate winrates for role+archetype combinations
+    combo_winrates = {}
+    for combo, stats in role_archetype_results.items():
+        if stats["total"] >= 10:  # Only show combinations with significant sample size
+            winrate = (stats["wins"] + 0.5 * stats["draws"]) / stats["total"]
+            combo_winrates[combo] = {
+                "winrate": winrate,
+                "wins": stats["wins"],
+                "losses": stats["losses"],
+                "draws": stats["draws"],
+                "total": stats["total"]
+            }
+
+    # Sort combinations by winrate (highest first)
+    sorted_combos = sorted(combo_winrates.items(), key=lambda x: x[1]["winrate"], reverse=True)
+
+    print("Top combinations (10+ fights minimum):")
+    for combo, data in sorted_combos[:10]:  # Show top 10
+        winrate = data["winrate"] * 100
+        wins = data["wins"]
+        losses = data["losses"]
+        draws = data["draws"]
+        total = data["total"]
+        print(f"  {combo:20s}: {winrate:5.1f}% ({wins:3d}W/{losses:3d}L/{draws:2d}D) from {total:3d} fights")
+
     print("\n===== ROUNDS DISTRIBUTION =====")
     avg_rounds = sum(rounds_list) / n
     print(f"Average fight length: {avg_rounds:.1f} rounds")
@@ -425,13 +515,28 @@ def run_benchmark(n=NUM_FIGHTS):
     if len(role_winrates_for_validation) >= 2:
         role_balance_spread = max(role_winrates_for_validation) - min(role_winrates_for_validation)
 
+    # Calculate archetype balance spread and winrates for validation
+    archetype_winrates_for_validation = {}
+    archetype_winrates_list = []
+    for archetype, stats in archetype_results.items():
+        if stats["total"] > 0:
+            winrate = (stats["wins"] + 0.5 * stats["draws"]) / stats["total"]
+            archetype_winrates_for_validation[archetype] = winrate
+            archetype_winrates_list.append(winrate)
+
+    archetype_balance_spread = 0.0
+    if len(archetype_winrates_list) >= 2:
+        archetype_balance_spread = max(archetype_winrates_list) - min(archetype_winrates_list)
+
     summary_data = {
         "mechanics": {k: v / n for k, v in global_mechanics.items()},
         "damage_split": {k: v / n for k, v in global_damage.items()},
         "stamina_distribution": {k: v / n for k, v in global_stamina_distribution.items()},
         "avg_total_damage": avg_total_damage,
         "avg_dps": avg_dps_calculated,
-        "role_balance_spread": role_balance_spread
+        "role_balance_spread": role_balance_spread,
+        "archetype_balance_spread": archetype_balance_spread,
+        "archetype_winrates": archetype_winrates_for_validation
     }
 
     return results, summary_data, rounds_list

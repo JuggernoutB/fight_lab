@@ -1,15 +1,23 @@
-# Build System and Role Classification
+# Build System: Role + Archetype Classification
 
-This document describes how the combat simulation system creates fighter builds and automatically classifies them into roles using a **production-level scoring system**.
+This document describes how the combat simulation system creates fighter builds and automatically classifies them into **roles** (combat style) and **archetypes** (stat distribution pattern) using production-level scoring systems.
 
 ## Overview
 
-The system uses a **continuous scoring-based role classification** approach where:
+The system uses **dual classification** with two independent dimensions:
+
+### 🎯 **Role Classification** - Combat Behavior
 1. Fighter stats are generated first (random or custom)
 2. Each role receives a calculated score based on stat distribution
 3. Role is determined by highest score + confidence measurement
 4. This provides smooth transitions and realistic role distributions
 5. No artificial boundaries or discrete if/else logic
+
+### 🏗️ **Archetype Classification** - Stat Distribution Pattern
+1. Analyzes how stats are distributed across HP/ATK/DEF/AGI
+2. Categorizes builds as EXTREME, SPECIALIZED, BALANCED, or HYBRID
+3. Independent of role - provides second axis of analysis
+4. Critical for detecting min/max exploitation and balance issues
 
 ## Fighter Stats
 
@@ -148,6 +156,104 @@ scores["ASSASSIN"] = atk_n * 0.45 + agi_n * 0.55  # Reduced from 0.5/0.5
 - **Frequency**: ~16.5% of random builds
 - **Playstyle**: Hit-and-run, dodge specialist, positioning control
 
+## Archetype Classification Algorithm
+
+### Function: `classify_build_archetype(hp, attack, defense, agility) -> archetype`
+
+The archetype system analyzes **stat distribution patterns** independent of roles:
+
+```python
+def classify_build_archetype(hp_stat, attack_stat, defense_stat, agility_stat):
+    stats = [hp_stat, attack_stat, defense_stat, agility_stat]
+    max_stat = max(stats)
+    min_stat = min(stats)
+    spread = max_stat - min_stat
+    sorted_stats = sorted(stats, reverse=True)
+
+    # 1. EXTREME - one stat dominates significantly
+    if sorted_stats[0] - sorted_stats[1] >= 5:
+        return "EXTREME"
+
+    # 2. SPECIALIZED - 1-2 dominant stats
+    if sorted_stats[0] - sorted_stats[2] >= 4:
+        return "SPECIALIZED"
+
+    # 3. BALANCED - all stats roughly even
+    if spread <= 2:
+        return "BALANCED"
+
+    # 4. HYBRID - everything else
+    return "HYBRID"
+```
+
+### Archetype Definitions
+
+#### 🔥 **EXTREME**
+- **Criteria**: Top stat ≥ 5 points higher than second-highest
+- **Philosophy**: Min/max builds with one dominant stat
+- **Examples**:
+  - (18, 8, 8, 8) - Pure HP tank
+  - (3, 18, 3, 3) - Glass cannon attacker
+  - (8, 3, 3, 18) - Pure speed specialist
+- **Balance Risk**: ⚠️ Should NOT dominate winrates (indicates broken scaling)
+
+#### ⚡ **SPECIALIZED**
+- **Criteria**: Top stat ≥ 4 points higher than third-highest
+- **Philosophy**: Focused builds with clear stat priorities
+- **Examples**:
+  - (16, 16, 8, 8) - Attack + HP focus
+  - (18, 18, 3, 3) - Extreme offense
+  - (8, 8, 18, 18) - Defense + mobility
+- **Balance Target**: Primary archetype for most builds
+
+#### ⚖️ **BALANCED**
+- **Criteria**: Spread ≤ 2 between highest and lowest stat
+- **Philosophy**: Even stat distribution
+- **Examples**:
+  - (12, 12, 12, 12) - Perfect balance
+  - (11, 12, 12, 13) - Near-perfect balance
+  - (10, 11, 11, 12) - Slight variation
+- **Balance Target**: Viable but not overpowered baseline
+
+#### 🌀 **HYBRID**
+- **Criteria**: Everything else (gradual stat distributions)
+- **Philosophy**: Builds with gradual stat differences
+- **Examples**:
+  - (14, 12, 10, 8) - Descending priority
+  - (15, 14, 13, 12) - Small gaps
+  - (8, 10, 12, 14) - Ascending focus
+- **Balance Target**: Should be competitive with other archetypes
+
+## Dual Classification System
+
+### Why Two Dimensions?
+
+The system provides **orthogonal analysis**:
+
+| Dimension | Answers | Examples |
+|-----------|---------|----------|
+| **Role** | "What does this build DO?" | ASSASSIN, TANK, BRUISER |
+| **Archetype** | "How are stats distributed?" | EXTREME, BALANCED, SPECIALIZED |
+
+### Powerful Combinations
+
+Real insights come from **role + archetype combinations**:
+
+```
+📊 Example Analysis Results:
+BRUISER + EXTREME     : 67.3% winrate (⚠️ overpowered)
+ASSASSIN + SPECIALIZED: 66.2% winrate (strong)
+UNIVERSAL + BALANCED  : 53.4% winrate (baseline)
+TANK + EXTREME        : 35.1% winrate (⚠️ underpowered)
+```
+
+### Production Benefits
+
+1. **🔍 Balance Detection**: Spot problematic combinations instantly
+2. **⚙️ Targeted Fixes**: Address specific archetype + role issues
+3. **📈 Meta Analysis**: Understand what stat patterns dominate
+4. **🚫 Exploit Prevention**: Detect min/max abuse early
+
 ## Statistical Distribution (Fair Matching System)
 
 Based on 10,000 random build analysis with **fair stat total matching**:
@@ -172,6 +278,40 @@ Based on 10,000 random build analysis with **fair stat total matching**:
 - **Pure builds** (conf > 0.15): 15.8% of total
 - **Hybrid builds** (conf < 0.05): 54.9% of total
 - **Confidence range**: 0.000 - 0.750
+
+### Archetype Distribution and Analysis
+
+Based on 5,000 fight analysis with fair matching:
+
+| Archetype | Frequency | Winrate | Balance Status | Key Insight |
+|-----------|-----------|---------|----------------|-------------|
+| SPECIALIZED | 52.5% | 50.7% | ✅ Balanced | Most common, competitive |
+| HYBRID | 18.6% | 50.0% | ✅ Balanced | Gradual distributions work |
+| EXTREME | 27.6% | 48.5% | ✅ **Properly Weak** | Min/max NOT rewarded |
+| BALANCED | 1.3% | 53.4% | ✅ Slightly Strong | Rare but viable |
+
+### Critical Archetype Findings
+
+#### 🎯 **EXTREME Builds Correctly Balanced**
+- **48.5% winrate** - Below average performance ✅
+- This is **exactly what we want** - prevents min/max exploitation
+- System correctly penalizes one-dimensional builds
+
+#### 🏆 **Top Role+Archetype Combinations**
+Real meta revealed through dual classification:
+```
+BRUISER + EXTREME     : 67.3% winrate (⚠️ needs attention)
+BRUISER + SPECIALIZED : 66.6% winrate (strong offensive)
+ASSASSIN + SPECIALIZED: 66.2% winrate (balanced glass cannon)
+ASSASSIN + EXTREME    : 65.4% winrate (pure burst)
+UNIVERSAL + BALANCED  : 53.4% winrate (baseline reference)
+```
+
+#### ⚖️ **Balance Validation Targets**
+Production archetype validation ensures:
+- **Archetype spread**: Max 10% difference between archetypes ✅
+- **EXTREME dominance check**: Must stay below 60% winrate ✅
+- **Individual archetype winrates**: All within 45-55% range ✅
 
 ## Balance Implications
 
@@ -241,9 +381,11 @@ def generate_matched_fighters():
 # Custom stats with specific role
 fighter = create_fighter(hp=15, attack=12, defense=10, agility=16, role="ASSASSIN")
 
-# Or auto-classify custom stats
+# Or auto-classify custom stats with dual classification
 stats = {"hp": 15, "attack": 12, "defense": 10, "agility": 16}
-role = classify_build_role(stats["hp"], stats["attack"], stats["defense"], stats["agility"])
+role, confidence = classify_build_role(stats["hp"], stats["attack"], stats["defense"], stats["agility"])
+archetype = classify_build_archetype(stats["hp"], stats["attack"], stats["defense"], stats["agility"])
+print(f"Build classified as: {role} ({archetype})")
 ```
 
 ### SINGLE Mode
@@ -256,23 +398,28 @@ fighter_b = create_fighter_balanced("ASSASSIN")  # (10,16,8,16)
 ## Technical Implementation
 
 ### File Structure
-- `state/fighter_factory.py` - Scoring-based classification and fighter creation
-- `simulation/benchmark.py` - **Fair matching system** with equal stat totals
+- `state/fighter_factory.py` - **Dual classification system** (role + archetype)
+- `simulation/benchmark.py` - **Fair matching + archetype analysis**
 - `game/run_fight.py` - Supports all 5 roles with input validation
-- `balance/targets.py` - **Updated targets** for fair system validation
+- `balance/targets.py` - **Archetype validation targets**
+- `balance/validator.py` - **Archetype balance validation**
 
 ### Key Algorithms
 1. **Role Scoring System** - Continuous classification with confidence metrics
-2. **Fair Matching Generator** - Equal stat total distribution algorithm
-3. **Stat Total Validation** - 100% perfect match verification
-4. **Confidence Analysis** - Pure vs hybrid build identification
+2. **Archetype Classification** - Stat distribution pattern analysis
+3. **Fair Matching Generator** - Equal stat total distribution algorithm
+4. **Dual Analysis Engine** - Role + archetype combination tracking
+5. **Production Validation** - Archetype dominance and spread checks
+6. **Confidence Analysis** - Pure vs hybrid build identification
 
 ### API Integration
-The enhanced classification system provides:
-- **Unbiased role analysis** - Fair stat total comparisons only
+The enhanced dual classification system provides:
+- **Unbiased role + archetype analysis** - Fair stat total comparisons
 - **Confidence scoring** - Identifies pure vs hybrid builds
 - **Real-time fairness validation** - Monitors stat total equality
-- **Production-ready balance data** - Accurate role effectiveness metrics
+- **Archetype dominance detection** - Prevents min/max exploitation
+- **Production-ready balance data** - Accurate effectiveness metrics
+- **Dual-axis meta analysis** - Role behavior + stat pattern insights
 
 ## Future Considerations
 

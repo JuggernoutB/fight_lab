@@ -67,6 +67,40 @@ def create_fighter_balanced(role: str) -> FighterState:
         return create_fighter(hp_stat=12, attack_stat=12, defense_stat=12, agility_stat=12, role=role)
 
 
+def classify_build_archetype(hp_stat: int, attack_stat: int, defense_stat: int, agility_stat: int) -> str:
+    """
+    Classify build archetype based on stat distribution pattern
+
+    Args:
+        hp_stat, attack_stat, defense_stat, agility_stat: Fighter stats
+
+    Returns:
+        Archetype string: EXTREME, SPECIALIZED, BALANCED, or HYBRID
+    """
+    stats = [hp_stat, attack_stat, defense_stat, agility_stat]
+
+    max_stat = max(stats)
+    min_stat = min(stats)
+    spread = max_stat - min_stat
+
+    sorted_stats = sorted(stats, reverse=True)
+
+    # 1. EXTREME - one stat dominates significantly
+    if sorted_stats[0] - sorted_stats[1] >= 5:
+        return "EXTREME"
+
+    # 2. SPECIALIZED - 1-2 dominant stats
+    if sorted_stats[0] - sorted_stats[2] >= 4:
+        return "SPECIALIZED"
+
+    # 3. BALANCED - all stats roughly even
+    if spread <= 2:
+        return "BALANCED"
+
+    # 4. HYBRID - everything else
+    return "HYBRID"
+
+
 def classify_build_role(hp_stat: int, attack_stat: int, defense_stat: int, agility_stat: int) -> tuple[str, float]:
     """
     Classify build into role using scoring system for smooth transitions
@@ -144,11 +178,15 @@ def create_fighter_random(role: str = None) -> FighterState:
     defense_stat = random.randint(3, 18)
     agility_stat = random.randint(3, 18)
 
-    # Classify role based on stats if not provided
+    # Classify role and archetype based on stats if not provided
     if role is None:
         role, confidence = classify_build_role(hp_stat, attack_stat, defense_stat, agility_stat)
+    else:
+        confidence = 0.5  # Default confidence for pre-defined roles
 
-    return create_fighter(
+    archetype = classify_build_archetype(hp_stat, attack_stat, defense_stat, agility_stat)
+
+    fighter = create_fighter(
         hp_stat=hp_stat,
         attack_stat=attack_stat,
         defense_stat=defense_stat,
@@ -156,9 +194,18 @@ def create_fighter_random(role: str = None) -> FighterState:
         role=role
     )
 
+    # Add metadata for analysis
+    fighter.role_confidence = confidence
+    fighter.archetype = archetype
+
+    return fighter
+
 
 def print_fighter_stats(fighter: FighterState) -> None:
     """Debug helper to print fighter stats"""
-    print(f"Role: {fighter.role}")
+    archetype = getattr(fighter, 'archetype', 'Unknown')
+    confidence = getattr(fighter, 'role_confidence', 0.0)
+    print(f"Role: {fighter.role} (confidence: {confidence:.3f})")
+    print(f"Archetype: {archetype}")
     print(f"Stats: HP={getattr(fighter, 'hp_stat', '?')}, ATK={fighter.attack}, DEF={fighter.defense}, AGI={fighter.agility}")
     print(f"Computed: HP={fighter.hp:.1f}, Stamina={fighter.stamina}")

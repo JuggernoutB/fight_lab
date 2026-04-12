@@ -92,6 +92,36 @@ def validate(results, summary, rounds_list, n):
             failed = True
 
     # =========================
+    # ARCHETYPE BALANCE
+    # =========================
+    if "archetype_balance_spread" in summary and "archetype_balance_spread" in TARGETS:
+        archetype_spread = summary["archetype_balance_spread"]
+        low, high = TARGETS["archetype_balance_spread"]
+        msg = check_range("archetype_balance_spread", archetype_spread, low, high)
+        report.append(msg)
+        if "[FAIL]" in msg:
+            failed = True
+
+    # Archetype individual winrates
+    if "archetype_winrates" in summary and "archetype_winrates" in TARGETS:
+        for archetype, winrate in summary["archetype_winrates"].items():
+            if archetype in TARGETS["archetype_winrates"]:
+                low, high = TARGETS["archetype_winrates"][archetype]
+                msg = check_range(f"archetype_{archetype.lower()}_winrate", winrate, low, high)
+                report.append(msg)
+                if "[FAIL]" in msg:
+                    failed = True
+
+    # Critical EXTREME dominance check
+    if "archetype_winrates" in summary and "EXTREME" in summary["archetype_winrates"]:
+        extreme_winrate = summary["archetype_winrates"]["EXTREME"]
+        low, high = TARGETS["extreme_dominance_check"]
+        msg = check_range("extreme_dominance_check", extreme_winrate, low, high)
+        report.append(msg)
+        if "[FAIL]" in msg:
+            failed = True
+
+    # =========================
     # RETURN RESULT
     # =========================
     final_report = "\n".join(report)
