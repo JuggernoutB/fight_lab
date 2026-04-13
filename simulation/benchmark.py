@@ -156,8 +156,6 @@ def run_benchmark(n=NUM_FIGHTS, use_level_system=False, level=9):
     # Build tracking (HP, ATK, DEF, AGI stats)
     builds_used = defaultdict(int)
 
-    # Track builds by fight length
-    builds_by_rounds = defaultdict(list)  # rounds -> [(build_a, build_b), ...]
 
     # Track stat total fairness
     stat_total_differences = []
@@ -213,8 +211,6 @@ def run_benchmark(n=NUM_FIGHTS, use_level_system=False, level=9):
         # Track round distribution
         rounds_distribution[rounds] += 1
 
-        # Track builds by fight length
-        builds_by_rounds[rounds].append((build_a, build_b))
 
         # Get role and confidence for analysis
         from state.fighter_factory import classify_build_role
@@ -280,29 +276,6 @@ def run_benchmark(n=NUM_FIGHTS, use_level_system=False, level=9):
     print(f"  Average stat total difference: {avg_stat_diff:.1f}")
     print(f"  Maximum stat total difference: {max_stat_diff}")
 
-    # Find shortest and longest fights
-    min_rounds = min(rounds_list)
-    max_rounds = max(rounds_list)
-
-    print(f"\nBuilds from shortest fights ({min_rounds} rounds):")
-    shortest_builds = set()
-    for build_a, build_b in builds_by_rounds[min_rounds]:
-        shortest_builds.add(build_a)
-        shortest_builds.add(build_b)
-
-    for i, build in enumerate(sorted(shortest_builds), 1):
-        hp_stat, atk, def_stat, agi = build
-        print(f"  {i:2d}. HP={hp_stat}, ATK={atk}, DEF={def_stat}, AGI={agi}")
-
-    print(f"\nBuilds from longest fights ({max_rounds} rounds):")
-    longest_builds = set()
-    for build_a, build_b in builds_by_rounds[max_rounds]:
-        longest_builds.add(build_a)
-        longest_builds.add(build_b)
-
-    for i, build in enumerate(sorted(longest_builds), 1):
-        hp_stat, atk, def_stat, agi = build
-        print(f"  {i:2d}. HP={hp_stat}, ATK={atk}, DEF={def_stat}, AGI={agi}")
 
     print("\n===== ROLE DISTRIBUTION =====")
     from collections import Counter

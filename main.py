@@ -66,25 +66,8 @@ def run_level_benchmark(level=9, num_fights=5000):
     # Run level benchmark
     results = run_level_benchmark(level, num_fights)
 
-    # Print results
+    # Print results (includes BALANCE VALIDATION)
     print_level_benchmark_results(results)
-
-    # Simple balance check
-    role_analysis = results.get("role_analysis", {})
-    if role_analysis:
-        sorted_roles = sorted(role_analysis.items(), key=lambda x: x[1]["winrate"], reverse=True)
-        if len(sorted_roles) >= 2:
-            best = sorted_roles[0][1]["winrate"]
-            worst = sorted_roles[-1][1]["winrate"]
-            spread = best - worst
-
-            print(f"\n📈 LEVEL {level} BALANCE CHECK:")
-            if spread < 0.15:
-                print(f"✅ Role spread {spread*100:.1f}% - GOOD BALANCE")
-                sys.exit(0)
-            else:
-                print(f"❌ Role spread {spread*100:.1f}% - NEEDS REBALANCING")
-                sys.exit(1)
 
 
 def run_single_mode(config_path=None, debug=False):

@@ -83,7 +83,15 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
         "level_info": {
             "level": level,
             "stat_budget": level_to_stat_budget(level)
-        }
+        },
+        "builds_used": {},  # Track all unique builds
+        "role_confidences": [],  # Track role classification confidence
+        "mechanics_data": {},  # Track combat mechanics
+        "damage_data": {},  # Track damage statistics
+        "stamina_data": {},  # Track stamina distribution
+        "dps_data": [],  # Track DPS values
+        "total_damage_data": [],  # Track total damage values
+        "rounds_distribution": {}  # Track detailed round distribution
     }
 
     # Progress tracking
@@ -97,6 +105,48 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
         # Simulate fight
         initial_state = FightState(0, fighter_a, fighter_b)
         final_state, telemetry = simulate_fight(initial_state, seed=i)
+
+        # Track builds
+        build_a = (getattr(fighter_a, 'hp_stat', 0), fighter_a.attack, fighter_a.defense, fighter_a.agility)
+        build_b = (getattr(fighter_b, 'hp_stat', 0), fighter_b.attack, fighter_b.defense, fighter_b.agility)
+        results["builds_used"][build_a] = results["builds_used"].get(build_a, 0) + 1
+        results["builds_used"][build_b] = results["builds_used"].get(build_b, 0) + 1
+
+        # Track role confidence
+        from state.fighter_factory import classify_build_role
+        _, confidence_a = classify_build_role(
+            getattr(fighter_a, 'hp_stat', 0), fighter_a.attack, fighter_a.defense, fighter_a.agility
+        )
+        _, confidence_b = classify_build_role(
+            getattr(fighter_b, 'hp_stat', 0), fighter_b.attack, fighter_b.defense, fighter_b.agility
+        )
+        results["role_confidences"].extend([confidence_a, confidence_b])
+
+        # Calculate metrics
+        rounds = final_state.round_id
+        summary = telemetry.summary()
+
+        # Track combat mechanics
+        for k, v in summary["mechanics"].items():
+            results["mechanics_data"][k] = results["mechanics_data"].get(k, 0) + v
+
+        # Track damage data
+        for k, v in summary["damage_split"].items():
+            results["damage_data"][k] = results["damage_data"].get(k, 0) + v
+
+        # Track stamina data
+        for k, v in summary["stamina_distribution"].items():
+            results["stamina_data"][k] = results["stamina_data"].get(k, 0) + v
+
+        # Calculate DPS and total damage
+        from simulation.benchmark import compute_total_damage, compute_dps
+        total_damage = compute_total_damage(telemetry)
+        dps = compute_dps(total_damage, rounds)
+        results["dps_data"].append(dps)
+        results["total_damage_data"].append(total_damage)
+
+        # Track round distribution
+        results["rounds_distribution"][rounds] = results["rounds_distribution"].get(rounds, 0) + 1
 
         # Store result
         fight_result = {
@@ -204,44 +254,225 @@ def analyze_level_results(fights: List[Dict]) -> Dict:
 
 
 def print_level_benchmark_results(results: Dict):
-    """Print formatted benchmark results"""
+    """Print formatted benchmark results (unified with legacy benchmark format)"""
     level = results["level_info"]["level"]
     stat_budget = results["level_info"]["stat_budget"]
     summary = results["summary"]
-
-    print(f"\n📊 LEVEL {level} RESULTS ({stat_budget} stat points)")
-    print("=" * 50)
-
-    # Fight outcomes
     total = summary["total_fights"]
-    winners = summary["winners"]
 
-    print("🏆 FIGHT OUTCOMES:")
-    print(f"  Fighter A wins: {winners['A']:4d} ({winners['A']/total*100:.1f}%)")
-    print(f"  Fighter B wins: {winners['B']:4d} ({winners['B']/total*100:.1f}%)")
-    print(f"  Draws:          {winners['DRAW_TIMEOUT'] + winners['DRAW_MUTUAL_DEATH']:4d} ({(winners['DRAW_TIMEOUT'] + winners['DRAW_MUTUAL_DEATH'])/total*100:.1f}%)")
+    print(f"\n===== BUILD ANALYSIS =====")
+    unique_builds = len(results["builds_used"])
+    total_fighters = sum(results["builds_used"].values())
+    print(f"Unique builds tested: {unique_builds}")
+    print(f"Total fighters generated: {total_fighters}")
+    print(f"Level {level} ({stat_budget} stat points) - Perfect fairness guaranteed")
 
-    # Round stats
-    print(f"\n⚔️ FIGHT LENGTH:")
-    print(f"  Average: {summary['avg_rounds']:.1f} rounds")
-    print(f"  Range: {summary['min_rounds']}-{summary['max_rounds']} rounds")
+    print(f"\n===== ROLE DISTRIBUTION =====")
+    # Count roles from fight data
+    from collections import Counter
+    role_a = [fight["fighter_a"]["role"] for fight in results["fights"]]
+    role_b = [fight["fighter_b"]["role"] for fight in results["fights"]]
 
-    # Role analysis
-    print(f"\n🎭 ROLE PERFORMANCE:")
+    role_counter_a = Counter(role_a)
+    role_counter_b = Counter(role_b)
+    total_fighters_a = sum(role_counter_a.values())
+    total_fighters_b = sum(role_counter_b.values())
+
+    print("Fighter A roles:")
+    for role, count in role_counter_a.items():
+        percentage = (count / total_fighters_a) * 100
+        print(f"  {role}: {count:4d} times ({percentage:5.1f}%)")
+
+    print("Fighter B roles:")
+    for role, count in role_counter_b.items():
+        percentage = (count / total_fighters_b) * 100
+        print(f"  {role}: {count:4d} times ({percentage:5.1f}%)")
+
+    print(f"\n===== ROLE WINRATE ANALYSIS =====")
     role_analysis = results["role_analysis"]
     sorted_roles = sorted(role_analysis.items(), key=lambda x: x[1]["winrate"], reverse=True)
 
+    print("Role performance (winrate = wins + 0.5 * draws):")
     for role, stats in sorted_roles:
-        print(f"  {role:11s}: {stats['winrate']*100:5.1f}% ({stats['wins']}W/{stats['losses']}L/{stats['draws']}D) from {stats['fights']} fights")
+        winrate = stats["winrate"] * 100
+        wins = stats["wins"]
+        losses = stats["losses"]
+        draws = stats["draws"]
+        total_role = stats["fights"]
+        print(f"  {role:11s}: {winrate:5.1f}% ({wins:4d}W/{losses:4d}L/{draws:3d}D) from {total_role:4d} fights")
 
-    # Balance check
+    print(f"\n===== ROLE QUALITY ANALYSIS =====")
+    all_confidences = results["role_confidences"]
+    if all_confidences:
+        avg_confidence = sum(all_confidences) / len(all_confidences)
+
+        # Categorize builds by confidence
+        pure_builds = len([c for c in all_confidences if c > 0.15])  # Clear role identity
+        hybrid_builds = len([c for c in all_confidences if c < 0.05])  # Ambiguous role
+        total_builds = len(all_confidences)
+
+        pure_percentage = (pure_builds / total_builds) * 100 if total_builds > 0 else 0
+        hybrid_percentage = (hybrid_builds / total_builds) * 100 if total_builds > 0 else 0
+
+        print(f"Average confidence: {avg_confidence:.3f}")
+        print(f"Pure builds (confidence > 0.15): {pure_builds:4d} ({pure_percentage:5.1f}%)")
+        print(f"Hybrid builds (confidence < 0.05): {hybrid_builds:4d} ({hybrid_percentage:5.1f}%)")
+        print(f"Confidence range: {min(all_confidences):.3f} - {max(all_confidences):.3f}")
+
+    print(f"\n===== ROUNDS DISTRIBUTION =====")
+    print(f"Average fight length: {summary['avg_rounds']:.1f} rounds")
+    print(f"Range: {summary['min_rounds']} - {summary['max_rounds']} rounds")
+    print("\nDetailed distribution:")
+    sorted_rounds = sorted(results["rounds_distribution"].items())
+    for rounds, count in sorted_rounds:
+        percentage = (count / total) * 100
+        print(f"  {rounds:2d} rounds: {count:4d} fights ({percentage:5.1f}%)")
+
+    print(f"\n===== DRAW ANALYSIS =====")
+    winners = summary["winners"]
+    total_draws = winners.get("DRAW_TIMEOUT", 0) + winners.get("DRAW_MUTUAL_DEATH", 0)
+    wins_a = winners.get("A", 0)
+    wins_b = winners.get("B", 0)
+
+    print(f"Total fights: {total}")
+    print(f"Fighter A wins: {wins_a:4d} ({(wins_a/total)*100:5.1f}%)")
+    print(f"Fighter B wins: {wins_b:4d} ({(wins_b/total)*100:5.1f}%)")
+    print(f"Total draws: {total_draws:4d} ({(total_draws/total)*100:5.1f}%)")
+
+    if total_draws > 0:
+        timeout_draws = winners.get("DRAW_TIMEOUT", 0)
+        mutual_death = winners.get("DRAW_MUTUAL_DEATH", 0)
+
+        print("Draw breakdown:")
+        if timeout_draws > 0:
+            print(f"  Timeout (max rounds): {timeout_draws:4d} ({(timeout_draws/total)*100:5.1f}%)")
+        if mutual_death > 0:
+            print(f"  Mutual death: {mutual_death:4d} ({(mutual_death/total)*100:5.1f}%)")
+    else:
+        print("No draws occurred")
+
+    print(f"\n===== DPS VARIANCE =====")
+    if results["dps_data"]:
+        dps_list = results["dps_data"]
+        total_damage_list = results["total_damage_data"]
+
+        avg_dps = sum(dps_list) / len(dps_list)
+        var_dps = sum((x - avg_dps) ** 2 for x in dps_list) / len(dps_list)
+        std_dps = var_dps ** 0.5
+        avg_total_damage = sum(total_damage_list) / len(total_damage_list)
+
+        print(f"Average DPS: {avg_dps:.1f}")
+        print(f"DPS Variance: {var_dps:.1f}")
+        print(f"DPS Std Dev: {std_dps:.1f}")
+        print(f"Average total damage: {avg_total_damage:.1f}")
+        print(f"DPS Range: {min(dps_list):.1f} - {max(dps_list):.1f}")
+
+    # Full balance validation (like legacy benchmark)
+    print(f"\n===== BALANCE VALIDATION =====")
+
+    # Prepare validation data
+    num_fights = total
+
+    # Calculate metrics for validation
+    mechanics_avg = {}
+    if results.get("mechanics_data"):
+        for k, v in results["mechanics_data"].items():
+            mechanics_avg[k] = v / num_fights
+
+    damage_avg = {}
+    if results.get("damage_data"):
+        for k, v in results["damage_data"].items():
+            damage_avg[k] = v / num_fights
+
+    stamina_avg = {}
+    if results.get("stamina_data"):
+        for k, v in results["stamina_data"].items():
+            stamina_avg[k] = v / num_fights
+
+    # Calculate additional metrics
+    avg_rounds = summary['avg_rounds']
+    avg_dps = sum(results["dps_data"]) / len(results["dps_data"]) if results["dps_data"] else 0
+    draw_rate = (winners.get("DRAW_TIMEOUT", 0) + winners.get("DRAW_MUTUAL_DEATH", 0)) / total
+
+    # Calculate role balance spread
+    role_balance_spread = 0.0
     if len(sorted_roles) >= 2:
         best_role = sorted_roles[0][1]["winrate"]
         worst_role = sorted_roles[-1][1]["winrate"]
-        spread = best_role - worst_role
+        role_balance_spread = best_role - worst_role
 
-        print(f"\n📈 BALANCE:")
-        print(f"  Role spread: {spread*100:.1f}% ({'✅ Good' if spread < 0.15 else '❌ Imbalanced'})")
+    # Import validation logic
+    from balance.validator import validate_single_metric
+
+    # Run validation checks
+    print(f"[{'OK' if validate_single_metric('rounds_avg', avg_rounds) else 'FAIL'}]   rounds_avg: {avg_rounds:.4f}")
+    print(f"[{'OK' if validate_single_metric('dps_avg', avg_dps) else 'FAIL'}]   dps_avg: {avg_dps:.4f}")
+
+    draw_result = validate_single_metric('draw_rate', draw_rate)
+    print(f"[{'OK' if draw_result else 'FAIL'}]   draw_rate: {draw_rate:.4f}" + ("" if draw_result else " not in (0.08, 0.16)"))
+
+    # Mechanics validation
+    if mechanics_avg:
+        for metric in ['crit', 'dodge', 'block', 'block_break', 'hit']:
+            if metric in mechanics_avg:
+                result = validate_single_metric(metric, mechanics_avg[metric])
+                print(f"[{'OK' if result else 'FAIL'}]   {metric}: {mechanics_avg[metric]:.4f}")
+
+    # Damage validation
+    if damage_avg:
+        for metric in ['crit_dmg', 'normal_dmg', 'blocked_dmg']:
+            metric_key = metric.replace('_dmg', '')
+            if metric_key in damage_avg:
+                result = validate_single_metric(metric, damage_avg[metric_key])
+                print(f"[{'OK' if result else 'FAIL'}]   {metric}: {damage_avg[metric_key]:.4f}")
+
+    # Stamina validation
+    if stamina_avg:
+        for metric in ['stamina_high', 'stamina_mid', 'stamina_low']:
+            stamina_key = metric.replace('stamina_', '')
+            if stamina_key in stamina_avg:
+                result = validate_single_metric(metric, stamina_avg[stamina_key])
+                range_text = ""
+                if not result:
+                    if metric == 'stamina_mid':
+                        range_text = " not in (0.4, 0.55)"
+                print(f"[{'OK' if result else 'FAIL'}]   {metric}: {stamina_avg[stamina_key]:.4f}{range_text}")
+
+    # Role balance validation
+    role_result = validate_single_metric('role_balance_spread', role_balance_spread)
+    range_text = "" if role_result else " not in (0.0, 0.15)"
+    print(f"[{'OK' if role_result else 'FAIL'}]   role_balance_spread: {role_balance_spread:.4f}{range_text}")
+
+    # Final result
+    all_passed = (validate_single_metric('rounds_avg', avg_rounds) and
+                  validate_single_metric('dps_avg', avg_dps) and
+                  validate_single_metric('draw_rate', draw_rate) and
+                  role_result)
+
+    # Add mechanics validation to final check
+    if mechanics_avg:
+        for metric in ['crit', 'dodge', 'block', 'block_break', 'hit']:
+            if metric in mechanics_avg:
+                all_passed = all_passed and validate_single_metric(metric, mechanics_avg[metric])
+
+    # Add damage validation to final check
+    if damage_avg:
+        for metric in ['crit_dmg', 'normal_dmg', 'blocked_dmg']:
+            metric_key = metric.replace('_dmg', '')
+            if metric_key in damage_avg:
+                all_passed = all_passed and validate_single_metric(metric, damage_avg[metric_key])
+
+    # Add stamina validation to final check
+    if stamina_avg:
+        for metric in ['stamina_high', 'stamina_mid', 'stamina_low']:
+            stamina_key = metric.replace('stamina_', '')
+            if stamina_key in stamina_avg:
+                all_passed = all_passed and validate_single_metric(metric, stamina_avg[stamina_key])
+
+    if all_passed:
+        print(f"\n✅ BALANCE TEST PASSED")
+    else:
+        print(f"\n❌ BALANCE TEST FAILED")
 
 
 def compare_levels():

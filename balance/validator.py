@@ -7,6 +7,15 @@ def check_range(name, value, low, high):
     return f"[OK]   {name}: {value:.4f}"
 
 
+def validate_single_metric(name, value):
+    """Validate a single metric against targets"""
+    if name not in TARGETS:
+        return True  # If no target defined, consider it passed
+
+    low, high = TARGETS[name]
+    return low <= value <= high
+
+
 def validate(results, summary, rounds_list, n):
 
     report = []
