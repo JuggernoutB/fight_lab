@@ -2,21 +2,27 @@
 
 ## 🎯 Overview
 
-V15 - производственная боевая система с CLI интерфейсом, JSON конфигурациями и стабильным API.
+V15 - производственная боевая система с CLI интерфейсом, JSON конфигурациями, level-based прогрессией и стабильным API.
+
+🔥 **NEW in V15.8**: Level-based fighter creation system с научно-точным балансированием!
 
 ## 🏗️ Architecture
 
 ```
 fight_logicV15/
-├── core/          # Core combat mechanics and API
-├── state/         # Fighter state management
-├── simulation/    # Fight orchestration and game engine
-├── telemetry/     # Analytics and metrics
-├── game/          # Game API layer for frontends
-├── modes/         # CLI simulation modes
-├── configs/       # JSON configuration files
-├── balance/       # Balance validation system
-└── docs/          # Documentation
+├── core/           # Core combat mechanics and API
+├── state/          # Fighter state management + Level system
+│   ├── level_system.py    # 🆕 Level-based fighter creation
+│   └── fighter_factory.py # Legacy + balanced presets
+├── simulation/     # Fight orchestration and game engine
+│   ├── level_benchmark.py # 🆕 Level-based benchmarking
+│   └── benchmark.py       # Legacy + level integration
+├── telemetry/      # Analytics and metrics
+├── game/           # Game API layer for frontends
+├── modes/          # CLI simulation modes
+├── configs/        # JSON configuration files
+├── balance/        # Balance validation system
+└── docs/           # Documentation
 ```
 
 ## 🚀 Quick Start
@@ -24,19 +30,23 @@ fight_logicV15/
 ### CLI Interface
 
 ```bash
-# Single fight with detailed analysis
-python main.py single configs/default_single.json
+# 🆕 LEVEL-BASED BENCHMARKING (RECOMMENDED)
+python main.py benchmark_level 9 5000     # Level 9, 5000 fights
+python main.py benchmark_level 5 1000     # Level 5, 1000 fights
+python main.py benchmark_level            # Default: Level 9, 5000 fights
 
-# Debug mode with technical details
-python main.py single configs/debug_single.json
+# SINGLE FIGHT ANALYSIS
+python main.py single                      # Debug mode (technical details)
+python main.py single configs/release_single.json  # Human-readable
+python main.py single configs/compact_single.json  # Quick analysis
 
-# Build analysis against multiple opponents
-python main.py build configs/default_build.json
+# BUILD TESTING
+python main.py build configs/default_build.json    # 1v1 build comparison
 
-# Mass simulation for balance validation
-python main.py benchmark
+# LEGACY BENCHMARKING
+python main.py benchmark                   # Old random system (unfair)
 
-# Help and available commands
+# HELP
 python main.py --help
 ```
 
@@ -59,6 +69,7 @@ print(f"API Version: {result['api_version']}")
 
 ## 📊 Key Features
 
+- **🆕 Level-Based System**: Scientific fighter progression with perfect fairness
 - **CLI Interface**: Production-ready command line interface
 - **JSON Configuration**: Flexible, version-controlled configuration files
 - **Dual Logging**: Release mode for designers, debug mode for developers
@@ -66,6 +77,48 @@ print(f"API Version: {result['api_version']}")
 - **Balance Validation**: Automated balance testing with PASS/FAIL reporting
 - **Game API**: Clean frontend integration for Telegram Mini Apps
 - **Deterministic Testing**: Seed-based reproducible fights
+
+## 🎯 Level-Based Fighter System (NEW!)
+
+### Concept
+Бойцы создаются на основе **уровня** вместо hardcoded статов, что обеспечивает:
+- ✅ **Perfect Fairness**: Все бои с одинаковым stat budget
+- ✅ **Scientific Balance**: Честные измерения без "stat luck"
+- ✅ **Game Progression**: Готовая система уровней для игроков
+- ✅ **Scaling Analysis**: Понимание как роли ведут себя на разных уровнях
+
+### Level Formula
+```
+Level 1:  12 stat points (базовые 3 в каждом стате)
+Level N:  12 + (N-1) × 5 stat points
+
+Examples:
+Level 5:  32 points
+Level 9:  52 points (эквивалент текущих presets)
+Level 11: 62 points
+```
+
+### Role Weights (Percentages instead of absolute numbers)
+```python
+TANK:       HP=35%, DEF=35%, ATK=15%, AGI=15%    # Maximum survivability
+BRUISER:    HP=30%, ATK=30%, DEF=25%, AGI=15%    # Balanced damage dealer
+ASSASSIN:   ATK=40%, AGI=40%, HP=10%, DEF=10%    # Glass cannon
+SKIRMISHER: AGI=40%, ATK=25%, DEF=20%, HP=15%    # Mobile fighter
+UNIVERSAL:  HP=25%, ATK=25%, DEF=25%, AGI=25%    # Perfect balance
+```
+
+### Usage Examples
+```bash
+# Compare roles at different levels
+python main.py benchmark_level 5 1000    # Early game balance
+python main.py benchmark_level 9 5000    # Mid game balance (current presets)
+python main.py benchmark_level 11 2000   # End game balance
+
+# API usage for game development
+from state.level_system import create_fighter_by_level
+tank_lvl9 = create_fighter_by_level(9, "TANK")     # 52 stat points
+assassin_lvl5 = create_fighter_by_level(5, "ASSASSIN")  # 32 stat points
+```
 
 ## 🎮 Simulation Modes
 

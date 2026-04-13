@@ -25,8 +25,14 @@ def generate_fighter():
     return create_fighter_random(role=None)  # Auto-classify based on generated stats
 
 
-def generate_matched_fighters():
+def generate_matched_fighters(use_level_system: bool = False, level: int = 9):
     """Generate two fighters with equal stat totals for fair comparison"""
+    if use_level_system:
+        # Use new level-based system
+        from simulation.level_benchmark import generate_level_matched_fighters
+        return generate_level_matched_fighters(level)
+
+    # Legacy random generation system
     from state.fighter_factory import create_fighter, classify_build_role
     import random
 
@@ -125,7 +131,7 @@ def compute_dps(total_damage, rounds):
 # MAIN BENCHMARK
 # ============================================================
 
-def run_benchmark(n=NUM_FIGHTS):
+def run_benchmark(n=NUM_FIGHTS, use_level_system=False, level=9):
 
     results = defaultdict(int)
     global_mechanics = defaultdict(int)
@@ -163,7 +169,7 @@ def run_benchmark(n=NUM_FIGHTS):
         # ------------------------
         # generate matched fighters (equal stat totals for fairness)
         # ------------------------
-        a, b = generate_matched_fighters()
+        a, b = generate_matched_fighters(use_level_system, level)
 
         # Track builds (stat combinations)
         build_a = (getattr(a, 'hp_stat', '?'), a.attack, a.defense, a.agility)

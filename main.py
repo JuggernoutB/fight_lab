@@ -5,7 +5,8 @@ Fight Logic V15 - Production CLI Interface
 
 Usage:
   python main.py                    # Default: benchmark mode
-  python main.py benchmark          # Mass simulation (5000 fights)
+  python main.py benchmark          # Mass simulation (5000 fights) - legacy random
+  python main.py benchmark_level [level] [fights]  # Level-based benchmark (default level=9)
   python main.py single             # Single fight (debug log - default)
   python main.py single configs/release_single.json  # Human-readable log
   python main.py single configs/compact_single.json  # Compact analysis log
@@ -50,6 +51,41 @@ def run_benchmark():
         sys.exit(1)
     else:
         print("\n✅ BALANCE TEST PASSED")
+
+
+def run_level_benchmark(level=9, num_fights=5000):
+    """Run level-based benchmark mode"""
+    from simulation.level_benchmark import run_level_benchmark, print_level_benchmark_results
+
+    print("🎯 LEVEL-BASED BENCHMARK MODE")
+    print("=" * 50)
+    print(f"Level: {level}")
+    print(f"Fights: {num_fights}")
+    print()
+
+    # Run level benchmark
+    results = run_level_benchmark(level, num_fights)
+
+    # Print results
+    print_level_benchmark_results(results)
+
+    # Simple balance check
+    role_analysis = results.get("role_analysis", {})
+    if role_analysis:
+        sorted_roles = sorted(role_analysis.items(), key=lambda x: x[1]["winrate"], reverse=True)
+        if len(sorted_roles) >= 2:
+            best = sorted_roles[0][1]["winrate"]
+            worst = sorted_roles[-1][1]["winrate"]
+            spread = best - worst
+
+            print(f"\n📈 LEVEL {level} BALANCE CHECK:")
+            if spread < 0.15:
+                print(f"✅ Role spread {spread*100:.1f}% - GOOD BALANCE")
+                sys.exit(0)
+            else:
+                print(f"❌ Role spread {spread*100:.1f}% - NEEDS REBALANCING")
+                sys.exit(1)
+
 
 def run_single_mode(config_path=None, debug=False):
     """Run single fight mode"""
@@ -104,6 +140,27 @@ def main():
         if mode == "benchmark":
             run_benchmark()
 
+        elif mode == "benchmark_level":
+            # Parse level benchmark arguments
+            level = 9  # Default level
+            num_fights = 5000  # Default fights
+
+            if len(args) >= 2:
+                try:
+                    level = int(args[1])
+                except ValueError:
+                    print(f"❌ Level must be an integer: {args[1]}")
+                    sys.exit(1)
+
+            if len(args) >= 3:
+                try:
+                    num_fights = int(args[2])
+                except ValueError:
+                    print(f"❌ Number of fights must be an integer: {args[2]}")
+                    sys.exit(1)
+
+            run_level_benchmark(level, num_fights)
+
         elif mode == "single":
             # Parse single mode arguments
             if len(args) == 1:
@@ -147,7 +204,7 @@ def main():
 
         else:
             print(f"❌ Unknown mode: {mode}")
-            print("Available modes: benchmark, single, build")
+            print("Available modes: benchmark, benchmark_level, single, build")
             print("Use --help for more information")
             sys.exit(1)
 
