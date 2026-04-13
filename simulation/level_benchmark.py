@@ -203,6 +203,7 @@ def analyze_level_results(fights: List[Dict]) -> Dict:
 
     # Role analysis
     role_results = {}
+    role_matchups = {}  # Track role vs role matchups
     for fight in fights:
         role_a = fight["fighter_a"]["role"]
         role_b = fight["fighter_b"]["role"]
@@ -232,6 +233,31 @@ def analyze_level_results(fights: List[Dict]) -> Dict:
         else:
             role_results[role_b]["draws"] += 1
 
+        # Track role vs role matchups
+        matchup_key = f"{role_a}_vs_{role_b}"
+        reverse_matchup_key = f"{role_b}_vs_{role_a}"
+
+        if matchup_key not in role_matchups:
+            role_matchups[matchup_key] = {"wins": 0, "losses": 0, "draws": 0, "total": 0}
+        if reverse_matchup_key not in role_matchups:
+            role_matchups[reverse_matchup_key] = {"wins": 0, "losses": 0, "draws": 0, "total": 0}
+
+        role_matchups[matchup_key]["total"] += 1
+        role_matchups[reverse_matchup_key]["total"] += 1
+
+        if winner == "A":
+            # A wins vs B
+            role_matchups[matchup_key]["wins"] += 1
+            role_matchups[reverse_matchup_key]["losses"] += 1
+        elif winner == "B":
+            # B wins vs A
+            role_matchups[matchup_key]["losses"] += 1
+            role_matchups[reverse_matchup_key]["wins"] += 1
+        else:  # Draw
+            # Both get draws
+            role_matchups[matchup_key]["draws"] += 1
+            role_matchups[reverse_matchup_key]["draws"] += 1
+
     # Calculate winrates
     for role, stats in role_results.items():
         winrate = (stats["wins"] + 0.5 * stats["draws"]) / stats["fights"]
@@ -249,7 +275,8 @@ def analyze_level_results(fights: List[Dict]) -> Dict:
             "min_rounds": min(rounds_list),
             "max_rounds": max(rounds_list)
         },
-        "role_analysis": role_results
+        "role_analysis": role_results,
+        "role_matchups": role_matchups
     }
 
 
@@ -288,18 +315,58 @@ def print_level_benchmark_results(results: Dict):
         percentage = (count / total_fighters_b) * 100
         print(f"  {role}: {count:4d} times ({percentage:5.1f}%)")
 
-    print(f"\n===== ROLE WINRATE ANALYSIS =====")
-    role_analysis = results["role_analysis"]
-    sorted_roles = sorted(role_analysis.items(), key=lambda x: x[1]["winrate"], reverse=True)
+    print(f"\n===== ROLE WINRATE MATRIX =====")
 
-    print("Role performance (winrate = wins + 0.5 * draws):")
-    for role, stats in sorted_roles:
-        winrate = stats["winrate"] * 100
-        wins = stats["wins"]
-        losses = stats["losses"]
-        draws = stats["draws"]
-        total_role = stats["fights"]
-        print(f"  {role:11s}: {winrate:5.1f}% ({wins:4d}W/{losses:4d}L/{draws:3d}D) from {total_role:4d} fights")
+    role_analysis = results["role_analysis"]
+    role_matchups = results["role_matchups"]
+
+    # Get all roles that appear in fights
+    all_roles = set(role_analysis.keys())
+    sorted_roles_list = sorted(all_roles)
+
+    # Calculate overall winrates for each role
+    overall_winrates = {}
+    for role, stats in role_analysis.items():
+        overall_winrates[role] = {
+            "winrate": stats["winrate"],
+            "total": stats["fights"]
+        }
+
+    # Create winrate matrix
+    def get_matchup_winrate(role_a, role_b):
+        if role_a == role_b:
+            return "N/A"
+
+        matchup_key = f"{role_a}_vs_{role_b}"
+        if matchup_key in role_matchups:
+            stats = role_matchups[matchup_key]
+            if stats["total"] > 0:
+                winrate = (stats["wins"] + 0.5 * stats["draws"]) / stats["total"]
+                return f"{winrate*100:5.1f}%"
+        return "  0.0%"
+
+    # Print header
+    header = "                "
+    for role in sorted_roles_list:
+        header += f"  vs {role:8s}"
+    header += "  | Overall"
+    print(header)
+
+    # Print matrix rows
+    for role_a in sorted_roles_list:
+        row = f"{role_a:12s}  :"
+        for role_b in sorted_roles_list:
+            winrate_str = get_matchup_winrate(role_a, role_b)
+            row += f"    {winrate_str:>7s}"
+
+        # Add overall winrate
+        if role_a in overall_winrates:
+            overall = overall_winrates[role_a]
+            row += f"  |  {overall['winrate']*100:5.1f}% ({overall['total']} fights)"
+        else:
+            row += f"  |    0.0% (0 fights)"
+
+        print(row)
 
     print(f"\n===== ROLE QUALITY ANALYSIS =====")
     all_confidences = results["role_confidences"]
@@ -394,12 +461,12 @@ def print_level_benchmark_results(results: Dict):
     avg_dps = sum(results["dps_data"]) / len(results["dps_data"]) if results["dps_data"] else 0
     draw_rate = (winners.get("DRAW_TIMEOUT", 0) + winners.get("DRAW_MUTUAL_DEATH", 0)) / total
 
-    # Calculate role balance spread
+    # Calculate role balance spread (using overall winrates from matrix)
     role_balance_spread = 0.0
-    if len(sorted_roles) >= 2:
-        best_role = sorted_roles[0][1]["winrate"]
-        worst_role = sorted_roles[-1][1]["winrate"]
-        role_balance_spread = best_role - worst_role
+    if overall_winrates:
+        winrates = [data["winrate"] for data in overall_winrates.values()]
+        if len(winrates) >= 2:
+            role_balance_spread = max(winrates) - min(winrates)
 
     # Import validation logic
     from balance.validator import validate_single_metric
