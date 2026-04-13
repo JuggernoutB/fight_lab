@@ -61,6 +61,11 @@ def simulate_fight(state, max_rounds=25, seed=None):
                 "damage": attack["damage"],
                 "event": attack["event"]
             }
+
+            # Add absorption information if available
+            if "absorbed" in attack:
+                legacy_attack["absorbed"] = attack["absorbed"]
+
             legacy_event["attacks"].append(legacy_attack)
 
         # Record with proper round state

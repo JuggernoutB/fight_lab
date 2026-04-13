@@ -51,6 +51,7 @@ def process_attack(
         dmg = raw
 
         event = "hit"
+        dodge_state = "hit"  # Default state
 
         # =========================
         # BLOCK LOGIC
@@ -77,9 +78,14 @@ def process_attack(
             )
 
             if dodge_state == "dodge":
+                # Full dodge - all damage absorbed
                 result = {
                     "damage": 0,
-                    "event": "dodge"
+                    "event": "dodge",
+                    "absorbed": {
+                        "block": 0.0,
+                        "dodge": raw  # All damage absorbed by dodge
+                    }
                 }
                 if debug_mode:
                     result.update({
@@ -91,6 +97,12 @@ def process_attack(
                     })
                 results[z] = result
                 continue
+            elif dodge_state == "glance":
+                # Partial dodge - some damage absorbed
+                damage_absorbed = max(0.0, raw - dmg)
+                # This absorption will be included in the final result below
+            else:
+                damage_absorbed = 0.0  # No dodge, no absorption
 
         # =========================
         # CRIT LOGIC
@@ -111,9 +123,24 @@ def process_attack(
         # Round damage using probabilistic rounding
         final_damage = round_damage_probabilistic(dmg)
 
+        # Calculate absorbed damage
+        block_absorbed = 0.0
+        dodge_absorbed = 0.0
+
+        if event in ("block", "block_break"):
+            # Block absorption = damage reduced by blocking
+            block_absorbed = max(0.0, raw - dmg)
+        elif dodge_state == "glance":
+            # Glancing hit from dodge = damage reduced by glancing
+            dodge_absorbed = damage_absorbed  # Set earlier in dodge logic
+
         result = {
             "damage": final_damage,
-            "event": event
+            "event": event,
+            "absorbed": {
+                "block": block_absorbed,
+                "dodge": dodge_absorbed
+            }
         }
 
         # Debug information only when requested

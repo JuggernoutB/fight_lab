@@ -108,23 +108,33 @@ def process_round(state, rng):
 
     # A's attacks
     for zone, attack_data in res_a.items():
-        round_attacks.append({
+        attack_event = {
             "attacker": "A",
             "defender": "B",
             "zone": zone,
             "damage": attack_data["damage"],
             "event": attack_data["event"]
-        })
+        }
+        # Add absorption data if available
+        if "absorbed" in attack_data:
+            attack_event["absorbed"] = attack_data["absorbed"]
+
+        round_attacks.append(attack_event)
 
     # B's attacks
     for zone, attack_data in res_b.items():
-        round_attacks.append({
+        attack_event = {
             "attacker": "B",
             "defender": "A",
             "zone": zone,
             "damage": attack_data["damage"],
             "event": attack_data["event"]
-        })
+        }
+        # Add absorption data if available
+        if "absorbed" in attack_data:
+            attack_event["absorbed"] = attack_data["absorbed"]
+
+        round_attacks.append(attack_event)
 
     # Add round event with fighter states
     round_event = {

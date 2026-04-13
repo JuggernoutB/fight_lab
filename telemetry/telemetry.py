@@ -19,6 +19,12 @@ class Telemetry:
             "blocked": 0.0,
         }
 
+        # Damage absorption tracking
+        self.damage_absorbed = {
+            "dodge": 0.0,      # Damage absorbed by dodging
+            "block": 0.0,      # Damage absorbed by blocking
+        }
+
         self.stamina_samples = []
         self.momentum_log = []
 
@@ -56,6 +62,14 @@ class Telemetry:
             else:
                 self.damage_types["normal"] += damage
 
+            # Track damage absorption
+            if "absorbed" in attack:
+                absorbed_data = attack["absorbed"]
+                if "dodge" in absorbed_data:
+                    self.damage_absorbed["dodge"] += absorbed_data["dodge"]
+                if "block" in absorbed_data:
+                    self.damage_absorbed["block"] += absorbed_data["block"]
+
         # =========================
         # STATE
         # =========================
@@ -83,6 +97,11 @@ class Telemetry:
                 self.stamina_time_distribution["low"] += 1
 
             self.total_samples += 1
+
+    def record_damage_absorption(self, absorption_type: str, absorbed_amount: float):
+        """Record damage absorption by type (dodge or block)"""
+        if absorption_type in self.damage_absorbed:
+            self.damage_absorbed[absorption_type] += absorbed_amount
 
     # ============================================================
     # SUMMARY
@@ -154,4 +173,5 @@ class Telemetry:
             "mechanics": mechanics_percent,
             "damage_split": damage_percent,
             "stamina_distribution": stamina_distribution_normalized,
+            "damage_absorbed": self.damage_absorbed.copy(),
         }

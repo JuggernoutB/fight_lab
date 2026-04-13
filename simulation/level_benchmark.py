@@ -91,7 +91,8 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
         "stamina_data": {},  # Track stamina distribution
         "dps_data": [],  # Track DPS values
         "total_damage_data": [],  # Track total damage values
-        "rounds_distribution": {}  # Track detailed round distribution
+        "rounds_distribution": {},  # Track detailed round distribution
+        "role_absorption": {}  # Track damage absorption by role
     }
 
     # Progress tracking
@@ -147,6 +148,23 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
 
         # Track round distribution
         results["rounds_distribution"][rounds] = results["rounds_distribution"].get(rounds, 0) + 1
+
+        # Track absorption by role
+        if "damage_absorbed" in summary:
+            absorbed = summary["damage_absorbed"]
+            # Track for fighter A
+            if fighter_a.role not in results["role_absorption"]:
+                results["role_absorption"][fighter_a.role] = {"dodge": 0.0, "block": 0.0, "fights": 0}
+            results["role_absorption"][fighter_a.role]["dodge"] += absorbed["dodge"]
+            results["role_absorption"][fighter_a.role]["block"] += absorbed["block"]
+            results["role_absorption"][fighter_a.role]["fights"] += 1
+
+            # Track for fighter B
+            if fighter_b.role not in results["role_absorption"]:
+                results["role_absorption"][fighter_b.role] = {"dodge": 0.0, "block": 0.0, "fights": 0}
+            results["role_absorption"][fighter_b.role]["dodge"] += absorbed["dodge"]
+            results["role_absorption"][fighter_b.role]["block"] += absorbed["block"]
+            results["role_absorption"][fighter_b.role]["fights"] += 1
 
         # Store result
         fight_result = {
@@ -433,6 +451,27 @@ def print_level_benchmark_results(results: Dict):
         print(f"DPS Std Dev: {std_dps:.1f}")
         print(f"Average total damage: {avg_total_damage:.1f}")
         print(f"DPS Range: {min(dps_list):.1f} - {max(dps_list):.1f}")
+
+    print(f"\n===== DAMAGE ABSORPTION ANALYSIS =====")
+    role_absorption = results.get("role_absorption", {})
+    if role_absorption:
+        print("Average damage absorbed per fight by role:")
+
+        # Sort roles by total absorption (highest first)
+        sorted_absorption = []
+        for role, data in role_absorption.items():
+            if data["fights"] > 0:
+                avg_dodge = data["dodge"] / data["fights"]
+                avg_block = data["block"] / data["fights"]
+                total_avg = avg_dodge + avg_block
+                sorted_absorption.append((role, avg_dodge, avg_block, total_avg, data["fights"]))
+
+        sorted_absorption.sort(key=lambda x: x[3], reverse=True)  # Sort by total absorption
+
+        for role, avg_dodge, avg_block, total_avg, fights in sorted_absorption:
+            print(f"  {role:11s}: {total_avg:5.1f} total ({avg_dodge:4.1f} dodge + {avg_block:4.1f} block) from {fights} fights")
+    else:
+        print("No absorption data available")
 
     # Full balance validation (like legacy benchmark)
     print(f"\n===== BALANCE VALIDATION =====")
