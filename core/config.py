@@ -35,7 +35,7 @@ CONFIG = {
     "min_block_reduction": 0.1,       # Minimum block damage reduction (10%)
     "max_block_reduction": 0.7,       # Maximum block damage reduction (70%)
     "base_block_break_chance": 0.28,  # Base block break chance (28%)
-    "atk_block_break_scale": 0.07,    # Attack scaling for block break
+    "agi_block_break_scale": 0.07,    # Agility scaling for block break
     "min_block_break_chance": 0.05,   # Minimum block break chance (5%)
     "max_block_break_chance": 0.6,    # Maximum block break chance (60%)
 
@@ -47,6 +47,7 @@ CONFIG = {
     "fresh_multiplier": 1.0,          # No fatigue penalty (100%)
     "tired_multiplier": 0.75,         # Tired penalty (75% effectiveness)
     "exhausted_multiplier": 0.5,      # Exhausted penalty (50% effectiveness)
+
 
     # ============================================================
     # STAMINA SYSTEM

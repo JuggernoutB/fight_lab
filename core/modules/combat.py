@@ -57,7 +57,7 @@ def process_attack(
         # =========================
         if z in def_zones:
 
-            if block_break(atk_attack, def_defense, attacker_stamina):
+            if block_break(atk_agility, def_defense, attacker_stamina):
                 # block is partially ignored
                 dmg *= CONFIG["block_break_damage_ratio"]
                 event = "block_break"
