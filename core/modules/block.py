@@ -24,8 +24,9 @@ def block_break(agility: int, defense: int, attacker_stamina: int, attacker_abso
     """
 
     # Stage 1: Check absorption resource first
-    if attacker_absorption_resource >= 0.5:
-        absorption_chance = attacker_absorption_resource  # Direct probability 0.5-1.0
+    threshold = CONFIG["absorption_event_threshold"]
+    if attacker_absorption_resource >= threshold:
+        absorption_chance = attacker_absorption_resource  # Direct probability threshold-1.0
         if random.random() < absorption_chance:
             # Block break triggered by absorption resource
             return True, 0.0  # Reset resource on successful trigger
