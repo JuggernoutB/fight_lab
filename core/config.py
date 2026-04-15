@@ -58,6 +58,13 @@ CONFIG = {
     "stamina_regen_per_round": 5,     # Stamina regenerated per round
 
     # ============================================================
+    # DAMAGE ABSORPTION RESOURCE SYSTEM
+    # ============================================================
+    "damage_absorption_koef": 3.0,    # Conversion factor: absorbed_damage → resource
+    "absorption_resource_decay": 0.85, # Resource decay per round (15% lost)
+    "absorption_event_threshold": 0.5, # Minimum resource for events (50%)
+
+    # ============================================================
     # EHP SCALING
     # ============================================================
     "hp_scaling_base": 10.0,         # Base health multiplier

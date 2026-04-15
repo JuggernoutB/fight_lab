@@ -155,6 +155,50 @@ def process_round(state, rng):
     }
     events.append(round_event)
 
+    # ============================================================
+    # DAMAGE ABSORPTION RESOURCE SYSTEM
+    # ============================================================
+
+    # Calculate absorbed damage for each fighter
+    absorbed_by_a = 0.0  # A absorbed damage from B's attacks
+    absorbed_by_b = 0.0  # B absorbed damage from A's attacks
+
+    for zone, attack_data in res_b.items():  # B attacking A
+        if "absorbed" in attack_data:
+            absorbed_by_a += attack_data["absorbed"]["dodge"] + attack_data["absorbed"]["block"]
+
+    for zone, attack_data in res_a.items():  # A attacking B
+        if "absorbed" in attack_data:
+            absorbed_by_b += attack_data["absorbed"]["dodge"] + attack_data["absorbed"]["block"]
+
+    # Process absorption events and update resources
+    absorption_events = []
+    config = get_config()
+
+    # Process A's absorption
+    if absorbed_by_a > 0:
+        absorption_events.extend(_process_absorption_resource(
+            a, b, absorbed_by_a, "A", config, rng
+        ))
+
+    # Process B's absorption
+    if absorbed_by_b > 0:
+        absorption_events.extend(_process_absorption_resource(
+            b, a, absorbed_by_b, "B", config, rng
+        ))
+
+    # Add absorption events to round events
+    if absorption_events:
+        round_event["absorption_events"] = absorption_events
+
+    # Apply resource decay to both fighters
+    a.damage_absorption_resource *= config["absorption_resource_decay"]
+    b.damage_absorption_resource *= config["absorption_resource_decay"]
+
+    # ============================================================
+    # APPLY DAMAGE
+    # ============================================================
+
     # Apply damage
     dmg_to_a = sum(attack_data["damage"] for attack_data in res_b.values())
     dmg_to_b = sum(attack_data["damage"] for attack_data in res_a.values())
@@ -238,3 +282,57 @@ def determine_winner(state):
         return "DRAW_TIMEOUT"
     else:
         return "DRAW_OTHER"
+
+
+def _process_absorption_resource(absorber, opponent, absorbed_damage, absorber_id, config, rng):
+    """
+    Process damage absorption resource logic for one fighter
+
+    Args:
+        absorber: Fighter who absorbed damage
+        opponent: Fighter who dealt damage
+        absorbed_damage: Amount of damage absorbed
+        absorber_id: "A" or "B"
+        config: Game configuration
+        rng: Random generator
+
+    Returns:
+        List of absorption events that occurred
+    """
+    events = []
+
+    # Convert absorbed damage to resource
+    opponent_max_hp = getattr(opponent, 'max_hp', opponent.hp)  # Use max_hp if available
+    if hasattr(opponent, 'hp_stat'):
+        # Calculate max HP from EHP system
+        from core.modules.ehp import EHPDamageCalculator
+        calc = EHPDamageCalculator()
+        opponent_max_hp = calc.calculate_base_hp(opponent.hp_stat)
+
+    damage_to_resource = (absorbed_damage / opponent_max_hp) * config["damage_absorption_koef"]
+
+    # Add to current resource (capped at 1.0)
+    old_resource = absorber.damage_absorption_resource
+    absorber.damage_absorption_resource = min(1.0, old_resource + damage_to_resource)
+
+    # Check for absorption event (BEFORE decay as specified)
+    if absorber.damage_absorption_resource >= config["absorption_event_threshold"]:
+        # Event probability = resource value
+        event_probability = absorber.damage_absorption_resource
+
+        if rng.random() < event_probability:
+            # Absorption event triggered!
+            event = {
+                "type": "absorption_event",
+                "fighter": absorber_id,
+                "resource_before": old_resource,
+                "resource_after": absorber.damage_absorption_resource,
+                "absorbed_damage": absorbed_damage,
+                "probability": event_probability
+            }
+            events.append(event)
+
+            # Reset resource to 0 after successful event
+            absorber.damage_absorption_resource = 0.0
+
+    return events

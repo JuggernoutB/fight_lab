@@ -19,6 +19,9 @@ class FighterState:
         self.damage_taken_last = 0
         self.last_damage_taken = 0
 
+        # DAMAGE ABSORPTION RESOURCE SYSTEM
+        self.damage_absorption_resource = 0.0  # Resource from absorbed damage (0.0-1.0)
+
 
 class FightState:
     def __init__(self, round_id, fighter_a, fighter_b):
