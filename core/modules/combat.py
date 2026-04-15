@@ -19,11 +19,12 @@ def process_attack(
     defender_stamina: int,
     atk_zones: List[str],
     def_zones: List[str],
-    debug_mode: bool = False
-) -> Dict[str, Dict]:
+    debug_mode: bool = False,
+    attacker_absorption_resource: float = 0.0
+) -> tuple[Dict[str, Dict], float]:
 
     if not atk_zones:
-        return {}
+        return {}, attacker_absorption_resource
 
     # === DATA NORMALIZATION (protect against dict typos) ===
     try:
@@ -61,7 +62,12 @@ def process_attack(
         if z in def_zones:
             is_blocked = True
 
-            if block_break(atk_agility, def_defense, attacker_stamina):
+            # Use enhanced block_break with absorption resource
+            break_succeeded, attacker_absorption_resource = block_break(
+                atk_agility, def_defense, attacker_stamina, attacker_absorption_resource
+            )
+
+            if break_succeeded:
                 # block is partially ignored
                 dmg *= CONFIG["block_break_damage_ratio"]
                 event = "block_break"
@@ -108,13 +114,17 @@ def process_attack(
                 damage_absorbed = 0.0  # No dodge, no absorption
 
         # =========================
-        # CRIT LOGIC
+        # CRIT LOGIC (only for unblocked zones)
         # =========================
-        is_crit = random.random() < calc_crit(
-            atk_agility,
-            def_defense,
-            attacker_stamina
-        )
+        is_crit = False
+        if not is_blocked:
+            # Use enhanced crit with absorption resource
+            is_crit, attacker_absorption_resource = calc_crit(
+                atk_agility,
+                def_defense,
+                attacker_stamina,
+                attacker_absorption_resource
+            )
 
         if is_crit:
             dmg *= CONFIG["crit_damage_multiplier"]
@@ -159,4 +169,4 @@ def process_attack(
 
         results[z] = result
 
-    return results
+    return results, attacker_absorption_resource

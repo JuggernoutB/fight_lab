@@ -84,24 +84,30 @@ def process_round(state, rng):
     atk_zones_a, def_zones_a = to_zones(action_a)
     atk_zones_b, def_zones_b = to_zones(action_b)
 
-    # Combat resolution
-    res_a = process_attack(
+    # Combat resolution with absorption resource integration
+    res_a, updated_resource_a = process_attack(
         attacker={"attack": a.attack, "agility": a.agility},
         defender={"defense": b.defense, "agility": b.agility},
         attacker_stamina=a.stamina,
         defender_stamina=b.stamina,
         atk_zones=atk_zones_a,
-        def_zones=def_zones_b
+        def_zones=def_zones_b,
+        attacker_absorption_resource=a.damage_absorption_resource
     )
 
-    res_b = process_attack(
+    res_b, updated_resource_b = process_attack(
         attacker={"attack": b.attack, "agility": b.agility},
         defender={"defense": a.defense, "agility": a.agility},
         attacker_stamina=b.stamina,
         defender_stamina=a.stamina,
         atk_zones=atk_zones_b,
-        def_zones=def_zones_a
+        def_zones=def_zones_a,
+        attacker_absorption_resource=b.damage_absorption_resource
     )
+
+    # Update fighter absorption resources
+    a.damage_absorption_resource = updated_resource_a
+    b.damage_absorption_resource = updated_resource_b
 
     # Build event log for this round
     round_attacks = []
