@@ -448,21 +448,23 @@ def run_benchmark(n=NUM_FIGHTS, use_level_system=False, level=9):
 
     print("\n===== DAMAGE ABSORPTION ANALYSIS =====")
     if role_absorption:
-        print("Average damage absorbed per fight by role:")
+        print("Block damage absorption per fight by role (used for resource conversion):")
 
-        # Sort roles by total absorption (highest first)
+        # Sort roles by block absorption only (highest first)
         sorted_absorption = []
         for role, data in role_absorption.items():
             if data["fights"] > 0:
-                avg_dodge = data["dodge"] / data["fights"]
                 avg_block = data["block"] / data["fights"]
-                total_avg = avg_dodge + avg_block
-                sorted_absorption.append((role, avg_dodge, avg_block, total_avg, data["fights"]))
+                sorted_absorption.append((role, avg_block, data["fights"]))
 
-        sorted_absorption.sort(key=lambda x: x[3], reverse=True)  # Sort by total absorption
+        sorted_absorption.sort(key=lambda x: x[1], reverse=True)  # Sort by block absorption
 
-        for role, avg_dodge, avg_block, total_avg, fights in sorted_absorption:
-            print(f"  {role:11s}: {total_avg:5.1f} total ({avg_dodge:4.1f} dodge + {avg_block:4.1f} block) from {fights} fights")
+        for role, avg_block, fights in sorted_absorption:
+            print(f"  {role:11s}: {avg_block:5.1f} block damage absorbed per fight from {fights} fights")
+
+        print()
+        print("Note: Only blocked damage contributes to absorption resource conversion.")
+        print("      Dodge damage is tracked separately but not used for events.")
     else:
         print("No absorption data available")
 
