@@ -52,11 +52,14 @@ def process_attack(
 
         event = "hit"
         dodge_state = "hit"  # Default state
+        damage_absorbed = 0.0  # Track dodge absorption
 
         # =========================
         # BLOCK LOGIC
         # =========================
+        is_blocked = False
         if z in def_zones:
+            is_blocked = True
 
             if block_break(atk_agility, def_defense, attacker_stamina):
                 # block is partially ignored
@@ -127,8 +130,8 @@ def process_attack(
         block_absorbed = 0.0
         dodge_absorbed = 0.0
 
-        if event in ("block", "block_break"):
-            # Block absorption = damage reduced by blocking
+        if is_blocked:
+            # Block absorption = damage reduced by blocking (both block and block_break)
             block_absorbed = max(0.0, raw - dmg)
         elif dodge_state == "glance":
             # Glancing hit from dodge = damage reduced by glancing
@@ -150,8 +153,8 @@ def process_attack(
                 "mitigated": max(0.0, raw - dmg),
                 "damage_before_rounding": dmg,  # Show damage before probabilistic rounding
                 "is_crit": is_crit,
-                "is_blocked": event in ("block", "block_break"),
-                "is_dodged": False
+                "is_blocked": is_blocked,
+                "is_dodged": dodge_state in ("dodge", "glance")
             })
 
         results[z] = result

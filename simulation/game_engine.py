@@ -159,17 +159,17 @@ def process_round(state, rng):
     # DAMAGE ABSORPTION RESOURCE SYSTEM
     # ============================================================
 
-    # Calculate absorbed damage for each fighter
-    absorbed_by_a = 0.0  # A absorbed damage from B's attacks
-    absorbed_by_b = 0.0  # B absorbed damage from A's attacks
+    # Calculate absorbed damage for each fighter (BLOCK ONLY - exclude dodge)
+    absorbed_by_a = 0.0  # A absorbed damage from B's attacks via blocking
+    absorbed_by_b = 0.0  # B absorbed damage from A's attacks via blocking
 
     for zone, attack_data in res_b.items():  # B attacking A
         if "absorbed" in attack_data:
-            absorbed_by_a += attack_data["absorbed"]["dodge"] + attack_data["absorbed"]["block"]
+            absorbed_by_a += attack_data["absorbed"]["block"]  # Only block absorption
 
     for zone, attack_data in res_a.items():  # A attacking B
         if "absorbed" in attack_data:
-            absorbed_by_b += attack_data["absorbed"]["dodge"] + attack_data["absorbed"]["block"]
+            absorbed_by_b += attack_data["absorbed"]["block"]  # Only block absorption
 
     # Process absorption events and update resources
     absorption_events = []
