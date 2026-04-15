@@ -68,6 +68,10 @@ def simulate_fight(state, max_rounds=25, seed=None):
 
             legacy_event["attacks"].append(legacy_attack)
 
+        # Add absorption events if available
+        if "absorption_events" in event:
+            legacy_event["absorption_events"] = event["absorption_events"]
+
         # Record with proper round state
         telemetry.record(legacy_event, round_state)
 

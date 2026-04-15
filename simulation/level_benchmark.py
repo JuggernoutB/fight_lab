@@ -160,24 +160,32 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
                 absorption_events_a = abs_events["by_fighter"].get("A", 0)
                 absorption_events_b = abs_events["by_fighter"].get("B", 0)
 
+            # Track final absorption resources
+            final_resource_a = final_state.fighter_a.damage_absorption_resource
+            final_resource_b = final_state.fighter_b.damage_absorption_resource
+
             # Track for fighter A
             if fighter_a.role not in results["role_absorption"]:
                 results["role_absorption"][fighter_a.role] = {
-                    "dodge": 0.0, "block": 0.0, "absorption_events": 0, "fights": 0
+                    "dodge": 0.0, "block": 0.0, "absorption_events": 0,
+                    "total_final_resource": 0.0, "fights": 0
                 }
             results["role_absorption"][fighter_a.role]["dodge"] += absorbed["dodge"]
             results["role_absorption"][fighter_a.role]["block"] += absorbed["block"]
             results["role_absorption"][fighter_a.role]["absorption_events"] += absorption_events_a
+            results["role_absorption"][fighter_a.role]["total_final_resource"] += final_resource_a
             results["role_absorption"][fighter_a.role]["fights"] += 1
 
             # Track for fighter B
             if fighter_b.role not in results["role_absorption"]:
                 results["role_absorption"][fighter_b.role] = {
-                    "dodge": 0.0, "block": 0.0, "absorption_events": 0, "fights": 0
+                    "dodge": 0.0, "block": 0.0, "absorption_events": 0,
+                    "total_final_resource": 0.0, "fights": 0
                 }
             results["role_absorption"][fighter_b.role]["dodge"] += absorbed["dodge"]
             results["role_absorption"][fighter_b.role]["block"] += absorbed["block"]
             results["role_absorption"][fighter_b.role]["absorption_events"] += absorption_events_b
+            results["role_absorption"][fighter_b.role]["total_final_resource"] += final_resource_b
             results["role_absorption"][fighter_b.role]["fights"] += 1
 
         # Store result
@@ -477,20 +485,27 @@ def print_level_benchmark_results(results: Dict):
                 avg_block = data["block"] / data["fights"]
                 total_avg = avg_dodge + avg_block
                 avg_events = data["absorption_events"] / data["fights"]
-                sorted_absorption.append((role, avg_dodge, avg_block, total_avg, avg_events, data["fights"]))
+                avg_final_resource = data["total_final_resource"] / data["fights"]
+                sorted_absorption.append((role, avg_dodge, avg_block, total_avg, avg_events, avg_final_resource, data["fights"]))
 
         sorted_absorption.sort(key=lambda x: x[3], reverse=True)  # Sort by total absorption
 
         print("Average damage absorbed per fight by role:")
-        for role, avg_dodge, avg_block, total_avg, avg_events, fights in sorted_absorption:
+        for role, avg_dodge, avg_block, total_avg, avg_events, avg_final_resource, fights in sorted_absorption:
             print(f"  {role:11s}: {total_avg:5.1f} total ({avg_dodge:4.1f} dodge + {avg_block:4.1f} block) from {fights} fights")
 
         print(f"\nAbsorption event frequency per fight by role:")
         # Sort by event frequency for this section
         sorted_by_events = sorted(sorted_absorption, key=lambda x: x[4], reverse=True)
-        for role, avg_dodge, avg_block, total_avg, avg_events, fights in sorted_by_events:
+        for role, avg_dodge, avg_block, total_avg, avg_events, avg_final_resource, fights in sorted_by_events:
             total_events = role_absorption[role]['absorption_events']
             print(f"  {role:11s}: {avg_events:.3f} events/fight (from {total_events} total events)")
+
+        print(f"\nAverage final absorption resource by role:")
+        # Sort by final resource for this section
+        sorted_by_resource = sorted(sorted_absorption, key=lambda x: x[5], reverse=True)
+        for role, avg_dodge, avg_block, total_avg, avg_events, avg_final_resource, fights in sorted_by_resource:
+            print(f"  {role:11s}: {avg_final_resource:.3f} avg final resource (max possible: 1.000)")
     else:
         print("No absorption data available")
 
