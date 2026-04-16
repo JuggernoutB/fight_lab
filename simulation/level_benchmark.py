@@ -95,6 +95,30 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
         "role_absorption": {}  # Track damage absorption by role
     }
 
+    # ============================================================
+    # ABSORPTION RESOURCE PERSISTENCE SYSTEM
+    # ============================================================
+    # Track build combinations and their absorption resources
+    # Key: (build_a_tuple, build_b_tuple) where build = (hp_stat, atk, def, agi)
+    # Value: {'resource_a': float, 'resource_b': float}
+    build_combination_resources = {}
+
+    def get_build_tuple(fighter):
+        """Extract build signature from fighter"""
+        return (getattr(fighter, 'hp_stat', 0), fighter.attack, fighter.defense, fighter.agility)
+
+    def get_combination_key(build_a, build_b):
+        """Create stable key for build combination (order-independent)"""
+        # Sort to ensure same combination regardless of A/B assignment
+        if build_a <= build_b:
+            return (build_a, build_b)
+        else:
+            return (build_b, build_a)
+
+    def is_swapped_combination(build_a, build_b, combination_key):
+        """Check if current assignment is swapped relative to stored key"""
+        return combination_key[0] != build_a
+
     # Progress tracking
     for i in range(num_fights):
         if i % 1000 == 0:
@@ -103,9 +127,55 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
         # Generate level-matched fighters
         fighter_a, fighter_b = generate_level_matched_fighters(level)
 
+        # ============================================================
+        # ABSORPTION RESOURCE PERSISTENCE LOGIC
+        # ============================================================
+        build_a = get_build_tuple(fighter_a)
+        build_b = get_build_tuple(fighter_b)
+        combination_key = get_combination_key(build_a, build_b)
+
+        # Check if we've seen this build combination before
+        if combination_key in build_combination_resources:
+            stored_resources = build_combination_resources[combination_key]
+
+            # Determine if builds are swapped relative to stored order
+            if is_swapped_combination(build_a, build_b, combination_key):
+                # Builds are swapped: A gets resource_b, B gets resource_a
+                fighter_a.damage_absorption_resource = stored_resources['resource_b']
+                fighter_b.damage_absorption_resource = stored_resources['resource_a']
+            else:
+                # Builds match stored order: A gets resource_a, B gets resource_b
+                fighter_a.damage_absorption_resource = stored_resources['resource_a']
+                fighter_b.damage_absorption_resource = stored_resources['resource_b']
+        else:
+            # New combination: start with default resources (0.0)
+            fighter_a.damage_absorption_resource = 0.0
+            fighter_b.damage_absorption_resource = 0.0
+
         # Simulate fight
         initial_state = FightState(0, fighter_a, fighter_b)
         final_state, telemetry = simulate_fight(initial_state, seed=i)
+
+        # ============================================================
+        # SAVE ABSORPTION RESOURCES FOR NEXT FIGHT OF SAME COMBINATION
+        # ============================================================
+        final_resource_a = final_state.fighter_a.damage_absorption_resource
+        final_resource_b = final_state.fighter_b.damage_absorption_resource
+
+        # Store resources based on build combination order
+        if is_swapped_combination(build_a, build_b, combination_key):
+            # Builds are swapped: A's resource goes to resource_b, B's goes to resource_a
+            build_combination_resources[combination_key] = {
+                'resource_a': final_resource_b,  # B's resource becomes stored resource_a
+                'resource_b': final_resource_a   # A's resource becomes stored resource_b
+            }
+        else:
+            # Builds match stored order: direct mapping
+            build_combination_resources[combination_key] = {
+                'resource_a': final_resource_a,  # A's resource stays as resource_a
+                'resource_b': final_resource_b   # B's resource stays as resource_b
+            }
+        # ============================================================
 
         # Track builds
         build_a = (getattr(fighter_a, 'hp_stat', 0), fighter_a.attack, fighter_a.defense, fighter_a.agility)
