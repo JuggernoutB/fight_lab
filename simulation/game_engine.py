@@ -351,4 +351,43 @@ def _process_absorption_resource(absorber, opponent, absorbed_damage, absorber_i
             # Reset resource to 0 after successful event
             #absorber.damage_absorption_resource = 0.0
 
+    # ============================================================
+    # NEW ABSORPTION MECHANIC: OPPONENT FATIGUE
+    # ============================================================
+    # Check for opponent fatigue mechanic (separate from absorption events)
+    fatigue_threshold = config["absorption_fatigue_threshold"]
+    if absorber.damage_absorption_resource >= fatigue_threshold:
+        # Apply fatigue to opponent
+        current_opponent_stamina = opponent.stamina
+
+        if current_opponent_stamina >= config["stamina_fresh_threshold"]:
+            # FRESH → TIRED: reduce stamina to tired level (59)
+            new_stamina = config["stamina_tired_threshold"] + 34  # 25 + 34 = 59 (top of tired range)
+            opponent.stamina = min(opponent.stamina, new_stamina)
+            fatigue_level = "FRESH_TO_TIRED"
+        elif current_opponent_stamina >= config["stamina_tired_threshold"]:
+            # TIRED → EXHAUSTED: reduce stamina to exhausted level (24)
+            new_stamina = config["stamina_tired_threshold"] - 1  # 25 - 1 = 24 (top of exhausted range)
+            opponent.stamina = min(opponent.stamina, new_stamina)
+            fatigue_level = "TIRED_TO_EXHAUSTED"
+        else:
+            # Already exhausted, no change
+            fatigue_level = "ALREADY_EXHAUSTED"
+
+        if fatigue_level != "ALREADY_EXHAUSTED":
+            # Create fatigue event
+            fatigue_event = {
+                "type": "absorption_fatigue",
+                "fighter": absorber_id,
+                "opponent": "A" if absorber_id == "B" else "B",
+                "resource_used": absorber.damage_absorption_resource,
+                "fatigue_applied": fatigue_level,
+                "opponent_stamina_before": current_opponent_stamina,
+                "opponent_stamina_after": opponent.stamina
+            }
+            events.append(fatigue_event)
+
+            # Reset absorption resource after using it
+            absorber.damage_absorption_resource = 0.0
+
     return events

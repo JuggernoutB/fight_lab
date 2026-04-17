@@ -195,6 +195,18 @@ def print_debug_log(log_events):
         #         probability = abs_event["probability"]
         #         print(f"  🔮 Fighter {fighter_id}: Absorption Event! ({resource_before:.3f} → {resource_after:.3f}, prob={probability:.3f})")
 
+        # Show absorption fatigue events if any
+        if "absorption_events" in event:
+            for abs_event in event["absorption_events"]:
+                if abs_event.get("type") == "absorption_fatigue":
+                    fighter_id = abs_event["fighter"]
+                    opponent_id = abs_event["opponent"]
+                    fatigue_type = abs_event["fatigue_applied"]
+                    resource_used = abs_event["resource_used"]
+                    stamina_before = abs_event["opponent_stamina_before"]
+                    stamina_after = abs_event["opponent_stamina_after"]
+                    print(f"💪 Fighter {fighter_id}: Fatigue Attack! Fighter {opponent_id} {fatigue_type} ({stamina_before} → {stamina_after} stamina, used {resource_used:.3f} resource)")
+
         print()
 
 def print_compact_log(log_events):
