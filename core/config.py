@@ -12,15 +12,15 @@ CONFIG = {
     # CRITICAL HITS
     # ============================================================
     "base_crit_chance": 0.10,         # Base crit chance (8%)
-    "agi_diff_crit_scale": 0.015,     # Agility difference scaling for crit
-    "crit_damage_multiplier": 2.0,    # Damage multiplier for crits
+    "agi_diff_crit_scale": 0.014,     # Agility difference scaling for crit
+    "crit_damage_multiplier": 1.9,    # Damage multiplier for crits
     "min_crit_chance": 0.005,         # Minimum possible crit chance (0.5%)
     "max_crit_chance": 0.35,          # Maximum possible crit chance (35%)
 
     # ============================================================
     # DODGE
     # ============================================================
-    "base_dodge_chance": 0.22,        # Base dodge chance (22%)
+    "base_dodge_chance": 0.2,        # Base dodge chance (22%)
     "agi_diff_dodge_scale": 0.04,     # Agility difference scaling for dodge
     "min_dodge_chance": 0.02,         # Minimum possible dodge chance (2%)
     "max_dodge_chance": 0.4,          # Maximum possible dodge chance (40%)
@@ -30,12 +30,12 @@ CONFIG = {
     # ============================================================
     # BLOCKING
     # ============================================================
-    "base_block_reduction": 0.30,     # Base damage reduction from blocking (30%)
-    "def_diff_block_scale": 0.025,    # Defense difference scaling for blocking
+    "base_block_reduction": 0.27,     # Base damage reduction from blocking (30%)
+    "def_diff_block_scale": 0.03,    # Defense difference scaling for blocking
     "min_block_reduction": 0.1,       # Minimum block damage reduction (10%)
     "max_block_reduction": 0.7,       # Maximum block damage reduction (70%)
     "base_block_break_chance": 0.28,  # Base block break chance (28%)
-    "agi_block_break_scale": 0.07,    # Agility scaling for block break
+    "agi_block_break_scale": 0.06,    # Agility scaling for block break
     "min_block_break_chance": 0.05,   # Minimum block break chance (5%)
     "max_block_break_chance": 0.6,    # Maximum block break chance (60%)
 
@@ -63,7 +63,8 @@ CONFIG = {
     "damage_absorption_koef": 10.0,   # Conversion factor: absorbed_damage → resource (block-only system)
     "absorption_resource_decay": 0.95, # Resource decay per round (5% lost)
     "absorption_event_threshold": 0.5, # Minimum resource for events (50%)
-    "stamina_transfer_amount": 15,     # Fixed amount of stamina transferred from opponent to activator
+    "stamina_transfer_amount": 25,     # Fixed amount of stamina transferred from opponent to activator
+    "min_defense_advantage": 3,        # Minimum DEF advantage required for stamina transfer
 
     # ============================================================
     # EHP SCALING
@@ -72,8 +73,6 @@ CONFIG = {
     "hp_scaling_constant": 30,        # Constant added to health stat
     "hp_scaling_exponent": 0.67,      # Exponent for health scaling curve
     "damage_scaling_base": 1.1,      # Base damage multiplier
-    "damage_scaling_constant": 49,    # Constant added to attack stat
+    "damage_scaling_constant": 50,    # Constant added to attack stat
     "damage_scaling_exponent": 0.63,  # Exponent for damage scaling curve
-    "defense_scaling_multiplier": 40.0, # Defense stat divider for EHP calculation
-    "defense_scaling_exponent": 0.55, # Exponent for defense scaling curve
 }

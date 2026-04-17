@@ -235,7 +235,18 @@ def process_round(state, rng):
     elif b_can_transfer:
         transfer_winner = "B"
 
-    # Execute stamina transfer
+    # Execute stamina transfer - but only if winner has significant DEF advantage (3+ points)
+    if transfer_winner:
+        if transfer_winner == "A":
+            def_advantage = a.defense - b.defense
+        else:
+            def_advantage = b.defense - a.defense
+
+        # Only proceed if the winner has sufficient defense advantage
+        min_def_advantage = config["min_defense_advantage"]
+        if def_advantage < min_def_advantage:
+            transfer_winner = None
+
     if transfer_winner:
         if transfer_winner == "A":
             absorber, opponent, absorber_id = a, b, "A"
@@ -261,7 +272,8 @@ def process_round(state, rng):
             "opponent_stamina_after": opponent.stamina,
             "absorber_stamina_before": absorber_stamina_before,
             "absorber_stamina_after": absorber.stamina,
-            "win_reason": "both_ready_higher_defense" if (a_can_transfer and b_can_transfer) else "only_ready"
+            "win_reason": "both_ready_higher_defense_3plus" if (a_can_transfer and b_can_transfer) else "only_ready_3plus",
+            "def_advantage": def_advantage
         }
         absorption_events.append(stamina_event)
 

@@ -210,10 +210,12 @@ def print_debug_log(log_events):
 
                     win_reason = abs_event.get("win_reason", "unknown")
                     reason_text = ""
-                    if win_reason == "both_ready_higher_defense":
-                        reason_text = " (both ready, higher DEF wins)"
-                    elif win_reason == "only_ready":
-                        reason_text = " (only one ready)"
+                    if win_reason == "both_ready_higher_defense_3plus":
+                        def_advantage = abs_event.get("def_advantage", 0)
+                        reason_text = f" (both ready, higher DEF wins +{def_advantage})"
+                    elif win_reason == "only_ready_3plus":
+                        def_advantage = abs_event.get("def_advantage", 0)
+                        reason_text = f" (only one ready, DEF +{def_advantage})"
 
                     print(f"💪 Fighter {fighter_id}: Absorption Event! Transfers {stamina_transferred} stamina{reason_text}")
                     print(f"    📉 Fighter {opponent_id}: {opponent_stamina_before} → {opponent_stamina_after} stamina")
