@@ -45,6 +45,8 @@ def simulate_fight(state, max_rounds=25, seed=None):
     # Reset absorption resources before fight begins
     fight_state.fighter_a.damage_absorption_resource = 0.0
     fight_state.fighter_b.damage_absorption_resource = 0.0
+    fight_state.fighter_a.absorption_fatigue_bonus = 0.0
+    fight_state.fighter_b.absorption_fatigue_bonus = 0.0
 
     # Game log for replay/UI
     log = []
@@ -97,7 +99,8 @@ def process_round(state, rng):
         atk_zones=atk_zones_a,
         def_zones=def_zones_b,
         attacker_absorption_resource=a.damage_absorption_resource,
-        defender_absorption_resource=b.damage_absorption_resource
+        defender_absorption_resource=b.damage_absorption_resource,
+        attacker_fatigue_bonus=a.absorption_fatigue_bonus
     )
 
     res_b, updated_resource_b, updated_resource_a_from_b = process_attack(
@@ -108,7 +111,8 @@ def process_round(state, rng):
         atk_zones=atk_zones_b,
         def_zones=def_zones_a,
         attacker_absorption_resource=b.damage_absorption_resource,
-        defender_absorption_resource=a.damage_absorption_resource
+        defender_absorption_resource=a.damage_absorption_resource,
+        attacker_fatigue_bonus=b.absorption_fatigue_bonus
     )
 
     # Update fighter absorption resources
@@ -159,13 +163,15 @@ def process_round(state, rng):
                 "hp": a.hp,
                 "stamina": a.stamina,
                 "fatigue_level": get_stamina_level(a.stamina),
-                "absorption_resource": a.damage_absorption_resource
+                "absorption_resource": a.damage_absorption_resource,
+                "fatigue_bonus": a.absorption_fatigue_bonus
             },
             "B": {
                 "hp": b.hp,
                 "stamina": b.stamina,
                 "fatigue_level": get_stamina_level(b.stamina),
-                "absorption_resource": b.damage_absorption_resource
+                "absorption_resource": b.damage_absorption_resource,
+                "fatigue_bonus": b.absorption_fatigue_bonus
             }
         }
     }
@@ -218,10 +224,21 @@ def process_round(state, rng):
         # Reset both fighters' absorption resources after fatigue mechanic is used
         a.damage_absorption_resource = 0.0
         b.damage_absorption_resource = 0.0
+        # Note: fatigue bonus remains active for the fighter who triggered it
 
     # Apply resource decay to both fighters
     a.damage_absorption_resource *= config["absorption_resource_decay"]
     b.damage_absorption_resource *= config["absorption_resource_decay"]
+
+    # Decay fatigue bonuses (reduce by 50% each round)
+    a.absorption_fatigue_bonus *= 0.5
+    b.absorption_fatigue_bonus *= 0.5
+
+    # Remove tiny bonuses to prevent floating point accumulation
+    if a.absorption_fatigue_bonus < 0.01:
+        a.absorption_fatigue_bonus = 0.0
+    if b.absorption_fatigue_bonus < 0.01:
+        b.absorption_fatigue_bonus = 0.0
 
     # ============================================================
     # APPLY DAMAGE
@@ -398,6 +415,9 @@ def _process_absorption_resource(absorber, opponent, absorbed_damage, absorber_i
                 "opponent_stamina_after": opponent.stamina
             }
             events.append(fatigue_event)
+
+            # Apply bonus to the fighter who triggered fatigue mechanic
+            absorber.absorption_fatigue_bonus = config["absorption_fatigue_bonus"]
 
             # Note: Resource will be reset for both fighters after fatigue processing
 

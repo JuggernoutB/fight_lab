@@ -3,7 +3,7 @@
 from ..config import CONFIG
 from .fatigue import get_fatigue_multiplier
 
-def calc_crit(att_agi: int, def_def: int, attacker_stamina: int, attacker_absorption_resource: float = 0.0) -> tuple[bool, float]:
+def calc_crit(att_agi: int, def_def: int, attacker_stamina: int, attacker_absorption_resource: float = 0.0, attacker_fatigue_bonus: float = 0.0) -> tuple[bool, float]:
     """
     Check if critical hit occurs using two-stage logic:
     1. First check absorption resource (if >= 0.5)
@@ -27,6 +27,9 @@ def calc_crit(att_agi: int, def_def: int, attacker_stamina: int, attacker_absorp
                      CONFIG["base_crit_chance"] + max(0, (att_agi - def_def) * CONFIG["agi_diff_crit_scale"])))
     fatigue_multiplier = get_fatigue_multiplier(attacker_stamina, 'crit')
     effective_chance = base_chance * fatigue_multiplier
+
+    # Apply fatigue bonus from absorption mechanic
+    effective_chance += attacker_fatigue_bonus
 
     if random.random() < effective_chance:
         # Critical hit triggered by standard formula (resource unchanged)

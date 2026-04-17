@@ -170,7 +170,9 @@ def print_debug_log(log_events):
             for fighter_id, state in fighters.items():
                 fatigue_str = format_fatigue_level(state["fatigue_level"])
                 absorption = state.get('absorption_resource', 0.0)
-                print(f"  {fighter_id}: HP={state['hp']:.1f} | Stamina={state['stamina']} | {fatigue_str} | 🔮 Absorption={absorption:.3f}")
+                bonus = state.get('fatigue_bonus', 0.0)
+                bonus_str = f" | ⚡ Bonus={bonus:.2f}" if bonus > 0 else ""
+                print(f"  {fighter_id}: HP={state['hp']:.1f} | Stamina={state['stamina']} | {fatigue_str} | 🔮 Absorption={absorption:.3f}{bonus_str}")
             print()
 
         # Show attacks

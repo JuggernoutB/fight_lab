@@ -21,7 +21,8 @@ def process_attack(
     def_zones: List[str],
     debug_mode: bool = False,
     attacker_absorption_resource: float = 0.0,
-    defender_absorption_resource: float = 0.0
+    defender_absorption_resource: float = 0.0,
+    attacker_fatigue_bonus: float = 0.0
 ) -> tuple[Dict[str, Dict], float, float]:
 
     if not atk_zones:
@@ -64,9 +65,9 @@ def process_attack(
         if z in def_zones:
             is_blocked = True
 
-            # Use enhanced block_break with absorption resource
+            # Use enhanced block_break with absorption resource and fatigue bonus
             break_succeeded, attacker_absorption_resource = block_break(
-                atk_agility, def_defense, attacker_stamina, attacker_absorption_resource
+                atk_agility, def_defense, attacker_stamina, attacker_absorption_resource, attacker_fatigue_bonus
             )
 
             if break_succeeded:
@@ -120,12 +121,13 @@ def process_attack(
         # =========================
         is_crit = False
         if not is_blocked:
-            # Use enhanced crit with absorption resource
+            # Use enhanced crit with absorption resource and fatigue bonus
             is_crit, attacker_absorption_resource = calc_crit(
                 atk_agility,
                 def_defense,
                 attacker_stamina,
-                attacker_absorption_resource
+                attacker_absorption_resource,
+                attacker_fatigue_bonus
             )
 
         if is_crit:

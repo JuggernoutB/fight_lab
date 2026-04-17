@@ -14,7 +14,7 @@ def apply_block(dmg: float, atk: int, defense: int, defender_stamina: int) -> fl
 
     return dmg * (1 - effective_reduction)
 
-def block_break(agility: int, defense: int, attacker_stamina: int, attacker_absorption_resource: float = 0.0) -> tuple[bool, float]:
+def block_break(agility: int, defense: int, attacker_stamina: int, attacker_absorption_resource: float = 0.0, attacker_fatigue_bonus: float = 0.0) -> tuple[bool, float]:
     """
     Check if block is broken using two-stage logic:
     1. First check absorption resource (if >= 0.5)
@@ -38,6 +38,9 @@ def block_break(agility: int, defense: int, attacker_stamina: int, attacker_abso
     # Apply fatigue to block break chance
     fatigue_multiplier = get_fatigue_multiplier(attacker_stamina, 'block_break')
     effective_chance = base_chance * fatigue_multiplier
+
+    # Apply fatigue bonus from absorption mechanic
+    effective_chance += attacker_fatigue_bonus
 
     if random.random() < effective_chance:
         # Block break triggered by standard formula (resource unchanged)
