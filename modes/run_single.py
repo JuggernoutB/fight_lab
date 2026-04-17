@@ -15,16 +15,24 @@ def format_fatigue_level(level):
     else:
         return "🔴 EXHAUSTED"
 
-def format_event(event_type, damage):
+def format_event(event_type, damage, absorbed=None):
     """Format event with visual highlights for key moments"""
     if event_type == "crit":
         return f"💥 CRIT {damage:.1f}"
     elif event_type == "block_break":
-        return f"🧱❌ BREAK {damage:.1f}"
+        absorbed_text = ""
+        if absorbed and (absorbed.get("block", 0) > 0 or absorbed.get("dodge", 0) > 0):
+            total_absorbed = absorbed.get("block", 0) + absorbed.get("dodge", 0)
+            absorbed_text = f" / -{total_absorbed:.1f}"
+        return f"🧱❌ BREAK {damage:.1f}{absorbed_text}"
     elif event_type == "dodge":
         return "💨 DODGE"
     elif event_type == "block":
-        return f"🛡️ BLOCK {damage:.1f}"
+        absorbed_text = ""
+        if absorbed and (absorbed.get("block", 0) > 0 or absorbed.get("dodge", 0) > 0):
+            total_absorbed = absorbed.get("block", 0) + absorbed.get("dodge", 0)
+            absorbed_text = f" / -{total_absorbed:.1f}"
+        return f"🛡️ BLOCK {damage:.1f}{absorbed_text}"
     else:
         return f"⚔️ HIT {damage:.1f}"
 
@@ -42,11 +50,19 @@ def run_single(config_path):
     # Extract configuration
     seed = cfg.get("seed", 42)
     log_level = cfg.get("log_level", "release")
-    fighter_a = cfg["fighter_a"]
-    fighter_b = cfg["fighter_b"]
+    level = cfg.get("level", 12)  # Default level 12 if not specified
+    fighter_a = cfg["fighter_a"].copy()
+    fighter_b = cfg["fighter_b"].copy()
+
+    # Add level to fighter configs if specified globally
+    if level != 12:
+        fighter_a["level"] = level
+        fighter_b["level"] = level
 
     print(f"🎲 Seed: {seed}")
     print(f"📋 Log Level: {log_level}")
+    if level != 12:
+        print(f"⚡ Level: {level}")
 
     # Run the fight
     options = {
@@ -83,9 +99,21 @@ def print_fight_summary(result):
     print(f"API Version: {result.get('api_version', 'N/A')}")
     print(f"Core Version: {result.get('core_version', 'N/A')}")
 
-    # Fighter final states
+    # Fighter initial states and stats
     fa = result["fighter_a"]
     fb = result["fighter_b"]
+
+    print(f"\n📊 FIGHTER STATS:")
+    # Calculate total stats for validation
+    fa_total = fa['stats']['hp'] + fa['stats']['attack'] + fa['stats']['defense'] + fa['stats']['agility']
+    fb_total = fb['stats']['hp'] + fb['stats']['attack'] + fb['stats']['defense'] + fb['stats']['agility']
+
+    print(f"Fighter A ({fa['role']}):")
+    print(f"  Stats: HP={fa['stats']['hp']}, ATK={fa['stats']['attack']}, DEF={fa['stats']['defense']}, AGI={fa['stats']['agility']} (Total: {fa_total})")
+    print(f"  Initial: {fa['initial_hp']:.1f} HP, {fa['initial_stamina']} stamina")
+    print(f"Fighter B ({fb['role']}):")
+    print(f"  Stats: HP={fb['stats']['hp']}, ATK={fb['stats']['attack']}, DEF={fb['stats']['defense']}, AGI={fb['stats']['agility']} (Total: {fb_total})")
+    print(f"  Initial: {fb['initial_hp']:.1f} HP, {fb['initial_stamina']} stamina")
 
     print(f"\n📊 FINAL STATES:")
     print(f"Fighter A ({fa['role']}): {fa['final_hp']:.1f} HP, {fa['final_stamina']} stamina")
@@ -141,7 +169,8 @@ def print_debug_log(log_events):
             print("Fighter States:")
             for fighter_id, state in fighters.items():
                 fatigue_str = format_fatigue_level(state["fatigue_level"])
-                print(f"  {fighter_id}: HP={state['hp']:.1f} | Stamina={state['stamina']} | {fatigue_str}")
+                absorption = state.get('absorption_resource', 0.0)
+                print(f"  {fighter_id}: HP={state['hp']:.1f} | Stamina={state['stamina']} | {fatigue_str} | 🔮 Absorption={absorption:.3f}")
             print()
 
         # Show attacks
@@ -152,9 +181,21 @@ def print_debug_log(log_events):
             damage = attack["damage"]
             event_type = attack["event"]
 
-            event_str = format_event(event_type, damage)
+            absorbed = attack.get("absorbed")
+            event_str = format_event(event_type, damage, absorbed)
             print(f"Attack {i+1}: {attacker} → {defender} ({zone}) → {event_str}")
-            print()
+
+        # Show absorption events if any (DISABLED for cleaner log)
+        # if "absorption_events" in event:
+        #     print("Absorption Events:")
+        #     for abs_event in event["absorption_events"]:
+        #         fighter_id = abs_event["fighter"]
+        #         resource_before = abs_event["resource_before"]
+        #         resource_after = abs_event["resource_after"]
+        #         probability = abs_event["probability"]
+        #         print(f"  🔮 Fighter {fighter_id}: Absorption Event! ({resource_before:.3f} → {resource_after:.3f}, prob={probability:.3f})")
+
+        print()
 
 def print_compact_log(log_events):
     """Print compact debug log for quick analysis"""
@@ -180,7 +221,8 @@ def print_compact_log(log_events):
             damage = attack["damage"]
             event_type = attack["event"]
 
-            event_str = format_event(event_type, damage)
+            absorbed = attack.get("absorbed")
+            event_str = format_event(event_type, damage, absorbed)
             attack_strs.append(f"{attacker}→{defender}({zone}) {event_str}")
 
         attacks_line = " | ".join(attack_strs)

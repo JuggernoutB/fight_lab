@@ -60,7 +60,7 @@ CONFIG = {
     # ============================================================
     # DAMAGE ABSORPTION RESOURCE SYSTEM
     # ============================================================
-    "damage_absorption_koef": 30.0,   # Conversion factor: absorbed_damage → resource (block-only system)
+    "damage_absorption_koef": 10.0,   # Conversion factor: absorbed_damage → resource (block-only system)
     "absorption_resource_decay": 0.95, # Resource decay per round (15% lost)
     "absorption_event_threshold": 0.5, # Minimum resource for events (50%)
 

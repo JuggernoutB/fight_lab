@@ -2,10 +2,10 @@
   "seed": 42,
   "mode": "standard",
   "log_level": "debug",
-
+  "level": 5,
   "fighter_a": {
     "type": "balanced",
-    "role": "BRUISER"
+    "role": "TANK"
   },
   "fighter_b": {
     "type": "balanced",

@@ -20,11 +20,12 @@ def process_attack(
     atk_zones: List[str],
     def_zones: List[str],
     debug_mode: bool = False,
-    attacker_absorption_resource: float = 0.0
-) -> tuple[Dict[str, Dict], float]:
+    attacker_absorption_resource: float = 0.0,
+    defender_absorption_resource: float = 0.0
+) -> tuple[Dict[str, Dict], float, float]:
 
     if not atk_zones:
-        return {}, attacker_absorption_resource
+        return {}, attacker_absorption_resource, defender_absorption_resource
 
     # === DATA NORMALIZATION (protect against dict typos) ===
     try:
@@ -45,6 +46,7 @@ def process_attack(
     base *= get_fatigue_multiplier(attacker_stamina, "attack")
 
     results = {}
+    total_absorbed_by_defender = 0.0  # Track total damage absorbed by defender
 
     for z in atk_zones:
 
@@ -169,4 +171,10 @@ def process_attack(
 
         results[z] = result
 
-    return results, attacker_absorption_resource
+        # Add absorbed damage to defender's total (BLOCK ONLY - dodge doesn't generate resource)
+        total_absorbed_by_defender += block_absorbed  # Only block absorption generates resource
+
+    # NOTE: Absorption resource is now calculated in game_engine.py using proper opponent max_hp scaling
+    # This avoids double-counting and ensures correct resource calculation
+
+    return results, attacker_absorption_resource, defender_absorption_resource

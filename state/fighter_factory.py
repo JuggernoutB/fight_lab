@@ -42,6 +42,73 @@ def create_fighter(hp_stat: int, attack_stat: int, defense_stat: int, agility_st
     return fighter
 
 
+def create_fighter_balanced_level(role: str, level: int = 12) -> FighterState:
+    """
+    Create fighter with role-based stats at specified level
+    All fighters get exactly the same total stat points: 12 + (level-1) * 5
+
+    Args:
+        role: Fighter role
+        level: Stat level (1+), determines total stat budget
+
+    Returns:
+        FighterState with role-based stat distribution at given level
+    """
+    # Clamp level to valid range
+    level = max(3, min(18, level))
+
+    # Calculate total stat budget using the same system as benchmark: 12 + (level-1) * 5
+    # This ensures compatibility with level_system.py
+    BASE_STATS = 12  # All stats start at 3, total = 3*4 = 12
+    STATS_PER_LEVEL = 5  # +5 stat points per level
+    total_stats = BASE_STATS + (level - 1) * STATS_PER_LEVEL
+
+    if role == "BRUISER":
+        # HP/DEF focused, balanced ATK, low AGI
+        hp_stat = total_stats // 4 + 3    # Higher HP
+        def_stat = total_stats // 4 + 3   # Higher DEF
+        atk_stat = total_stats // 4       # Average ATK
+        agi_stat = total_stats - hp_stat - def_stat - atk_stat  # Remaining points
+
+    elif role == "ASSASSIN":
+        # ATK/AGI focused, low HP/DEF
+        atk_stat = total_stats // 4 + 4   # Higher ATK
+        agi_stat = total_stats // 4 + 4   # Higher AGI
+        hp_stat = total_stats // 4 - 2    # Lower HP
+        def_stat = total_stats - atk_stat - agi_stat - hp_stat  # Remaining points
+
+    elif role == "TANK":
+        # HP/DEF maximized, low ATK/AGI
+        hp_stat = total_stats // 4 + 4    # Highest HP
+        def_stat = total_stats // 4 + 4   # Highest DEF
+        atk_stat = total_stats // 4 - 2   # Lower ATK
+        agi_stat = total_stats - hp_stat - def_stat - atk_stat  # Remaining points
+
+    elif role == "SKIRMISHER":
+        # AGI focused, balanced other stats
+        agi_stat = total_stats // 4 + 3   # Higher AGI
+        atk_stat = total_stats // 4 + 1   # Slightly higher ATK
+        def_stat = total_stats // 4       # Average DEF
+        hp_stat = total_stats - agi_stat - atk_stat - def_stat  # Remaining points
+
+    else:  # UNIVERSAL or unknown
+        # All stats equal
+        base_stat = total_stats // 4
+        remainder = total_stats % 4
+        hp_stat = base_stat + (1 if remainder > 0 else 0)
+        atk_stat = base_stat + (1 if remainder > 1 else 0)
+        def_stat = base_stat + (1 if remainder > 2 else 0)
+        agi_stat = base_stat
+
+    # Ensure all stats are in valid range (3-18)
+    hp_stat = max(3, min(18, hp_stat))
+    atk_stat = max(3, min(18, atk_stat))
+    def_stat = max(3, min(18, def_stat))
+    agi_stat = max(3, min(18, agi_stat))
+
+    return create_fighter(hp_stat=hp_stat, attack_stat=atk_stat, defense_stat=def_stat, agility_stat=agi_stat, role=role)
+
+
 def create_fighter_balanced(role: str) -> FighterState:
     """
     Create fighter with balanced stats for testing

@@ -87,11 +87,27 @@ def run_fight(fighter_a_config, fighter_b_config, options=None):
         "rounds": fight_result["rounds"],
         "fighter_a": {
             "role": fighter_a.role,
+            "initial_hp": initial_hp_a,
+            "initial_stamina": 100,  # Initial stamina is always 100
+            "stats": {
+                "hp": getattr(fighter_a, 'hp_stat', 'N/A'),
+                "attack": fighter_a.attack,
+                "defense": fighter_a.defense,
+                "agility": fighter_a.agility
+            },
             "final_hp": fight_result["final_state"].fighter_a.hp,
             "final_stamina": fight_result["final_state"].fighter_a.stamina
         },
         "fighter_b": {
             "role": fighter_b.role,
+            "initial_hp": initial_hp_b,
+            "initial_stamina": 100,  # Initial stamina is always 100
+            "stats": {
+                "hp": getattr(fighter_b, 'hp_stat', 'N/A'),
+                "attack": fighter_b.attack,
+                "defense": fighter_b.defense,
+                "agility": fighter_b.agility
+            },
             "final_hp": fight_result["final_state"].fighter_b.hp,
             "final_stamina": fight_result["final_state"].fighter_b.stamina
         },
@@ -121,7 +137,14 @@ def _create_fighter(config):
         raise ValueError(f"Invalid role '{role}'. Must be one of: {valid_roles}")
 
     if fighter_type == "balanced":
-        return create_fighter_balanced(role)
+        level = config.get("level", 12)  # Default level 12
+        if level != 12:
+            # Use existing level system (same as benchmark)
+            from state.level_system import create_fighter_by_level
+            return create_fighter_by_level(level, role)
+        else:
+            # Use default balanced creation
+            return create_fighter_balanced(role)
     elif fighter_type == "random":
         return create_fighter_random(role)
     elif fighter_type == "custom" and "stats" in config:

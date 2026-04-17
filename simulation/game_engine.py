@@ -42,6 +42,10 @@ def simulate_fight(state, max_rounds=25, seed=None):
     fight_state.round_id = 0
     fight_state.end_reason = None
 
+    # Reset absorption resources before fight begins
+    fight_state.fighter_a.damage_absorption_resource = 0.0
+    fight_state.fighter_b.damage_absorption_resource = 0.0
+
     # Game log for replay/UI
     log = []
 
@@ -85,29 +89,33 @@ def process_round(state, rng):
     atk_zones_b, def_zones_b = to_zones(action_b)
 
     # Combat resolution with absorption resource integration
-    res_a, updated_resource_a = process_attack(
+    res_a, updated_resource_a, updated_resource_b_from_a = process_attack(
         attacker={"attack": a.attack, "agility": a.agility},
         defender={"defense": b.defense, "agility": b.agility},
         attacker_stamina=a.stamina,
         defender_stamina=b.stamina,
         atk_zones=atk_zones_a,
         def_zones=def_zones_b,
-        attacker_absorption_resource=a.damage_absorption_resource
+        attacker_absorption_resource=a.damage_absorption_resource,
+        defender_absorption_resource=b.damage_absorption_resource
     )
 
-    res_b, updated_resource_b = process_attack(
+    res_b, updated_resource_b, updated_resource_a_from_b = process_attack(
         attacker={"attack": b.attack, "agility": b.agility},
         defender={"defense": a.defense, "agility": a.agility},
         attacker_stamina=b.stamina,
         defender_stamina=a.stamina,
         atk_zones=atk_zones_b,
         def_zones=def_zones_a,
-        attacker_absorption_resource=b.damage_absorption_resource
+        attacker_absorption_resource=b.damage_absorption_resource,
+        defender_absorption_resource=a.damage_absorption_resource
     )
 
     # Update fighter absorption resources
-    a.damage_absorption_resource = updated_resource_a
-    b.damage_absorption_resource = updated_resource_b
+    # A gets resource from defending against B's attacks
+    a.damage_absorption_resource = updated_resource_a_from_b
+    # B gets resource from defending against A's attacks
+    b.damage_absorption_resource = updated_resource_b_from_a
 
     # Build event log for this round
     round_attacks = []
@@ -150,12 +158,14 @@ def process_round(state, rng):
             "A": {
                 "hp": a.hp,
                 "stamina": a.stamina,
-                "fatigue_level": get_stamina_level(a.stamina)
+                "fatigue_level": get_stamina_level(a.stamina),
+                "absorption_resource": a.damage_absorption_resource
             },
             "B": {
                 "hp": b.hp,
                 "stamina": b.stamina,
-                "fatigue_level": get_stamina_level(b.stamina)
+                "fatigue_level": get_stamina_level(b.stamina),
+                "absorption_resource": b.damage_absorption_resource
             }
         }
     }
@@ -339,6 +349,6 @@ def _process_absorption_resource(absorber, opponent, absorbed_damage, absorber_i
             events.append(event)
 
             # Reset resource to 0 after successful event
-            absorber.damage_absorption_resource = 0.0
+            #absorber.damage_absorption_resource = 0.0
 
     return events
