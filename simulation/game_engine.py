@@ -207,6 +207,18 @@ def process_round(state, rng):
     if absorption_events:
         round_event["absorption_events"] = absorption_events
 
+    # Check if any fatigue mechanic was triggered and reset both fighters' resources
+    fatigue_triggered = False
+    for event in absorption_events:
+        if event.get("type") == "absorption_fatigue" and event.get("fatigue_applied") != "ALREADY_EXHAUSTED":
+            fatigue_triggered = True
+            break
+
+    if fatigue_triggered:
+        # Reset both fighters' absorption resources after fatigue mechanic is used
+        a.damage_absorption_resource = 0.0
+        b.damage_absorption_resource = 0.0
+
     # Apply resource decay to both fighters
     a.damage_absorption_resource *= config["absorption_resource_decay"]
     b.damage_absorption_resource *= config["absorption_resource_decay"]
@@ -387,7 +399,6 @@ def _process_absorption_resource(absorber, opponent, absorbed_damage, absorber_i
             }
             events.append(fatigue_event)
 
-            # Reset absorption resource after using it
-            absorber.damage_absorption_resource = 0.0
+            # Note: Resource will be reset for both fighters after fatigue processing
 
     return events
