@@ -45,8 +45,8 @@ CONFIG = {
     "stamina_fresh_threshold": 60,    # Above this = Fresh (no penalties)
     "stamina_tired_threshold": 25,    # Above this = Tired, below = Exhausted
     "fresh_multiplier": 1.0,          # No fatigue penalty (100%)
-    "tired_multiplier": 0.75,         # Tired penalty (75% effectiveness)
-    "exhausted_multiplier": 0.5,      # Exhausted penalty (50% effectiveness)
+    "tired_multiplier": 0.7,         # Tired penalty (75% effectiveness)
+    "exhausted_multiplier": 0.4,      # Exhausted penalty (50% effectiveness)
 
 
     # ============================================================
@@ -72,7 +72,7 @@ CONFIG = {
     "hp_scaling_constant": 30,        # Constant added to health stat
     "hp_scaling_exponent": 0.67,      # Exponent for health scaling curve
     "damage_scaling_base": 1.1,      # Base damage multiplier
-    "damage_scaling_constant": 50,    # Constant added to attack stat
+    "damage_scaling_constant": 49,    # Constant added to attack stat
     "damage_scaling_exponent": 0.63,  # Exponent for damage scaling curve
     "defense_scaling_multiplier": 40.0, # Defense stat divider for EHP calculation
     "defense_scaling_exponent": 0.55, # Exponent for defense scaling curve
