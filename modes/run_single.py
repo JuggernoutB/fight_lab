@@ -208,9 +208,17 @@ def print_debug_log(log_events):
                     absorber_stamina_before = abs_event["absorber_stamina_before"]
                     absorber_stamina_after = abs_event["absorber_stamina_after"]
 
-                    print(f"💪 Fighter {fighter_id}: Absorption Event! Transfers {stamina_transferred} stamina (used {resource_used:.3f} resource)")
+                    win_reason = abs_event.get("win_reason", "unknown")
+                    reason_text = ""
+                    if win_reason == "both_ready_higher_defense":
+                        reason_text = " (both ready, higher DEF wins)"
+                    elif win_reason == "only_ready":
+                        reason_text = " (only one ready)"
+
+                    print(f"💪 Fighter {fighter_id}: Absorption Event! Transfers {stamina_transferred} stamina{reason_text}")
                     print(f"    📉 Fighter {opponent_id}: {opponent_stamina_before} → {opponent_stamina_after} stamina")
                     print(f"    📈 Fighter {fighter_id}: {absorber_stamina_before} → {absorber_stamina_after} stamina")
+                    print(f"    🔮 Resource used: {resource_used:.3f}")
 
         print()
 

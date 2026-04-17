@@ -193,17 +193,77 @@ def process_round(state, rng):
     absorption_events = []
     config = get_config()
 
-    # Process A's absorption
+    # Add absorbed damage to resources first
     if absorbed_by_a > 0:
-        absorption_events.extend(_process_absorption_resource(
-            a, b, absorbed_by_a, "A", config, rng
-        ))
+        # A absorbed damage - add to A's resource
+        opponent_max_hp = getattr(b, 'max_hp', b.hp)
+        if hasattr(b, 'hp_stat'):
+            from core.modules.ehp import EHPDamageCalculator
+            calc = EHPDamageCalculator()
+            opponent_max_hp = calc.calculate_base_hp(b.hp_stat)
 
-    # Process B's absorption
+        damage_to_resource = (absorbed_by_a / opponent_max_hp) * config["damage_absorption_koef"]
+        a.damage_absorption_resource = min(1.0, a.damage_absorption_resource + damage_to_resource)
+
     if absorbed_by_b > 0:
-        absorption_events.extend(_process_absorption_resource(
-            b, a, absorbed_by_b, "B", config, rng
-        ))
+        # B absorbed damage - add to B's resource
+        opponent_max_hp = getattr(a, 'max_hp', a.hp)
+        if hasattr(a, 'hp_stat'):
+            from core.modules.ehp import EHPDamageCalculator
+            calc = EHPDamageCalculator()
+            opponent_max_hp = calc.calculate_base_hp(a.hp_stat)
+
+        damage_to_resource = (absorbed_by_b / opponent_max_hp) * config["damage_absorption_koef"]
+        b.damage_absorption_resource = min(1.0, b.damage_absorption_resource + damage_to_resource)
+
+    # NEW ENHANCED STAMINA TRANSFER LOGIC
+    threshold = config["absorption_event_threshold"]
+
+    # Check who can trigger stamina transfer
+    a_can_transfer = (a.damage_absorption_resource >= threshold and
+                     get_stamina_level(a.stamina) != 2)  # Not exhausted
+    b_can_transfer = (b.damage_absorption_resource >= threshold and
+                     get_stamina_level(b.stamina) != 2)  # Not exhausted
+
+    # Determine who gets the transfer
+    transfer_winner = None
+    if a_can_transfer and b_can_transfer:
+        # Both can transfer - winner is who has higher DEFENSE
+        transfer_winner = "A" if a.defense > b.defense else "B"
+    elif a_can_transfer:
+        transfer_winner = "A"
+    elif b_can_transfer:
+        transfer_winner = "B"
+
+    # Execute stamina transfer
+    if transfer_winner:
+        if transfer_winner == "A":
+            absorber, opponent, absorber_id = a, b, "A"
+        else:
+            absorber, opponent, absorber_id = b, a, "B"
+
+        stamina_transfer = config["stamina_transfer_amount"]
+        current_opponent_stamina = opponent.stamina
+        absorber_stamina_before = absorber.stamina
+
+        # Transfer stamina
+        opponent.stamina = max(0, opponent.stamina - stamina_transfer)
+        absorber.stamina = min(100, absorber.stamina + stamina_transfer)
+
+        # Create event
+        stamina_event = {
+            "type": "absorption_stamina_transfer",
+            "fighter": absorber_id,
+            "opponent": "A" if absorber_id == "B" else "B",
+            "resource_used": absorber.damage_absorption_resource,
+            "stamina_transferred": stamina_transfer,
+            "opponent_stamina_before": current_opponent_stamina,
+            "opponent_stamina_after": opponent.stamina,
+            "absorber_stamina_before": absorber_stamina_before,
+            "absorber_stamina_after": absorber.stamina,
+            "win_reason": "both_ready_higher_defense" if (a_can_transfer and b_can_transfer) else "only_ready"
+        }
+        absorption_events.append(stamina_event)
 
     # Add absorption events to round events
     if absorption_events:
@@ -314,87 +374,3 @@ def determine_winner(state):
         return "DRAW_OTHER"
 
 
-def _process_absorption_resource(absorber, opponent, absorbed_damage, absorber_id, config, rng):
-    """
-    Process damage absorption resource logic for one fighter
-
-    Args:
-        absorber: Fighter who absorbed damage
-        opponent: Fighter who dealt damage
-        absorbed_damage: Amount of damage absorbed
-        absorber_id: "A" or "B"
-        config: Game configuration
-        rng: Random generator
-
-    Returns:
-        List of absorption events that occurred
-    """
-    events = []
-
-    # Convert absorbed damage to resource
-    opponent_max_hp = getattr(opponent, 'max_hp', opponent.hp)  # Use max_hp if available
-    if hasattr(opponent, 'hp_stat'):
-        # Calculate max HP from EHP system
-        from core.modules.ehp import EHPDamageCalculator
-        calc = EHPDamageCalculator()
-        opponent_max_hp = calc.calculate_base_hp(opponent.hp_stat)
-
-    damage_to_resource = (absorbed_damage / opponent_max_hp) * config["damage_absorption_koef"]
-
-    # Add to current resource (capped at 1.0)
-    old_resource = absorber.damage_absorption_resource
-    absorber.damage_absorption_resource = min(1.0, old_resource + damage_to_resource)
-
-    # Check for absorption event (BEFORE decay as specified)
-    if absorber.damage_absorption_resource >= config["absorption_event_threshold"]:
-        # Event probability = resource value
-        event_probability = absorber.damage_absorption_resource
-
-        if rng.random() < event_probability:
-            # Absorption event triggered!
-            event = {
-                "type": "absorption_event",
-                "fighter": absorber_id,
-                "resource_before": old_resource,
-                "resource_after": absorber.damage_absorption_resource,
-                "absorbed_damage": absorbed_damage,
-                "probability": event_probability
-            }
-            events.append(event)
-
-            # Reset resource to 0 after successful event
-            #absorber.damage_absorption_resource = 0.0
-
-    # ============================================================
-    # NEW ABSORPTION MECHANIC: SIMPLE STAMINA TRANSFER
-    # ============================================================
-    # Check for stamina transfer mechanic
-    threshold = config["absorption_event_threshold"]
-    if absorber.damage_absorption_resource >= threshold:
-        # Fixed stamina transfer amount
-        stamina_transfer = config["stamina_transfer_amount"]
-
-        current_opponent_stamina = opponent.stamina
-        absorber_stamina_before = absorber.stamina
-
-        # Reduce opponent's stamina (minimum 0)
-        opponent.stamina = max(0, opponent.stamina - stamina_transfer)
-
-        # Add same amount to absorber (maximum 100)
-        absorber.stamina = min(100, absorber.stamina + stamina_transfer)
-
-        # Create stamina transfer event
-        stamina_event = {
-            "type": "absorption_stamina_transfer",
-            "fighter": absorber_id,
-            "opponent": "A" if absorber_id == "B" else "B",
-            "resource_used": absorber.damage_absorption_resource,
-            "stamina_transferred": stamina_transfer,
-            "opponent_stamina_before": current_opponent_stamina,
-            "opponent_stamina_after": opponent.stamina,
-            "absorber_stamina_before": absorber_stamina_before,
-            "absorber_stamina_after": absorber.stamina
-        }
-        events.append(stamina_event)
-
-    return events
