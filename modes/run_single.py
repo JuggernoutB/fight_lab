@@ -170,9 +170,7 @@ def print_debug_log(log_events):
             for fighter_id, state in fighters.items():
                 fatigue_str = format_fatigue_level(state["fatigue_level"])
                 absorption = state.get('absorption_resource', 0.0)
-                bonus = state.get('fatigue_bonus', 0.0)
-                bonus_str = f" | ⚡ Bonus={bonus:.2f}" if bonus > 0 else ""
-                print(f"  {fighter_id}: HP={state['hp']:.1f} | Stamina={state['stamina']} | {fatigue_str} | 🔮 Absorption={absorption:.3f}{bonus_str}")
+                print(f"  {fighter_id}: HP={state['hp']:.1f} | Stamina={state['stamina']} | {fatigue_str} | 🔮 Absorption={absorption:.3f}")
             print()
 
         # Show attacks
@@ -197,17 +195,22 @@ def print_debug_log(log_events):
         #         probability = abs_event["probability"]
         #         print(f"  🔮 Fighter {fighter_id}: Absorption Event! ({resource_before:.3f} → {resource_after:.3f}, prob={probability:.3f})")
 
-        # Show absorption fatigue events if any
+        # Show absorption events if any
         if "absorption_events" in event:
             for abs_event in event["absorption_events"]:
-                if abs_event.get("type") == "absorption_fatigue":
+                if abs_event.get("type") == "absorption_stamina_transfer":
                     fighter_id = abs_event["fighter"]
                     opponent_id = abs_event["opponent"]
-                    fatigue_type = abs_event["fatigue_applied"]
                     resource_used = abs_event["resource_used"]
-                    stamina_before = abs_event["opponent_stamina_before"]
-                    stamina_after = abs_event["opponent_stamina_after"]
-                    print(f"💪 Fighter {fighter_id}: Fatigue Attack! Fighter {opponent_id} {fatigue_type} ({stamina_before} → {stamina_after} stamina, used {resource_used:.3f} resource)")
+                    stamina_transferred = abs_event["stamina_transferred"]
+                    opponent_stamina_before = abs_event["opponent_stamina_before"]
+                    opponent_stamina_after = abs_event["opponent_stamina_after"]
+                    absorber_stamina_before = abs_event["absorber_stamina_before"]
+                    absorber_stamina_after = abs_event["absorber_stamina_after"]
+
+                    print(f"💪 Fighter {fighter_id}: Absorption Event! Transfers {stamina_transferred} stamina (used {resource_used:.3f} resource)")
+                    print(f"    📉 Fighter {opponent_id}: {opponent_stamina_before} → {opponent_stamina_after} stamina")
+                    print(f"    📈 Fighter {fighter_id}: {absorber_stamina_before} → {absorber_stamina_after} stamina")
 
         print()
 

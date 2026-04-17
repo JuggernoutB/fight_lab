@@ -54,74 +54,16 @@ def process_attack(
         raw = base * ZONE_MULTIPLIERS[z]   # true pre-mitigation snapshot
         dmg = raw
 
-        event = "hit"
-        dodge_state = "hit"  # Default state
-        damage_absorbed = 0.0  # Track dodge absorption
-
         # =========================
-        # BLOCK LOGIC
+        # STEP 1: ROLL ALL MECHANICS (independent checks)
         # =========================
-        is_blocked = False
-        if z in def_zones:
-            is_blocked = True
 
-            # Use enhanced block_break with absorption resource and fatigue bonus
-            break_succeeded, attacker_absorption_resource = block_break(
-                atk_agility, def_defense, attacker_stamina, attacker_absorption_resource, attacker_fatigue_bonus
-            )
+        # Check if zone is blocked
+        is_blocked = z in def_zones
 
-            if break_succeeded:
-                # block is partially ignored
-                dmg *= CONFIG["block_break_damage_ratio"]
-                event = "block_break"
-            else:
-                dmg = apply_block(dmg, atk_attack, def_defense, defender_stamina)
-                event = "block"
-
-        # =========================
-        # DODGE LOGIC
-        # =========================
-        else:
-            dmg, dodge_state = apply_dodge(
-                dmg,
-                atk_attack,
-                def_agility,
-                defender_stamina
-            )
-
-            if dodge_state == "dodge":
-                # Full dodge - all damage absorbed
-                result = {
-                    "damage": 0,
-                    "event": "dodge",
-                    "absorbed": {
-                        "block": 0.0,
-                        "dodge": raw  # All damage absorbed by dodge
-                    }
-                }
-                if debug_mode:
-                    result.update({
-                        "raw": raw,
-                        "mitigated": raw,
-                        "is_crit": False,
-                        "is_blocked": False,
-                        "is_dodged": True
-                    })
-                results[z] = result
-                continue
-            elif dodge_state == "glance":
-                # Partial dodge - some damage absorbed
-                damage_absorbed = max(0.0, raw - dmg)
-                # This absorption will be included in the final result below
-            else:
-                damage_absorbed = 0.0  # No dodge, no absorption
-
-        # =========================
-        # CRIT LOGIC (only for unblocked zones)
-        # =========================
+        # Always check crit (unless blocked zone)
         is_crit = False
         if not is_blocked:
-            # Use enhanced crit with absorption resource and fatigue bonus
             is_crit, attacker_absorption_resource = calc_crit(
                 atk_agility,
                 def_defense,
@@ -130,9 +72,71 @@ def process_attack(
                 attacker_fatigue_bonus
             )
 
-        if is_crit:
-            dmg *= CONFIG["crit_damage_multiplier"]
-            event = "crit"
+        # Always check dodge (unless blocked zone)
+        dodge_state = "hit"
+        if not is_blocked:
+            dmg_temp, dodge_state = apply_dodge(
+                dmg,
+                atk_attack,
+                def_agility,
+                defender_stamina
+            )
+            # Don't apply dodge damage reduction yet, just remember the state
+
+        # =========================
+        # STEP 2: RESOLVE FINAL OUTCOME
+        # =========================
+
+        # Priority: dodge > block > crit hit
+        if not is_blocked and dodge_state == "dodge":
+            # Full dodge - all damage absorbed, but crit still counted!
+            result = {
+                "damage": 0,
+                "event": "crit_dodge" if is_crit else "dodge",
+                "absorbed": {
+                    "block": 0.0,
+                    "dodge": raw
+                },
+                "crit_rolled": is_crit  # Track crit for statistics
+            }
+            if debug_mode:
+                result.update({
+                    "raw": raw,
+                    "mitigated": raw,
+                    "is_crit": is_crit,
+                    "is_blocked": False,
+                    "is_dodged": True
+                })
+            results[z] = result
+            continue
+
+        elif is_blocked:
+            # Handle block logic
+            break_succeeded, attacker_absorption_resource = block_break(
+                atk_agility, def_defense, attacker_stamina, attacker_absorption_resource, attacker_fatigue_bonus
+            )
+
+            if break_succeeded:
+                dmg *= CONFIG["block_break_damage_ratio"]
+                event = "crit_block_break" if is_crit else "block_break"
+                if is_crit:
+                    dmg *= CONFIG["crit_damage_multiplier"]
+            else:
+                dmg = apply_block(dmg, atk_attack, def_defense, defender_stamina)
+                event = "crit_block" if is_crit else "block"
+                if is_crit:
+                    dmg *= CONFIG["crit_damage_multiplier"]
+
+        else:
+            # Regular hit or glancing hit
+            if dodge_state == "glance":
+                dmg, _ = apply_dodge(dmg, atk_attack, def_agility, defender_stamina)
+                event = "crit_glance" if is_crit else "glance"
+            else:
+                event = "crit" if is_crit else "hit"
+
+            if is_crit:
+                dmg *= CONFIG["crit_damage_multiplier"]
 
         # =========================
         # FINAL OUTPUT - Stable API Contract
@@ -149,7 +153,7 @@ def process_attack(
             block_absorbed = max(0.0, raw - dmg)
         elif dodge_state == "glance":
             # Glancing hit from dodge = damage reduced by glancing
-            dodge_absorbed = damage_absorbed  # Set earlier in dodge logic
+            dodge_absorbed = max(0.0, raw - dmg)
 
         result = {
             "damage": final_damage,

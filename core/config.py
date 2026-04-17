@@ -11,9 +11,9 @@ CONFIG = {
     # ============================================================
     # CRITICAL HITS
     # ============================================================
-    "base_crit_chance": 0.08,         # Base crit chance (8%)
+    "base_crit_chance": 0.10,         # Base crit chance (8%)
     "agi_diff_crit_scale": 0.015,     # Agility difference scaling for crit
-    "crit_damage_multiplier": 1.6,    # Damage multiplier for crits
+    "crit_damage_multiplier": 2.0,    # Damage multiplier for crits
     "min_crit_chance": 0.005,         # Minimum possible crit chance (0.5%)
     "max_crit_chance": 0.35,          # Maximum possible crit chance (35%)
 
@@ -61,10 +61,9 @@ CONFIG = {
     # DAMAGE ABSORPTION RESOURCE SYSTEM
     # ============================================================
     "damage_absorption_koef": 10.0,   # Conversion factor: absorbed_damage → resource (block-only system)
-    "absorption_resource_decay": 0.95, # Resource decay per round (15% lost)
+    "absorption_resource_decay": 0.95, # Resource decay per round (5% lost)
     "absorption_event_threshold": 0.5, # Minimum resource for events (50%)
-    "absorption_fatigue_threshold": 0.5, # Threshold for opponent fatigue mechanic (50%)
-    "absorption_fatigue_bonus": 0.05,  # Crit/block break bonus after fatigue mechanic (5%)
+    "stamina_transfer_amount": 15,     # Fixed amount of stamina transferred from opponent to activator
 
     # ============================================================
     # EHP SCALING

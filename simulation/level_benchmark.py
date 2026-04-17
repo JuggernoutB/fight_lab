@@ -205,6 +205,14 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
         for k, v in summary["damage_split"].items():
             results["damage_data"][k] = results["damage_data"].get(k, 0) + v
 
+        # Track NEW crit metrics
+        if "crit_metrics" in summary:
+            if "crit_metrics_data" not in results:
+                results["crit_metrics_data"] = {}
+            for k, v in summary["crit_metrics"].items():
+                if isinstance(v, (int, float)):
+                    results["crit_metrics_data"][k] = results["crit_metrics_data"].get(k, 0) + v
+
         # Track stamina data
         for k, v in summary["stamina_distribution"].items():
             results["stamina_data"][k] = results["stamina_data"].get(k, 0) + v
@@ -623,9 +631,9 @@ def print_level_benchmark_results(results: Dict):
     draw_result = validate_single_metric('draw_rate', draw_rate)
     print(f"[{'OK' if draw_result else 'FAIL'}]   draw_rate: {draw_rate:.4f}" + ("" if draw_result else " not in (0.08, 0.16)"))
 
-    # Mechanics validation
+    # Mechanics validation (exclude crit - now handled separately)
     if mechanics_avg:
-        for metric in ['crit', 'dodge', 'block', 'block_break', 'hit']:
+        for metric in ['dodge', 'block', 'block_break', 'hit']:
             if metric in mechanics_avg:
                 result = validate_single_metric(metric, mechanics_avg[metric])
                 print(f"[{'OK' if result else 'FAIL'}]   {metric}: {mechanics_avg[metric]:.4f}")
@@ -654,6 +662,25 @@ def print_level_benchmark_results(results: Dict):
     role_result = validate_single_metric('role_balance_spread', role_balance_spread)
     range_text = "" if role_result else " not in (0.0, 0.15)"
     print(f"[{'OK' if role_result else 'FAIL'}]   role_balance_spread: {role_balance_spread:.4f}{range_text}")
+
+    # NEW: Advanced crit metrics
+    if results.get("crit_metrics_data"):
+        crit_data = results["crit_metrics_data"]
+        total = num_fights
+
+        print(f"\n===== ADVANCED CRIT ANALYSIS =====")
+
+        if crit_data.get("total_rolls", 0) > 0:
+            raw_crit_rate = crit_data["crit_rolls"] / crit_data["total_rolls"]
+            print(f"Raw crit rate:         {raw_crit_rate:.4f} ({raw_crit_rate*100:.1f}%) - {crit_data['crit_rolls']}/{crit_data['total_rolls']} rolls")
+
+        if crit_data.get("successful_hits", 0) > 0:
+            effective_crit_rate = crit_data["crit_hits"] / crit_data["successful_hits"]
+            print(f"Effective crit rate:   {effective_crit_rate:.4f} ({effective_crit_rate*100:.1f}%) - {crit_data['crit_hits']}/{crit_data['successful_hits']} hits")
+
+        if crit_data.get("crit_damage_ratio"):
+            avg_crit_damage = crit_data["crit_damage_ratio"] / total
+            print(f"Crit damage ratio:     {avg_crit_damage:.4f} ({avg_crit_damage*100:.1f}%) of total damage")
 
     # Final result
     all_passed = (validate_single_metric('rounds_avg', avg_rounds) and

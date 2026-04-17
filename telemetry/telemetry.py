@@ -11,6 +11,19 @@ class Telemetry:
             "block": 0,
             "block_break": 0,
             "hit": 0,
+            "crit_dodge": 0,
+            "crit_block": 0,
+            "crit_block_break": 0,
+            "crit_glance": 0,
+            "glance": 0,
+        }
+
+        # NEW: Separate crit tracking for proper metrics
+        self.crit_stats = {
+            "total_rolls": 0,      # Total times crit was checked
+            "crit_rolls": 0,       # Times crit succeeded (raw crit rate)
+            "successful_hits": 0,  # Hits that actually dealt damage (for effective crit rate)
+            "crit_hits": 0,        # Crits that actually dealt damage
         }
 
         self.damage_types = {
@@ -54,13 +67,32 @@ class Telemetry:
             event_type = attack["event"]
             damage = attack["damage"]
 
-            # Count events
-            self.counters[event_type] += 1
+            # Count events (for old compatibility)
+            if event_type in self.counters:
+                self.counters[event_type] += 1
 
-            # Categorize damage
-            if event_type == "crit":
+            # NEW: Track crit statistics properly
+            # Check if crit was rolled (for any non-blocked attack)
+            if event_type not in ["block"]:  # All non-blocked attacks check crit
+                self.crit_stats["total_rolls"] += 1
+
+                # Check if crit succeeded
+                is_crit_event = "crit" in event_type
+                if is_crit_event:
+                    self.crit_stats["crit_rolls"] += 1
+
+                # Track hits that dealt damage (not dodged)
+                if event_type != "dodge" and event_type != "crit_dodge":
+                    self.crit_stats["successful_hits"] += 1
+
+                    # Track crits that dealt damage
+                    if is_crit_event:
+                        self.crit_stats["crit_hits"] += 1
+
+            # Categorize damage for compatibility
+            if "crit" in event_type:
                 self.damage_types["crit"] += damage
-            elif event_type in ["block", "block_break"]:
+            elif event_type in ["block", "block_break", "crit_block", "crit_block_break"]:
                 self.damage_types["blocked"] += damage
             else:
                 self.damage_types["normal"] += damage
@@ -72,6 +104,11 @@ class Telemetry:
                     self.damage_absorbed["dodge"] += absorbed_data["dodge"]
                 if "block" in absorbed_data:
                     self.damage_absorbed["block"] += absorbed_data["block"]
+
+            # NEW: Track crit_rolled for dodged attacks
+            if "crit_rolled" in attack:
+                if attack["crit_rolled"]:
+                    self.crit_stats["crit_rolls"] += 1
 
         # =========================
         # PROCESS ABSORPTION EVENTS
@@ -182,6 +219,26 @@ class Telemetry:
             if event["fighter"] in absorption_events_by_fighter:
                 absorption_events_by_fighter[event["fighter"]] += 1
 
+        # -------------------------
+        # NEW CRIT METRICS
+        # -------------------------
+        crit_metrics = {}
+        if self.crit_stats["total_rolls"] > 0:
+            crit_metrics["raw_crit_rate"] = self.crit_stats["crit_rolls"] / self.crit_stats["total_rolls"]
+
+        if self.crit_stats["successful_hits"] > 0:
+            crit_metrics["effective_crit_rate"] = self.crit_stats["crit_hits"] / self.crit_stats["successful_hits"]
+
+        if total_damage > 0:
+            crit_metrics["crit_damage_ratio"] = self.damage_types["crit"] / total_damage
+
+        crit_metrics.update({
+            "total_rolls": self.crit_stats["total_rolls"],
+            "crit_rolls": self.crit_stats["crit_rolls"],
+            "successful_hits": self.crit_stats["successful_hits"],
+            "crit_hits": self.crit_stats["crit_hits"]
+        })
+
         return {
             "rounds": rounds,
             "total_damage": total_damage,
@@ -191,6 +248,7 @@ class Telemetry:
 
             "mechanics": mechanics_percent,
             "damage_split": damage_percent,
+            "crit_metrics": crit_metrics,  # NEW
             "stamina_distribution": stamina_distribution_normalized,
             "damage_absorbed": self.damage_absorbed.copy(),
             "absorption_events": {
