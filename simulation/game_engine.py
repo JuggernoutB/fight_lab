@@ -219,15 +219,15 @@ def process_round(state, rng):
     # NEW ENHANCED STAMINA TRANSFER LOGIC
     threshold = config["absorption_event_threshold"]
 
-    # Check who can trigger stamina transfer
+    # Check who can trigger stamina transfer - ONLY TANK can use this ability
     a_can_transfer = (a.damage_absorption_resource >= threshold and
                      get_stamina_level(a.stamina) != 2 and  # Not exhausted
                      get_stamina_level(b.stamina) != 0 and  # Opponent must be tired/exhausted (not fresh)
-                     a.role != "BRUISER")  # BRUISER cannot use stamina transfer
+                     a.role == "TANK")  # ONLY TANK can use stamina transfer
     b_can_transfer = (b.damage_absorption_resource >= threshold and
                      get_stamina_level(b.stamina) != 2 and  # Not exhausted
                      get_stamina_level(a.stamina) != 0 and  # Opponent must be tired/exhausted (not fresh)
-                     b.role != "BRUISER")  # BRUISER cannot use stamina transfer
+                     b.role == "TANK")  # ONLY TANK can use stamina transfer
 
     # Determine who gets the transfer
     transfer_winner = None
