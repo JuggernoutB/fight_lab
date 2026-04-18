@@ -681,7 +681,10 @@ def print_level_benchmark_results(results: Dict):
 
     # Role balance validation
     role_result = validate_single_metric('role_balance_spread', role_balance_spread)
-    range_text = "" if role_result else " not in (0.0, 0.15)"
+    # Get actual targets for proper error message
+    from balance.targets import TARGETS
+    target_range = TARGETS.get('role_balance_spread', (0.0, 0.15))
+    range_text = "" if role_result else f" not in {target_range}"
     print(f"[{'OK' if role_result else 'FAIL'}]   role_balance_spread: {role_balance_spread:.4f}{range_text}")
 
     # NEW: Advanced crit metrics

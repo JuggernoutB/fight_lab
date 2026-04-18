@@ -222,9 +222,11 @@ def process_round(state, rng):
     # Check who can trigger stamina transfer
     a_can_transfer = (a.damage_absorption_resource >= threshold and
                      get_stamina_level(a.stamina) != 2 and  # Not exhausted
+                     get_stamina_level(b.stamina) != 0 and  # Opponent must be tired/exhausted (not fresh)
                      a.role != "BRUISER")  # BRUISER cannot use stamina transfer
     b_can_transfer = (b.damage_absorption_resource >= threshold and
                      get_stamina_level(b.stamina) != 2 and  # Not exhausted
+                     get_stamina_level(a.stamina) != 0 and  # Opponent must be tired/exhausted (not fresh)
                      b.role != "BRUISER")  # BRUISER cannot use stamina transfer
 
     # Determine who gets the transfer
