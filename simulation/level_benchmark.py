@@ -92,7 +92,8 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
         "dps_data": [],  # Track DPS values
         "total_damage_data": [],  # Track total damage values
         "rounds_distribution": {},  # Track detailed round distribution
-        "role_absorption": {}  # Track damage absorption by role
+        "role_absorption": {},  # Track damage absorption by role
+        "stamina_transfer_by_round": {}  # Track stamina transfer events by round
     }
 
     # ============================================================
@@ -265,6 +266,16 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
             results["role_absorption"][fighter_b.role]["absorption_events"] += absorption_events_b
             results["role_absorption"][fighter_b.role]["total_final_resource"] += final_resource_b
             results["role_absorption"][fighter_b.role]["fights"] += 1
+
+        # Track stamina transfer events by round from telemetry
+        for round_event in telemetry.events:
+            round_num = round_event["round"]
+            if "absorption_events" in round_event:
+                for abs_event in round_event["absorption_events"]:
+                    if abs_event.get("type") == "absorption_stamina_transfer":
+                        if round_num not in results["stamina_transfer_by_round"]:
+                            results["stamina_transfer_by_round"][round_num] = 0
+                        results["stamina_transfer_by_round"][round_num] += 1
 
         # Store result
         fight_result = {
@@ -568,16 +579,26 @@ def print_level_benchmark_results(results: Dict):
 
         sorted_absorption.sort(key=lambda x: x[3], reverse=True)  # Sort by total absorption
 
-        print("Average damage absorbed per fight by role:")
+        print("Average BLOCK damage absorbed per fight by role:")
         for role, avg_dodge, avg_block, total_avg, avg_events, avg_final_resource, fights in sorted_absorption:
-            print(f"  {role:11s}: {total_avg:5.1f} total ({avg_dodge:4.1f} dodge + {avg_block:4.1f} block) from {fights} fights")
+            print(f"  {role:11s}: {avg_block:5.1f} block absorbed from {fights} fights")
 
-        print(f"\nAbsorption event frequency per fight by role:")
+        print(f"\nStamina transfer activation rate by role:")
         # Sort by event frequency for this section
         sorted_by_events = sorted(sorted_absorption, key=lambda x: x[4], reverse=True)
         for role, avg_dodge, avg_block, total_avg, avg_events, avg_final_resource, fights in sorted_by_events:
             total_events = role_absorption[role]['absorption_events']
-            print(f"  {role:11s}: {avg_events:.3f} events/fight (from {total_events} total events)")
+            activation_rate = (total_events / fights) * 100 if fights > 0 else 0
+            print(f"  {role:11s}: {activation_rate:5.1f}% ({total_events}/{fights} fights)")
+
+        # NEW: Stamina transfer distribution by round
+        if results["stamina_transfer_by_round"]:
+            total_transfers = sum(results["stamina_transfer_by_round"].values())
+            print(f"\nStamina transfer distribution by round:")
+            for round_num in sorted(results["stamina_transfer_by_round"].keys()):
+                count = results["stamina_transfer_by_round"][round_num]
+                percentage = (count / total_transfers) * 100 if total_transfers > 0 else 0
+                print(f"  Round {round_num:2d}: {count:3d} events ({percentage:4.1f}%)")
 
         print(f"\nAverage final absorption resource by role:")
         # Sort by final resource for this section
