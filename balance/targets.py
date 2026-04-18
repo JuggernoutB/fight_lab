@@ -43,7 +43,7 @@ TARGETS = {
     # =========================
     # ROLE BALANCE
     # =========================
-    "role_balance_spread": (0.0, 0.15),  # Max 15% spread (relaxed for new scoring system)
+    "role_balance_spread": (0.0, 0.06),  # Max 15% spread (relaxed for new scoring system)
 
     # Role distribution targets (percentage of total fights)
     "role_distribution": {

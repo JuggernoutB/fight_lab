@@ -14,15 +14,6 @@ def calc_crit(att_agi: int, def_def: int, attacker_stamina: int, attacker_absorp
 
     import random
 
-    # Stage 1: Check absorption resource first
-    #threshold = CONFIG["absorption_event_threshold"]
-    #if attacker_absorption_resource >= threshold:
-    #    absorption_chance = attacker_absorption_resource  # Direct probability threshold-1.0
-    #    if random.random() < absorption_chance:
-    #        # Critical hit triggered by absorption resource
-    #        return True, 0.0  # Reset resource on successful trigger
-
-    # Stage 2: Standard formula check
     base_chance = max(CONFIG["min_crit_chance"], min(CONFIG["max_crit_chance"],
                      CONFIG["base_crit_chance"] + max(0, (att_agi - def_def) * CONFIG["agi_diff_crit_scale"])))
     fatigue_multiplier = get_fatigue_multiplier(attacker_stamina, 'crit')
