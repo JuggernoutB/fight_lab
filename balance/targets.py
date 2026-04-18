@@ -18,6 +18,11 @@ TARGETS = {
     "draw_rate": (0.08, 0.16),
 
     # =========================
+    # STAMINA EXHAUSTION
+    # =========================
+    "stamina_exhaustion_rate": (0.0, 0.02),  # Max 2% fights with 0 stamina
+
+    # =========================
     # MECHANICS DISTRIBUTION
     # =========================
     "crit": (0.08, 0.12),

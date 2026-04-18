@@ -93,7 +93,8 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
         "total_damage_data": [],  # Track total damage values
         "rounds_distribution": {},  # Track detailed round distribution
         "role_absorption": {},  # Track damage absorption by role
-        "stamina_transfer_by_round": {}  # Track stamina transfer events by round
+        "stamina_transfer_by_round": {},  # Track stamina transfer events by round
+        "stamina_exhaustion_fights": 0  # Track fights where someone reached 0 stamina
     }
 
     # ============================================================
@@ -268,14 +269,28 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
             results["role_absorption"][fighter_b.role]["fights"] += 1
 
         # Track stamina transfer events by round from telemetry
+        stamina_reached_zero = False
         for round_event in telemetry.events:
             round_num = round_event["round"]
+
+            # Check for stamina transfer events
             if "absorption_events" in round_event:
                 for abs_event in round_event["absorption_events"]:
                     if abs_event.get("type") == "absorption_stamina_transfer":
                         if round_num not in results["stamina_transfer_by_round"]:
                             results["stamina_transfer_by_round"][round_num] = 0
                         results["stamina_transfer_by_round"][round_num] += 1
+
+            # Check if any fighter reached 0 stamina during this round
+            if "fighters_pre_round" in round_event:
+                fighters_state = round_event["fighters_pre_round"]
+                if (fighters_state.get("A", {}).get("stamina", 100) == 0 or
+                    fighters_state.get("B", {}).get("stamina", 100) == 0):
+                    stamina_reached_zero = True
+
+        # Count this fight if someone reached 0 stamina
+        if stamina_reached_zero:
+            results["stamina_exhaustion_fights"] += 1
 
         # Store result
         fight_result = {
@@ -547,6 +562,12 @@ def print_level_benchmark_results(results: Dict):
     else:
         print("No draws occurred")
 
+    # NEW: Stamina exhaustion analysis
+    exhaustion_fights = results["stamina_exhaustion_fights"]
+    exhaustion_rate = (exhaustion_fights / total) * 100 if total > 0 else 0
+    print(f"\n===== STAMINA EXHAUSTION ANALYSIS =====")
+    print(f"Fights with 0 stamina: {exhaustion_fights:4d} ({exhaustion_rate:5.1f}%)")
+
     print(f"\n===== DPS VARIANCE =====")
     if results["dps_data"]:
         dps_list = results["dps_data"]
@@ -634,6 +655,7 @@ def print_level_benchmark_results(results: Dict):
     avg_rounds = summary['avg_rounds']
     avg_dps = sum(results["dps_data"]) / len(results["dps_data"]) if results["dps_data"] else 0
     draw_rate = (winners.get("DRAW_TIMEOUT", 0) + winners.get("DRAW_MUTUAL_DEATH", 0)) / total
+    stamina_exhaustion_rate = results["stamina_exhaustion_fights"] / total if total > 0 else 0.0
 
     # Calculate role balance spread (using overall winrates from matrix)
     role_balance_spread = 0.0
@@ -651,6 +673,9 @@ def print_level_benchmark_results(results: Dict):
 
     draw_result = validate_single_metric('draw_rate', draw_rate)
     print(f"[{'OK' if draw_result else 'FAIL'}]   draw_rate: {draw_rate:.4f}" + ("" if draw_result else " not in (0.08, 0.16)"))
+
+    stamina_exhaustion_result = validate_single_metric('stamina_exhaustion_rate', stamina_exhaustion_rate)
+    print(f"[{'OK' if stamina_exhaustion_result else 'FAIL'}]   stamina_exhaustion_rate: {stamina_exhaustion_rate:.4f}" + ("" if stamina_exhaustion_result else " not in (0.0, 0.02)"))
 
     # Mechanics validation (exclude crit - now handled separately)
     if mechanics_avg:
@@ -710,6 +735,7 @@ def print_level_benchmark_results(results: Dict):
     all_passed = (validate_single_metric('rounds_avg', avg_rounds) and
                   validate_single_metric('dps_avg', avg_dps) and
                   validate_single_metric('draw_rate', draw_rate) and
+                  validate_single_metric('stamina_exhaustion_rate', stamina_exhaustion_rate) and
                   role_result)
 
     # Add mechanics validation to final check
