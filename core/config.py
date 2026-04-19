@@ -12,7 +12,7 @@ CONFIG = {
     # CRITICAL HITS
     # ============================================================
     "base_crit_chance": 0.10,         # Base crit chance (8%)
-    "agi_diff_crit_scale": 0.025,     # Agility difference scaling for crit
+    "agi_diff_crit_scale": 0.04,     # Agility difference scaling for crit
     "crit_damage_multiplier": 3.2,    # Damage multiplier for crits
     "min_crit_chance": 0.005,         # Minimum possible crit chance (0.5%)
     "max_crit_chance": 0.35,          # Maximum possible crit chance (35%)
@@ -20,24 +20,24 @@ CONFIG = {
     # ============================================================
     # DODGE
     # ============================================================
-    "base_dodge_chance": 0.2,        # Base dodge chance (22%)
+    "base_dodge_chance": 0.1,        # Base dodge chance (22%)
     "agi_diff_dodge_scale": 0.075,     # Agility difference scaling for dodge
     "min_dodge_chance": 0.05,         # Minimum possible dodge chance (2%)
-    "max_dodge_chance": 0.4,          # Maximum possible dodge chance (40%)
+    "max_dodge_chance": 0.5,          # Maximum possible dodge chance (40%)
     "full_dodge_ratio": 0.6,          # Ratio of total dodge chance that results in full dodge
     "glance_damage_ratio": 0.5,       # Damage ratio for glancing hits
 
     # ============================================================
     # BLOCKING
     # ============================================================
-    "base_block_reduction": 0.27,     # Base damage reduction from blocking (30%)
+    "base_block_reduction": 0.27,     # Base damage reduction from blocking
     "def_diff_block_scale": 0.055,    # Defense difference scaling for blocking
-    "min_block_reduction": 0.1,       # Minimum block damage reduction (10%)
-    "max_block_reduction": 0.7,       # Maximum block damage reduction (70%)
-    "base_block_break_chance": 0.25,  # Base block break chance (28%)
-    "agi_block_break_scale": 0.08,    # Agility scaling for block break
-    "min_block_break_chance": 0.05,   # Minimum block break chance (5%)
-    "max_block_break_chance": 0.6,    # Maximum block break chance (60%)
+    "min_block_reduction": 0.1,       # Minimum block damage reduction
+    "max_block_reduction": 0.7,       # Maximum block damage reduction
+    "base_block_break_chance": 0.2,  # Base block break chance
+    "agi_block_break_scale": 0.1,    # Agility scaling for block break
+    "min_block_break_chance": 0.05,   # Minimum block break chance
+    "max_block_break_chance": 0.7,    # Maximum block break chance
 
     # ============================================================
     # FATIGUE SYSTEM
@@ -56,6 +56,11 @@ CONFIG = {
     "attack_stamina_cost_per_zone": 7,  # Stamina cost per attack zone
     "defense_stamina_cost_per_zone": 4, # Stamina cost per defense zone
     "stamina_regen_per_round": 5,     # Stamina regenerated per round
+
+    # Action-based stamina costs (for successful mechanics)
+    "stamina_cost_dodge": 2,          # Stamina cost for successful dodge
+    "stamina_cost_crit": 2,           # Stamina cost for successful critical hit
+    "stamina_cost_block_break": 2,    # Stamina cost for successful block break
 
     # ============================================================
     # DAMAGE ABSORPTION RESOURCE SYSTEM

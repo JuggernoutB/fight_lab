@@ -89,7 +89,7 @@ def process_round(state, rng):
     atk_zones_b, def_zones_b = to_zones(action_b)
 
     # Combat resolution with absorption resource integration
-    res_a, updated_resource_a, updated_resource_b_from_a = process_attack(
+    res_a, updated_resource_a, updated_resource_b_from_a, action_costs_a = process_attack(
         attacker={"attack": a.attack, "agility": a.agility},
         defender={"defense": b.defense, "agility": b.agility},
         attacker_stamina=a.stamina,
@@ -101,7 +101,7 @@ def process_round(state, rng):
         attacker_fatigue_bonus=0.0
     )
 
-    res_b, updated_resource_b, updated_resource_a_from_b = process_attack(
+    res_b, updated_resource_b, updated_resource_a_from_b, action_costs_b = process_attack(
         attacker={"attack": b.attack, "agility": b.agility},
         defender={"defense": a.defense, "agility": a.agility},
         attacker_stamina=b.stamina,
@@ -327,9 +327,26 @@ def process_round(state, rng):
     # Update meta state
     update_meta(state, events)
 
-    # Apply stamina changes
+    # Apply stamina changes for actions first
     a.stamina = apply_stamina(a.stamina, action_a)
     b.stamina = apply_stamina(b.stamina, action_b)
+
+    # Apply stamina costs for successful combat mechanics
+    config = get_config()
+
+    # Fighter A action costs
+    stamina_cost_a = (action_costs_a["dodge"] * config["stamina_cost_dodge"] +
+                     action_costs_a["crit"] * config["stamina_cost_crit"] +
+                     action_costs_a["block_break"] * config["stamina_cost_block_break"])
+
+    # Fighter B action costs
+    stamina_cost_b = (action_costs_b["dodge"] * config["stamina_cost_dodge"] +
+                     action_costs_b["crit"] * config["stamina_cost_crit"] +
+                     action_costs_b["block_break"] * config["stamina_cost_block_break"])
+
+    # Apply costs (cannot go below 0)
+    a.stamina = max(0, a.stamina - stamina_cost_a)
+    b.stamina = max(0, b.stamina - stamina_cost_b)
 
     return events
 

@@ -23,10 +23,10 @@ def process_attack(
     attacker_absorption_resource: float = 0.0,
     defender_absorption_resource: float = 0.0,
     attacker_fatigue_bonus: float = 0.0
-) -> tuple[Dict[str, Dict], float, float]:
+) -> tuple[Dict[str, Dict], float, float, Dict[str, int]]:
 
     if not atk_zones:
-        return {}, attacker_absorption_resource, defender_absorption_resource
+        return {}, attacker_absorption_resource, defender_absorption_resource, {}
 
     # === DATA NORMALIZATION (protect against dict typos) ===
     try:
@@ -48,6 +48,13 @@ def process_attack(
 
     results = {}
     total_absorbed_by_defender = 0.0  # Track total damage absorbed by defender
+
+    # Track successful actions for stamina costs
+    action_costs = {
+        "dodge": 0,
+        "crit": 0,
+        "block_break": 0
+    }
 
     for z in atk_zones:
 
@@ -90,6 +97,10 @@ def process_attack(
         # Priority: dodge > block > crit hit
         if not is_blocked and dodge_state == "dodge":
             # Full dodge - all damage absorbed, but crit still counted!
+            action_costs["dodge"] += 1  # Successful dodge costs stamina
+            if is_crit:
+                action_costs["crit"] += 1  # Successful crit costs stamina
+
             result = {
                 "damage": 0,
                 "event": "crit_dodge" if is_crit else "dodge",
@@ -117,14 +128,17 @@ def process_attack(
             )
 
             if break_succeeded:
+                action_costs["block_break"] += 1  # Successful block break costs stamina
                 dmg *= CONFIG["block_break_damage_ratio"]
                 event = "crit_block_break" if is_crit else "block_break"
                 if is_crit:
+                    action_costs["crit"] += 1  # Successful crit costs stamina
                     dmg *= CONFIG["crit_damage_multiplier"]
             else:
                 dmg = apply_block(dmg, atk_attack, def_defense, defender_stamina)
                 event = "crit_block" if is_crit else "block"
                 if is_crit:
+                    action_costs["crit"] += 1  # Successful crit costs stamina
                     dmg *= CONFIG["crit_damage_multiplier"]
 
         else:
@@ -132,10 +146,13 @@ def process_attack(
             if dodge_state == "glance":
                 dmg, _ = apply_dodge(dmg, atk_attack, def_agility, defender_stamina)
                 event = "crit_glance" if is_crit else "glance"
+                if is_crit:
+                    action_costs["crit"] += 1  # Successful crit costs stamina
             else:
                 event = "crit" if is_crit else "hit"
 
             if is_crit:
+                action_costs["crit"] += 1  # Successful crit costs stamina
                 dmg *= CONFIG["crit_damage_multiplier"]
 
         # =========================
@@ -190,4 +207,4 @@ def process_attack(
     # NOTE: Absorption resource is now calculated in game_engine.py using proper opponent max_hp scaling
     # This avoids double-counting and ensures correct resource calculation
 
-    return results, attacker_absorption_resource, defender_absorption_resource
+    return results, attacker_absorption_resource, defender_absorption_resource, action_costs
