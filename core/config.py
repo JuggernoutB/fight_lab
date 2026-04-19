@@ -13,7 +13,7 @@ CONFIG = {
     # ============================================================
     "base_crit_chance": 0.10,         # Base crit chance (8%)
     "agi_diff_crit_scale": 0.04,     # Agility difference scaling for crit
-    "crit_damage_multiplier": 3.2,    # Damage multiplier for crits
+    "crit_damage_multiplier": 2.2,    # Damage multiplier for crits
     "min_crit_chance": 0.005,         # Minimum possible crit chance (0.5%)
     "max_crit_chance": 0.35,          # Maximum possible crit chance (35%)
 

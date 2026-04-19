@@ -86,7 +86,8 @@ def process_attack(
                 dmg,
                 atk_attack,
                 def_agility,
-                defender_stamina
+                defender_stamina,
+                atk_agility
             )
             # Don't apply dodge damage reduction yet, just remember the state
 
@@ -144,7 +145,7 @@ def process_attack(
         else:
             # Regular hit or glancing hit
             if dodge_state == "glance":
-                dmg, _ = apply_dodge(dmg, atk_attack, def_agility, defender_stamina)
+                dmg, _ = apply_dodge(dmg, atk_attack, def_agility, defender_stamina, atk_agility)
                 event = "crit_glance" if is_crit else "glance"
                 if is_crit:
                     action_costs["crit"] += 1  # Successful crit costs stamina
