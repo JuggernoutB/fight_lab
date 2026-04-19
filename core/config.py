@@ -11,26 +11,26 @@ CONFIG = {
     # ============================================================
     # CRITICAL HITS
     # ============================================================
-    "base_crit_chance": 0.10,         # Base crit chance (8%)
-    "agi_diff_crit_scale": 0.04,     # Agility difference scaling for crit
-    "crit_damage_multiplier": 2.2,    # Damage multiplier for crits
+    "base_crit_chance": 0.11,         # Base crit chance (8%)
+    "agi_diff_crit_scale": 0.03,     # Agility difference scaling for crit
+    "crit_damage_multiplier": 1.5,    # Damage multiplier for crits
     "min_crit_chance": 0.005,         # Minimum possible crit chance (0.5%)
-    "max_crit_chance": 0.35,          # Maximum possible crit chance (35%)
+    "max_crit_chance": 0.32,          # Maximum possible crit chance (35%)
 
     # ============================================================
     # DODGE
     # ============================================================
-    "base_dodge_chance": 0.1,        # Base dodge chance (22%)
-    "agi_diff_dodge_scale": 0.075,     # Agility difference scaling for dodge
+    "base_dodge_chance": 0.2,        # Base dodge chance (22%)
+    "agi_diff_dodge_scale": 0.1,     # Agility difference scaling for dodge
     "min_dodge_chance": 0.05,         # Minimum possible dodge chance (2%)
-    "max_dodge_chance": 0.5,          # Maximum possible dodge chance (40%)
-    "full_dodge_ratio": 0.6,          # Ratio of total dodge chance that results in full dodge
-    "glance_damage_ratio": 0.5,       # Damage ratio for glancing hits
+    "max_dodge_chance": 0.55,          # Maximum possible dodge chance (40%)
+    "full_dodge_ratio": 0.5,          # Ratio of total dodge chance that results in full dodge
+    "glance_damage_ratio": 0.4,       # Damage ratio for glancing hits
 
     # ============================================================
     # BLOCKING
     # ============================================================
-    "base_block_reduction": 0.27,     # Base damage reduction from blocking
+    "base_block_reduction": 0.26,     # Base damage reduction from blocking
     "def_diff_block_scale": 0.055,    # Defense difference scaling for blocking
     "min_block_reduction": 0.1,       # Minimum block damage reduction
     "max_block_reduction": 0.7,       # Maximum block damage reduction
@@ -75,10 +75,10 @@ CONFIG = {
     # EHP SCALING
     # ============================================================
     "hp_scaling_base": 10.0,         # Base health multiplier
-    "hp_scaling_constant": 27,        # Constant added to health stat
+    "hp_scaling_constant": 24,        # Constant added to health stat
     "hp_scaling_exponent": 0.67,      # Exponent for health scaling curve
-    "damage_scaling_base": 1.1,      # Base damage multiplier
-    "damage_scaling_constant": 49.0,    # Constant added to attack stat
+    "damage_scaling_base": 1.25,      # Base damage multiplier
+    "damage_scaling_constant": 51.0,    # Constant added to attack stat
     "damage_scaling_exponent": 0.63,  # Exponent for damage scaling curve
     "defense_scaling_multiplier": 40.0, # Defense stat divider for EHP calculation
     "defense_scaling_exponent": 0.55, # Exponent for defense scaling curve
