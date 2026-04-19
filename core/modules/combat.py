@@ -139,6 +139,13 @@ def process_attack(
                 dmg *= CONFIG["crit_damage_multiplier"]
 
         # =========================
+        # EHP MITIGATION - Apply defense-based damage reduction
+        # =========================
+        # Apply EHP-based mitigation (hidden defense effectiveness)
+        from core.modules.ehp import apply_defense_reduction
+        dmg = apply_defense_reduction(dmg, def_defense)
+
+        # =========================
         # FINAL OUTPUT - Stable API Contract
         # =========================
         # Round damage using probabilistic rounding

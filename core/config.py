@@ -75,4 +75,11 @@ CONFIG = {
     "damage_scaling_base": 1.1,      # Base damage multiplier
     "damage_scaling_constant": 49.0,    # Constant added to attack stat
     "damage_scaling_exponent": 0.63,  # Exponent for damage scaling curve
+    "defense_scaling_multiplier": 40.0, # Defense stat divider for EHP calculation
+    "defense_scaling_exponent": 0.55, # Exponent for defense scaling curve
+
+    # ============================================================
+    # DEFENSE (EHP INTEGRATION)
+    # ============================================================
+    "defense_effectiveness": 0.25,   # 0.0 = disabled, 1.0 = full power (start conservative)
 }

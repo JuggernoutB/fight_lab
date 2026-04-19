@@ -202,7 +202,12 @@ def process_round(state, rng):
             calc = EHPDamageCalculator()
             opponent_max_hp = calc.calculate_base_hp(b.hp_stat)
 
-        damage_to_resource = (absorbed_by_a / opponent_max_hp) * config["damage_absorption_koef"]
+        # EHP INTEGRATION: Apply absorption efficiency based on A's defense
+        from core.modules.ehp import calculate_absorption_efficiency
+        absorption_efficiency = calculate_absorption_efficiency(a.defense)
+        effective_absorbed = absorbed_by_a * absorption_efficiency
+
+        damage_to_resource = (effective_absorbed / opponent_max_hp) * config["damage_absorption_koef"]
         a.damage_absorption_resource = min(1.0, a.damage_absorption_resource + damage_to_resource)
 
     if absorbed_by_b > 0:
@@ -213,7 +218,12 @@ def process_round(state, rng):
             calc = EHPDamageCalculator()
             opponent_max_hp = calc.calculate_base_hp(a.hp_stat)
 
-        damage_to_resource = (absorbed_by_b / opponent_max_hp) * config["damage_absorption_koef"]
+        # EHP INTEGRATION: Apply absorption efficiency based on B's defense
+        from core.modules.ehp import calculate_absorption_efficiency
+        absorption_efficiency = calculate_absorption_efficiency(b.defense)
+        effective_absorbed = absorbed_by_b * absorption_efficiency
+
+        damage_to_resource = (effective_absorbed / opponent_max_hp) * config["damage_absorption_koef"]
         b.damage_absorption_resource = min(1.0, b.damage_absorption_resource + damage_to_resource)
 
     # NEW ENHANCED STAMINA TRANSFER LOGIC
