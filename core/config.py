@@ -11,8 +11,8 @@ CONFIG = {
     # ============================================================
     # CRITICAL HITS
     # ============================================================
-    "base_crit_chance": 0.11,         # Base crit chance (8%)
-    "agi_diff_crit_scale": 0.03,     # Agility difference scaling for crit
+    "base_crit_chance": 0.15,         # Base crit chance (8%)
+    "agi_diff_crit_scale": 0.025,     # Agility difference scaling for crit
     "crit_damage_multiplier": 1.5,    # Damage multiplier for crits
     "min_crit_chance": 0.005,         # Minimum possible crit chance (0.5%)
     "max_crit_chance": 0.32,          # Maximum possible crit chance (35%)
@@ -58,9 +58,9 @@ CONFIG = {
     "stamina_regen_per_round": 5,     # Stamina regenerated per round
 
     # Action-based stamina costs (for successful mechanics)
-    "stamina_cost_dodge": 2,          # Stamina cost for successful dodge
-    "stamina_cost_crit": 2,           # Stamina cost for successful critical hit
-    "stamina_cost_block_break": 2,    # Stamina cost for successful block break
+    "stamina_cost_dodge": 4,          # Stamina cost for successful dodge
+    "stamina_cost_crit": 4,           # Stamina cost for successful critical hit
+    "stamina_cost_block_break": 4,    # Stamina cost for successful block break
 
     # ============================================================
     # DAMAGE ABSORPTION RESOURCE SYSTEM
@@ -75,13 +75,13 @@ CONFIG = {
     # EHP SCALING
     # ============================================================
     "hp_scaling_base": 10.0,         # Base health multiplier
-    "hp_scaling_constant": 24,        # Constant added to health stat
+    "hp_scaling_constant": 25,        # Constant added to health stat
     "hp_scaling_exponent": 0.67,      # Exponent for health scaling curve
     "damage_scaling_base": 1.25,      # Base damage multiplier
-    "damage_scaling_constant": 51.0,    # Constant added to attack stat
+    "damage_scaling_constant": 50.0,    # Constant added to attack stat
     "damage_scaling_exponent": 0.63,  # Exponent for damage scaling curve
     "defense_scaling_multiplier": 40.0, # Defense stat divider for EHP calculation
-    "defense_scaling_exponent": 0.55, # Exponent for defense scaling curve
+    "defense_scaling_exponent": 1.1, # Exponent for defense scaling curve
 
     # ============================================================
     # DEFENSE (EHP INTEGRATION)
