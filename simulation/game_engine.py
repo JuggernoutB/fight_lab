@@ -223,36 +223,38 @@ def process_round(state, rng):
 
     # Add absorbed damage to resources first
     if absorbed_by_a > 0:
-        # A absorbed damage - add to A's resource
-        opponent_max_hp = getattr(b, 'max_hp', b.hp)
-        if hasattr(b, 'hp_stat'):
-            from core.modules.ehp import EHPDamageCalculator
-            calc = EHPDamageCalculator()
-            opponent_max_hp = calc.calculate_base_hp(b.hp_stat)
+        # A absorbed damage - add to A's resource only if A has defense advantage
+        if a.defense > b.defense:
+            opponent_max_hp = getattr(b, 'max_hp', b.hp)
+            if hasattr(b, 'hp_stat'):
+                from core.modules.ehp import EHPDamageCalculator
+                calc = EHPDamageCalculator()
+                opponent_max_hp = calc.calculate_base_hp(b.hp_stat)
 
-        # EHP INTEGRATION: Apply absorption efficiency based on A's defense
-        from core.modules.ehp import calculate_absorption_efficiency
-        absorption_efficiency = calculate_absorption_efficiency(a.defense)
-        effective_absorbed = absorbed_by_a * absorption_efficiency
+            # EHP INTEGRATION: Apply absorption efficiency based on A's defense
+            from core.modules.ehp import calculate_absorption_efficiency
+            absorption_efficiency = calculate_absorption_efficiency(a.defense)
+            effective_absorbed = absorbed_by_a * absorption_efficiency
 
-        damage_to_resource = (effective_absorbed / opponent_max_hp) * config["damage_absorption_koef"]
-        a.damage_absorption_resource = min(1.0, a.damage_absorption_resource + damage_to_resource)
+            damage_to_resource = (effective_absorbed / opponent_max_hp) * config["damage_absorption_koef"]
+            a.damage_absorption_resource = min(1.0, a.damage_absorption_resource + damage_to_resource)
 
     if absorbed_by_b > 0:
-        # B absorbed damage - add to B's resource
-        opponent_max_hp = getattr(a, 'max_hp', a.hp)
-        if hasattr(a, 'hp_stat'):
-            from core.modules.ehp import EHPDamageCalculator
-            calc = EHPDamageCalculator()
-            opponent_max_hp = calc.calculate_base_hp(a.hp_stat)
+        # B absorbed damage - add to B's resource only if B has defense advantage
+        if b.defense > a.defense:
+            opponent_max_hp = getattr(a, 'max_hp', a.hp)
+            if hasattr(a, 'hp_stat'):
+                from core.modules.ehp import EHPDamageCalculator
+                calc = EHPDamageCalculator()
+                opponent_max_hp = calc.calculate_base_hp(a.hp_stat)
 
-        # EHP INTEGRATION: Apply absorption efficiency based on B's defense
-        from core.modules.ehp import calculate_absorption_efficiency
-        absorption_efficiency = calculate_absorption_efficiency(b.defense)
-        effective_absorbed = absorbed_by_b * absorption_efficiency
+            # EHP INTEGRATION: Apply absorption efficiency based on B's defense
+            from core.modules.ehp import calculate_absorption_efficiency
+            absorption_efficiency = calculate_absorption_efficiency(b.defense)
+            effective_absorbed = absorbed_by_b * absorption_efficiency
 
-        damage_to_resource = (effective_absorbed / opponent_max_hp) * config["damage_absorption_koef"]
-        b.damage_absorption_resource = min(1.0, b.damage_absorption_resource + damage_to_resource)
+            damage_to_resource = (effective_absorbed / opponent_max_hp) * config["damage_absorption_koef"]
+            b.damage_absorption_resource = min(1.0, b.damage_absorption_resource + damage_to_resource)
 
     # NEW SKIP PROTECTION LOGIC - Skip events already handled in combat.py
     # Resource consumption for skip protection already handled there

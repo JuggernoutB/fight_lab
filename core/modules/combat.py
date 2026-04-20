@@ -62,10 +62,7 @@ def process_attack(
 
     # Check if defender has skip protection active
     config = CONFIG
-    defense_advantage = def_defense - opponent_defense  # Defender DEF vs Opponent DEF comparison
-    has_defense_advantage = defense_advantage >= config["min_defense_advantage"]
-    defender_has_skip = (defender_absorption_resource >= config["absorption_event_threshold"] and
-                        has_defense_advantage)
+    defender_has_skip = (defender_absorption_resource >= config["absorption_event_threshold"])
 
     for z in atk_zones:
 

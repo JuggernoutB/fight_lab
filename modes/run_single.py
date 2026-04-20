@@ -195,32 +195,14 @@ def print_debug_log(log_events):
         #         probability = abs_event["probability"]
         #         print(f"  🔮 Fighter {fighter_id}: Absorption Event! ({resource_before:.3f} → {resource_after:.3f}, prob={probability:.3f})")
 
-        # Show absorption events if any
-        if "absorption_events" in event:
-            for abs_event in event["absorption_events"]:
-                if abs_event.get("type") == "absorption_stamina_transfer":
-                    fighter_id = abs_event["fighter"]
-                    opponent_id = abs_event["opponent"]
-                    resource_used = abs_event["resource_used"]
-                    stamina_transferred = abs_event["stamina_transferred"]
-                    opponent_stamina_before = abs_event["opponent_stamina_before"]
-                    opponent_stamina_after = abs_event["opponent_stamina_after"]
-                    absorber_stamina_before = abs_event["absorber_stamina_before"]
-                    absorber_stamina_after = abs_event["absorber_stamina_after"]
-
-                    win_reason = abs_event.get("win_reason", "unknown")
-                    reason_text = ""
-                    if win_reason == "both_ready_higher_defense_3plus":
-                        def_advantage = abs_event.get("def_advantage", 0)
-                        reason_text = f" (both ready, higher DEF wins +{def_advantage})"
-                    elif win_reason == "only_ready_3plus":
-                        def_advantage = abs_event.get("def_advantage", 0)
-                        reason_text = f" (only one ready, DEF +{def_advantage})"
-
-                    print(f"💪 Fighter {fighter_id}: Absorption Event! Transfers {stamina_transferred} stamina{reason_text}")
-                    print(f"    📉 Fighter {opponent_id}: {opponent_stamina_before} → {opponent_stamina_after} stamina")
-                    print(f"    📈 Fighter {fighter_id}: {absorber_stamina_before} → {absorber_stamina_after} stamina")
-                    print(f"    🔮 Resource used: {resource_used:.3f}")
+        # Show skip protection events if any
+        if "skip_events" in event:
+            for skip_event in event["skip_events"]:
+                defender_id = skip_event["defender"]
+                attacker_id = skip_event["attacker"]
+                blocked_mechanic = skip_event["blocked_mechanic"]
+                print(f"🛡️ Fighter {defender_id}: Skip Protection! Blocked {blocked_mechanic} from Fighter {attacker_id}")
+                print(f"    🚫 Mechanic '{blocked_mechanic}' was prevented by absorption resource")
 
         print()
 
