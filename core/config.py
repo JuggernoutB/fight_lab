@@ -65,11 +65,11 @@ CONFIG = {
     # ============================================================
     # DAMAGE ABSORPTION RESOURCE SYSTEM
     # ============================================================
-    "damage_absorption_koef": 10.0,   # Conversion factor: absorbed_damage → resource (block-only system)
-    "absorption_resource_decay": 0.8, # Resource decay per round (5% lost)
+    "damage_absorption_koef": 20.0,   # Conversion factor: absorbed_damage → resource (block-only system)
+    "absorption_resource_decay": 0.85, # Resource decay per round (5% lost)
     "absorption_event_threshold": 0.4, # Minimum resource for events (50%)
     "stamina_transfer_amount": 0,     # Fixed amount of stamina transferred from opponent to activator
-    "min_defense_advantage": 3,        # Minimum DEF advantage required for stamina transfer
+    "min_defense_advantage": 1,        # Minimum DEF advantage required for skip protection
 
     # ============================================================
     # EHP SCALING

@@ -93,7 +93,7 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
         "total_damage_data": [],  # Track total damage values
         "rounds_distribution": {},  # Track detailed round distribution
         "role_absorption": {},  # Track damage absorption by role
-        "stamina_transfer_by_round": {},  # Track stamina transfer events by round
+        "skip_protection_by_round": {},  # Track skip protection events by round
         "stamina_exhaustion_fights": 0  # Track fights where someone reached 0 stamina
     }
 
@@ -232,13 +232,13 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
         # Track absorption by role
         if "damage_absorbed" in summary:
             absorbed = summary["damage_absorbed"]
-            # Track absorption events
-            absorption_events_a = 0
-            absorption_events_b = 0
-            if "absorption_events" in summary:
-                abs_events = summary["absorption_events"]
-                absorption_events_a = abs_events["by_fighter"].get("A", 0)
-                absorption_events_b = abs_events["by_fighter"].get("B", 0)
+            # Track skip protection events
+            skip_events_a = 0
+            skip_events_b = 0
+            if "skip_events" in summary:
+                skip_data = summary["skip_events"]
+                skip_events_a = skip_data["by_fighter"].get("A", 0)
+                skip_events_b = skip_data["by_fighter"].get("B", 0)
 
             # Track final absorption resources
             final_resource_a = final_state.fighter_a.damage_absorption_resource
@@ -247,39 +247,37 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
             # Track for fighter A
             if fighter_a.role not in results["role_absorption"]:
                 results["role_absorption"][fighter_a.role] = {
-                    "dodge": 0.0, "block": 0.0, "absorption_events": 0,
+                    "dodge": 0.0, "block": 0.0, "skip_events": 0,
                     "total_final_resource": 0.0, "fights": 0
                 }
             results["role_absorption"][fighter_a.role]["dodge"] += absorbed["dodge"]
             results["role_absorption"][fighter_a.role]["block"] += absorbed["block"]
-            results["role_absorption"][fighter_a.role]["absorption_events"] += absorption_events_a
+            results["role_absorption"][fighter_a.role]["skip_events"] += skip_events_a
             results["role_absorption"][fighter_a.role]["total_final_resource"] += final_resource_a
             results["role_absorption"][fighter_a.role]["fights"] += 1
 
             # Track for fighter B
             if fighter_b.role not in results["role_absorption"]:
                 results["role_absorption"][fighter_b.role] = {
-                    "dodge": 0.0, "block": 0.0, "absorption_events": 0,
+                    "dodge": 0.0, "block": 0.0, "skip_events": 0,
                     "total_final_resource": 0.0, "fights": 0
                 }
             results["role_absorption"][fighter_b.role]["dodge"] += absorbed["dodge"]
             results["role_absorption"][fighter_b.role]["block"] += absorbed["block"]
-            results["role_absorption"][fighter_b.role]["absorption_events"] += absorption_events_b
+            results["role_absorption"][fighter_b.role]["skip_events"] += skip_events_b
             results["role_absorption"][fighter_b.role]["total_final_resource"] += final_resource_b
             results["role_absorption"][fighter_b.role]["fights"] += 1
 
-        # Track stamina transfer events by round from telemetry
+        # Track skip protection events by round from telemetry
         stamina_reached_zero = False
         for round_event in telemetry.events:
             round_num = round_event["round"]
 
-            # Check for stamina transfer events
-            if "absorption_events" in round_event:
-                for abs_event in round_event["absorption_events"]:
-                    if abs_event.get("type") == "absorption_stamina_transfer":
-                        if round_num not in results["stamina_transfer_by_round"]:
-                            results["stamina_transfer_by_round"][round_num] = 0
-                        results["stamina_transfer_by_round"][round_num] += 1
+            # Check for skip protection events
+            if "skip_events" in round_event:
+                if round_num not in results["skip_protection_by_round"]:
+                    results["skip_protection_by_round"][round_num] = 0
+                results["skip_protection_by_round"][round_num] += len(round_event["skip_events"])
 
             # Check if any fighter reached 0 stamina during this round
             if "fighters_pre_round" in round_event:
@@ -594,37 +592,36 @@ def print_level_benchmark_results(results: Dict):
                 avg_dodge = data["dodge"] / data["fights"]
                 avg_block = data["block"] / data["fights"]
                 total_avg = avg_dodge + avg_block
-                avg_events = data["absorption_events"] / data["fights"]
+                avg_skip_events = data["skip_events"] / data["fights"]
                 avg_final_resource = data["total_final_resource"] / data["fights"]
-                sorted_absorption.append((role, avg_dodge, avg_block, total_avg, avg_events, avg_final_resource, data["fights"]))
+                sorted_absorption.append((role, avg_dodge, avg_block, total_avg, avg_skip_events, avg_final_resource, data["fights"]))
 
         sorted_absorption.sort(key=lambda x: x[3], reverse=True)  # Sort by total absorption
 
         print("Average BLOCK damage absorbed per fight by role:")
-        for role, avg_dodge, avg_block, total_avg, avg_events, avg_final_resource, fights in sorted_absorption:
+        for role, avg_dodge, avg_block, total_avg, avg_skip_events, avg_final_resource, fights in sorted_absorption:
             print(f"  {role:11s}: {avg_block:5.1f} block absorbed from {fights} fights")
 
-        print(f"\nStamina transfer activation rate by role:")
+        print(f"\nSkip protection activation rate by role:")
         # Sort by event frequency for this section
         sorted_by_events = sorted(sorted_absorption, key=lambda x: x[4], reverse=True)
-        for role, avg_dodge, avg_block, total_avg, avg_events, avg_final_resource, fights in sorted_by_events:
-            total_events = role_absorption[role]['absorption_events']
-            activation_rate = (total_events / fights) * 100 if fights > 0 else 0
-            print(f"  {role:11s}: {activation_rate:5.1f}% ({total_events}/{fights} fights)")
+        for role, avg_dodge, avg_block, total_avg, avg_skip_events, avg_final_resource, fights in sorted_by_events:
+            total_events = role_absorption[role]['skip_events']
+            print(f"  {role:11s}: {avg_skip_events:5.2f} avg skip activations per fight ({total_events} total events)")
 
-        # NEW: Stamina transfer distribution by round
-        if results["stamina_transfer_by_round"]:
-            total_transfers = sum(results["stamina_transfer_by_round"].values())
-            print(f"\nStamina transfer distribution by round:")
-            for round_num in sorted(results["stamina_transfer_by_round"].keys()):
-                count = results["stamina_transfer_by_round"][round_num]
-                percentage = (count / total_transfers) * 100 if total_transfers > 0 else 0
+        # NEW: Skip protection distribution by round
+        if results["skip_protection_by_round"]:
+            total_skips = sum(results["skip_protection_by_round"].values())
+            print(f"\nSkip protection distribution by round:")
+            for round_num in sorted(results["skip_protection_by_round"].keys()):
+                count = results["skip_protection_by_round"][round_num]
+                percentage = (count / total_skips) * 100 if total_skips > 0 else 0
                 print(f"  Round {round_num:2d}: {count:3d} events ({percentage:4.1f}%)")
 
         print(f"\nAverage final absorption resource by role:")
         # Sort by final resource for this section
         sorted_by_resource = sorted(sorted_absorption, key=lambda x: x[5], reverse=True)
-        for role, avg_dodge, avg_block, total_avg, avg_events, avg_final_resource, fights in sorted_by_resource:
+        for role, avg_dodge, avg_block, total_avg, avg_skip_events, avg_final_resource, fights in sorted_by_resource:
             print(f"  {role:11s}: {avg_final_resource:.3f} avg final resource (max possible: 1.000)")
     else:
         print("No absorption data available")

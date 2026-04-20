@@ -41,6 +41,9 @@ class Telemetry:
         # Absorption resource event tracking
         self.absorption_events = []
 
+        # Skip protection event tracking
+        self.skip_events = []
+
         self.stamina_samples = []
         self.momentum_log = []
 
@@ -116,6 +119,13 @@ class Telemetry:
         if "absorption_events" in event:
             for abs_event in event["absorption_events"]:
                 self.absorption_events.append(abs_event)
+
+        # =========================
+        # PROCESS SKIP PROTECTION EVENTS
+        # =========================
+        if "skip_events" in event:
+            for skip_event in event["skip_events"]:
+                self.skip_events.append(skip_event)
 
         # =========================
         # STATE
@@ -220,6 +230,15 @@ class Telemetry:
                 absorption_events_by_fighter[event["fighter"]] += 1
 
         # -------------------------
+        # SKIP PROTECTION EVENTS
+        # -------------------------
+        skip_event_count = len(self.skip_events)
+        skip_events_by_fighter = {"A": 0, "B": 0}
+        for event in self.skip_events:
+            if event["defender"] in skip_events_by_fighter:
+                skip_events_by_fighter[event["defender"]] += 1
+
+        # -------------------------
         # NEW CRIT METRICS
         # -------------------------
         crit_metrics = {}
@@ -255,5 +274,10 @@ class Telemetry:
                 "total": absorption_event_count,
                 "by_fighter": absorption_events_by_fighter.copy(),
                 "events": self.absorption_events.copy()
+            },
+            "skip_events": {
+                "total": skip_event_count,
+                "by_fighter": skip_events_by_fighter.copy(),
+                "events": self.skip_events.copy()
             }
         }

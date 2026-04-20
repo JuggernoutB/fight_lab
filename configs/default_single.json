@@ -9,6 +9,6 @@
   },
   "fighter_b": {
     "type": "balanced",
-    "role": "TANK"
+    "role": "SKIRMISHER"
   }
 }

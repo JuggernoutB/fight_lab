@@ -22,11 +22,12 @@ def process_attack(
     debug_mode: bool = False,
     attacker_absorption_resource: float = 0.0,
     defender_absorption_resource: float = 0.0,
-    attacker_fatigue_bonus: float = 0.0
-) -> tuple[Dict[str, Dict], float, float, Dict[str, int]]:
+    attacker_fatigue_bonus: float = 0.0,
+    opponent_defense: int = 0
+) -> tuple[Dict[str, Dict], float, float, Dict[str, int], Dict[str, any]]:
 
     if not atk_zones:
-        return {}, attacker_absorption_resource, defender_absorption_resource, {}
+        return {}, attacker_absorption_resource, defender_absorption_resource, {}, {}
 
     # === DATA NORMALIZATION (protect against dict typos) ===
     try:
@@ -56,6 +57,16 @@ def process_attack(
         "block_break": 0
     }
 
+    # Track skip protection events
+    skip_events = {}
+
+    # Check if defender has skip protection active
+    config = CONFIG
+    defense_advantage = def_defense - opponent_defense  # Defender DEF vs Opponent DEF comparison
+    has_defense_advantage = defense_advantage >= config["min_defense_advantage"]
+    defender_has_skip = (defender_absorption_resource >= config["absorption_event_threshold"] and
+                        has_defense_advantage)
+
     for z in atk_zones:
 
         raw = base * ZONE_MULTIPLIERS[z]   # true pre-mitigation snapshot
@@ -70,6 +81,7 @@ def process_attack(
 
         # Always check crit (unless blocked zone)
         is_crit = False
+        crit_skipped = False
         if not is_blocked:
             is_crit, attacker_absorption_resource = calc_crit(
                 atk_agility,
@@ -79,8 +91,16 @@ def process_attack(
                 attacker_fatigue_bonus
             )
 
+            # Check if crit is blocked by skip protection
+            if is_crit and defender_has_skip and "crit_skip" not in skip_events:
+                is_crit = False  # Block the crit
+                crit_skipped = True
+                skip_events["crit_skip"] = True
+                defender_absorption_resource -= config["absorption_event_threshold"]  # Consume protection
+
         # Always check dodge (unless blocked zone)
         dodge_state = "hit"
+        dodge_skipped = False
         if not is_blocked:
             dmg_temp, dodge_state = apply_dodge(
                 dmg,
@@ -89,6 +109,14 @@ def process_attack(
                 defender_stamina,
                 atk_agility
             )
+
+            # Check if dodge is blocked by skip protection
+            if dodge_state in ["dodge", "glance"] and defender_has_skip and "dodge_skip" not in skip_events:
+                dodge_state = "hit"  # Block the dodge, make it a normal hit
+                dodge_skipped = True
+                skip_events["dodge_skip"] = True
+                defender_absorption_resource -= config["absorption_event_threshold"]  # Consume protection
+
             # Don't apply dodge damage reduction yet, just remember the state
 
         # =========================
@@ -127,6 +155,14 @@ def process_attack(
             break_succeeded, attacker_absorption_resource = block_break(
                 atk_agility, def_defense, attacker_stamina, attacker_absorption_resource, attacker_fatigue_bonus
             )
+
+            # Check if block break is blocked by skip protection
+            block_break_skipped = False
+            if break_succeeded and defender_has_skip and "block_break_skip" not in skip_events:
+                break_succeeded = False  # Block the block break
+                block_break_skipped = True
+                skip_events["block_break_skip"] = True
+                defender_absorption_resource -= config["absorption_event_threshold"]  # Consume protection
 
             if break_succeeded:
                 action_costs["block_break"] += 1  # Successful block break costs stamina
@@ -208,4 +244,4 @@ def process_attack(
     # NOTE: Absorption resource is now calculated in game_engine.py using proper opponent max_hp scaling
     # This avoids double-counting and ensures correct resource calculation
 
-    return results, attacker_absorption_resource, defender_absorption_resource, action_costs
+    return results, attacker_absorption_resource, defender_absorption_resource, action_costs, skip_events

@@ -72,6 +72,10 @@ def simulate_fight(state, max_rounds=25, seed=None):
         if "absorption_events" in event:
             legacy_event["absorption_events"] = event["absorption_events"]
 
+        # Add skip events if available
+        if "skip_events" in event:
+            legacy_event["skip_events"] = event["skip_events"]
+
         # Record with proper round state
         telemetry.record(legacy_event, round_state)
 

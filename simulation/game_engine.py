@@ -89,7 +89,7 @@ def process_round(state, rng):
     atk_zones_b, def_zones_b = to_zones(action_b)
 
     # Combat resolution with absorption resource integration
-    res_a, updated_resource_a, updated_resource_b_from_a, action_costs_a = process_attack(
+    res_a, updated_resource_a, updated_resource_b_from_a, action_costs_a, skip_events_a = process_attack(
         attacker={"attack": a.attack, "agility": a.agility},
         defender={"defense": b.defense, "agility": b.agility},
         attacker_stamina=a.stamina,
@@ -98,10 +98,11 @@ def process_round(state, rng):
         def_zones=def_zones_b,
         attacker_absorption_resource=a.damage_absorption_resource,
         defender_absorption_resource=b.damage_absorption_resource,
-        attacker_fatigue_bonus=0.0
+        attacker_fatigue_bonus=0.0,
+        opponent_defense=a.defense  # Defender's opponent (attacker) defense for skip protection comparison
     )
 
-    res_b, updated_resource_b, updated_resource_a_from_b, action_costs_b = process_attack(
+    res_b, updated_resource_b, updated_resource_a_from_b, action_costs_b, skip_events_b = process_attack(
         attacker={"attack": b.attack, "agility": b.agility},
         defender={"defense": a.defense, "agility": a.agility},
         attacker_stamina=b.stamina,
@@ -110,7 +111,8 @@ def process_round(state, rng):
         def_zones=def_zones_a,
         attacker_absorption_resource=b.damage_absorption_resource,
         defender_absorption_resource=a.damage_absorption_resource,
-        attacker_fatigue_bonus=0.0
+        attacker_fatigue_bonus=0.0,
+        opponent_defense=b.defense  # Defender's opponent (attacker) defense for skip protection comparison
     )
 
     # Update fighter absorption resources
@@ -171,6 +173,32 @@ def process_round(state, rng):
             }
         }
     }
+
+    # Add skip events if any occurred
+    all_skip_events = []
+    if skip_events_a:
+        for event_type, occurred in skip_events_a.items():
+            if occurred:
+                all_skip_events.append({
+                    "type": "skip_protection",
+                    "defender": "B",  # B defended against A's attack
+                    "attacker": "A",
+                    "blocked_mechanic": event_type.replace("_skip", "")
+                })
+
+    if skip_events_b:
+        for event_type, occurred in skip_events_b.items():
+            if occurred:
+                all_skip_events.append({
+                    "type": "skip_protection",
+                    "defender": "A",  # A defended against B's attack
+                    "attacker": "B",
+                    "blocked_mechanic": event_type.replace("_skip", "")
+                })
+
+    if all_skip_events:
+        round_event["skip_events"] = all_skip_events
+
     events.append(round_event)
 
     # ============================================================
@@ -226,84 +254,9 @@ def process_round(state, rng):
         damage_to_resource = (effective_absorbed / opponent_max_hp) * config["damage_absorption_koef"]
         b.damage_absorption_resource = min(1.0, b.damage_absorption_resource + damage_to_resource)
 
-    # NEW ENHANCED STAMINA TRANSFER LOGIC
-    threshold = config["absorption_event_threshold"]
-
-    # Check who can trigger stamina transfer - only fighters with higher defense than opponent
-    a_can_transfer = (a.damage_absorption_resource >= threshold and
-                     get_stamina_level(a.stamina) != 2 and  # Not exhausted
-                     get_stamina_level(b.stamina) != 0 and  # Opponent must be tired/exhausted (not fresh)
-                     a.defense > b.defense)  # Must have higher defense than opponent
-    b_can_transfer = (b.damage_absorption_resource >= threshold and
-                     get_stamina_level(b.stamina) != 2 and  # Not exhausted
-                     get_stamina_level(a.stamina) != 0 and  # Opponent must be tired/exhausted (not fresh)
-                     b.defense > a.defense)  # Must have higher defense than opponent
-
-    # Determine who gets the transfer
-    transfer_winner = None
-    # With defense-based logic, only one can transfer at a time (higher defense)
-    if a_can_transfer:
-        transfer_winner = "A"
-    elif b_can_transfer:
-        transfer_winner = "B"
-
-    # Execute stamina transfer - but only if winner has significant DEF advantage (3+ points)
-    if transfer_winner:
-        if transfer_winner == "A":
-            def_advantage = a.defense - b.defense
-        else:
-            def_advantage = b.defense - a.defense
-
-        # Only proceed if the winner has sufficient defense advantage
-        min_def_advantage = config["min_defense_advantage"]
-        if def_advantage < min_def_advantage:
-            transfer_winner = None
-
-    if transfer_winner:
-        if transfer_winner == "A":
-            absorber, opponent, absorber_id = a, b, "A"
-        else:
-            absorber, opponent, absorber_id = b, a, "B"
-
-        stamina_transfer = config["stamina_transfer_amount"]
-        current_opponent_stamina = opponent.stamina
-        absorber_stamina_before = absorber.stamina
-
-        # Transfer stamina
-        opponent.stamina = max(0, opponent.stamina - stamina_transfer)
-        absorber.stamina = min(100, absorber.stamina + stamina_transfer)
-
-        # Create event
-        stamina_event = {
-            "type": "absorption_stamina_transfer",
-            "fighter": absorber_id,
-            "opponent": "A" if absorber_id == "B" else "B",
-            "resource_used": absorber.damage_absorption_resource,
-            "stamina_transferred": stamina_transfer,
-            "opponent_stamina_before": current_opponent_stamina,
-            "opponent_stamina_after": opponent.stamina,
-            "absorber_stamina_before": absorber_stamina_before,
-            "absorber_stamina_after": absorber.stamina,
-            "win_reason": "both_ready_higher_defense_3plus" if (a_can_transfer and b_can_transfer) else "only_ready_3plus",
-            "def_advantage": def_advantage
-        }
-        absorption_events.append(stamina_event)
-
-    # Add absorption events to round events
-    if absorption_events:
-        round_event["absorption_events"] = absorption_events
-
-    # Check if any absorption event was triggered and reset both fighters' resources
-    absorption_triggered = False
-    for event in absorption_events:
-        if event.get("type") == "absorption_stamina_transfer":
-            absorption_triggered = True
-            break
-
-    if absorption_triggered:
-        # Reset both fighters' absorption resources after absorption event is used
-        a.damage_absorption_resource = 0.0
-        b.damage_absorption_resource = 0.0
+    # NEW SKIP PROTECTION LOGIC - Skip events already handled in combat.py
+    # Resource consumption for skip protection already handled there
+    # Just need to apply resource decay
 
     # Apply resource decay to both fighters
     a.damage_absorption_resource *= config["absorption_resource_decay"]
