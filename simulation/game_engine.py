@@ -229,22 +229,20 @@ def process_round(state, rng):
     # NEW ENHANCED STAMINA TRANSFER LOGIC
     threshold = config["absorption_event_threshold"]
 
-    # Check who can trigger stamina transfer - ONLY TANK can use this ability
+    # Check who can trigger stamina transfer - only fighters with higher defense than opponent
     a_can_transfer = (a.damage_absorption_resource >= threshold and
                      get_stamina_level(a.stamina) != 2 and  # Not exhausted
                      get_stamina_level(b.stamina) != 0 and  # Opponent must be tired/exhausted (not fresh)
-                     a.role == "TANK")  # ONLY TANK can use stamina transfer
+                     a.defense > b.defense)  # Must have higher defense than opponent
     b_can_transfer = (b.damage_absorption_resource >= threshold and
                      get_stamina_level(b.stamina) != 2 and  # Not exhausted
                      get_stamina_level(a.stamina) != 0 and  # Opponent must be tired/exhausted (not fresh)
-                     b.role == "TANK")  # ONLY TANK can use stamina transfer
+                     b.defense > a.defense)  # Must have higher defense than opponent
 
     # Determine who gets the transfer
     transfer_winner = None
-    if a_can_transfer and b_can_transfer:
-        # Both can transfer - winner is who has higher DEFENSE
-        transfer_winner = "A" if a.defense > b.defense else "B"
-    elif a_can_transfer:
+    # With defense-based logic, only one can transfer at a time (higher defense)
+    if a_can_transfer:
         transfer_winner = "A"
     elif b_can_transfer:
         transfer_winner = "B"
