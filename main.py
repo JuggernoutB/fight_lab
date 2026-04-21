@@ -6,13 +6,17 @@ Fight Logic V15 - Production CLI Interface
 Usage:
   python main.py                    # Default: benchmark mode
   python main.py benchmark          # Mass simulation (5000 fights) - legacy random
-  python main.py benchmark_level [level] [fights]  # Level-based benchmark (default level=9)
+  python main.py benchmark_level [level] [fights] [action_mode]  # Level-based benchmark (default level=9, action_mode=normal)
   python main.py single             # Single fight (debug log - default)
   python main.py single configs/release_single.json  # Human-readable log
   python main.py single configs/compact_single.json  # Compact analysis log
   python main.py single configs/custom_single.json
   python main.py build              # Build analysis (default config)
   python main.py build configs/custom_build.json
+
+Action modes:
+  normal  # Equal behavior: 50% 1-2 attack zones, 33.3% 0-2 defense zones (default)
+  ai      # AI behavior based on stamina/damage thresholds
 
 Examples:
   python main.py single                               # Debug single fight (default)
@@ -53,7 +57,7 @@ def run_benchmark():
         print("\n✅ BALANCE TEST PASSED")
 
 
-def run_level_benchmark(level=9, num_fights=5000):
+def run_level_benchmark(level=9, num_fights=5000, action_mode="normal"):
     """Run level-based benchmark mode"""
     from simulation.level_benchmark import run_level_benchmark, print_level_benchmark_results
 
@@ -61,10 +65,11 @@ def run_level_benchmark(level=9, num_fights=5000):
     print("=" * 50)
     print(f"Level: {level}")
     print(f"Fights: {num_fights}")
+    print(f"Action Mode: {action_mode}")
     print()
 
     # Run level benchmark
-    results = run_level_benchmark(level, num_fights)
+    results = run_level_benchmark(level, num_fights, action_mode)
 
     # Print results (includes BALANCE VALIDATION)
     print_level_benchmark_results(results)
@@ -127,6 +132,7 @@ def main():
             # Parse level benchmark arguments
             level = 9  # Default level
             num_fights = 5000  # Default fights
+            action_mode = "normal"  # Default action mode
 
             if len(args) >= 2:
                 try:
@@ -142,7 +148,13 @@ def main():
                     print(f"❌ Number of fights must be an integer: {args[2]}")
                     sys.exit(1)
 
-            run_level_benchmark(level, num_fights)
+            if len(args) >= 4:
+                action_mode = args[3].lower()
+                if action_mode not in ["normal", "ai"]:
+                    print(f"❌ Action mode must be 'normal' or 'ai': {args[3]}")
+                    sys.exit(1)
+
+            run_level_benchmark(level, num_fights, action_mode)
 
         elif mode == "single":
             # Parse single mode arguments

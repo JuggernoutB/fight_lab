@@ -57,12 +57,11 @@ def process_attack(
         "block_break": 0
     }
 
-    # Track skip protection events
-    skip_events = {}
+    # Track skip protection events (list to allow multiple activations)
+    skip_events = []
 
-    # Check if defender has skip protection active
+    # Get config for skip protection threshold
     config = CONFIG
-    defender_has_skip = (defender_absorption_resource >= config["absorption_event_threshold"])
 
     for z in atk_zones:
 
@@ -88,11 +87,11 @@ def process_attack(
                 attacker_fatigue_bonus
             )
 
-            # Check if crit is blocked by skip protection
-            if is_crit and defender_has_skip and "crit_skip" not in skip_events:
+            # Check if crit is blocked by skip protection (dynamic check)
+            if is_crit and defender_absorption_resource >= config["absorption_event_threshold"]:
                 is_crit = False  # Block the crit
                 crit_skipped = True
-                skip_events["crit_skip"] = True
+                skip_events.append("crit_skip")
                 defender_absorption_resource -= config["absorption_event_threshold"]  # Consume protection
 
         # Always check dodge (unless blocked zone)
@@ -107,11 +106,11 @@ def process_attack(
                 atk_agility
             )
 
-            # Check if dodge is blocked by skip protection
-            if dodge_state in ["dodge", "glance"] and defender_has_skip and "dodge_skip" not in skip_events:
+            # Check if dodge is blocked by skip protection (dynamic check)
+            if dodge_state in ["dodge", "glance"] and defender_absorption_resource >= config["absorption_event_threshold"]:
                 dodge_state = "hit"  # Block the dodge, make it a normal hit
                 dodge_skipped = True
-                skip_events["dodge_skip"] = True
+                skip_events.append("dodge_skip")
                 defender_absorption_resource -= config["absorption_event_threshold"]  # Consume protection
 
             # Don't apply dodge damage reduction yet, just remember the state
@@ -153,12 +152,12 @@ def process_attack(
                 atk_agility, def_defense, attacker_stamina, attacker_absorption_resource, attacker_fatigue_bonus
             )
 
-            # Check if block break is blocked by skip protection
+            # Check if block break is blocked by skip protection (dynamic check)
             block_break_skipped = False
-            if break_succeeded and defender_has_skip and "block_break_skip" not in skip_events:
+            if break_succeeded and defender_absorption_resource >= config["absorption_event_threshold"]:
                 break_succeeded = False  # Block the block break
                 block_break_skipped = True
-                skip_events["block_break_skip"] = True
+                skip_events.append("block_break_skip")
                 defender_absorption_resource -= config["absorption_event_threshold"]  # Consume protection
 
             if break_succeeded:

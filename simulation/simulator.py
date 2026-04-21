@@ -8,7 +8,7 @@ from core.api import get_initial_stamina
 
 STAMINA_INIT = get_initial_stamina()
 
-def simulate_fight(state, max_rounds=25, seed=None):
+def simulate_fight(state, max_rounds=25, seed=None, action_mode="normal"):
     """
     Legacy compatibility wrapper for old telemetry API
 
@@ -24,7 +24,7 @@ def simulate_fight(state, max_rounds=25, seed=None):
     from copy import deepcopy
 
     # Use new clean game engine
-    fight_result = engine_simulate_fight(state, max_rounds, seed)
+    fight_result = engine_simulate_fight(state, max_rounds, seed, action_mode)
 
     # Convert back to legacy format
     final_state = fight_result["final_state"]

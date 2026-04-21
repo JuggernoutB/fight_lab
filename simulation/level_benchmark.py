@@ -71,7 +71,7 @@ def generate_level_matched_fighters(level: int) -> Tuple[FighterState, FighterSt
     return fighter_a, fighter_b
 
 
-def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
+def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "normal") -> Dict:
     """Run benchmark at specific level"""
     print(f"📊 LEVEL {level} BENCHMARK - {level_to_stat_budget(level)} stat points")
     print(f"Running {num_fights} fights...")
@@ -129,6 +129,10 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
         # Generate level-matched fighters
         fighter_a, fighter_b = generate_level_matched_fighters(level)
 
+        # Initialize resource generation tracking for this fight
+        fighter_a.total_resource_generated = 0.0
+        fighter_b.total_resource_generated = 0.0
+
         # ============================================================
         # ABSORPTION RESOURCE PERSISTENCE LOGIC
         # ============================================================
@@ -154,9 +158,10 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
             fighter_a.damage_absorption_resource = 0.0
             fighter_b.damage_absorption_resource = 0.0
 
+
         # Simulate fight
         initial_state = FightState(0, fighter_a, fighter_b)
-        final_state, telemetry = simulate_fight(initial_state, seed=i)
+        final_state, telemetry = simulate_fight(initial_state, seed=i, action_mode=action_mode)
 
         # ============================================================
         # SAVE ABSORPTION RESOURCES FOR NEXT FIGHT OF SAME COMBINATION
@@ -244,26 +249,34 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
             final_resource_a = final_state.fighter_a.damage_absorption_resource
             final_resource_b = final_state.fighter_b.damage_absorption_resource
 
-            # Track block event counts from mechanics
+            # Track block event counts by analyzing telemetry events directly
             block_events_a = 0
             block_events_b = 0
-            if "mechanics" in summary:
-                mechanics = summary["mechanics"]
-                # Count all block-related events for fighter A (defended)
-                block_events_a = mechanics.get("block", 0) + mechanics.get("crit_block", 0)
-                # Note: block_break events mean blocks were broken, so they're still block attempts
+
+            # Count blocks from telemetry events
+            for event in telemetry.events:
+                for attack in event.get("attacks", []):
+                    if attack["event"] in ["block", "crit_block"]:
+                        # Determine who blocked based on attack direction
+                        attacker = attack.get("attacker", "")
+                        if attacker == "A":
+                            block_events_b += 1  # B blocked A's attack
+                        elif attacker == "B":
+                            block_events_a += 1  # A blocked B's attack
 
             # Track for fighter A
             if fighter_a.role not in results["role_absorption"]:
                 results["role_absorption"][fighter_a.role] = {
                     "dodge": 0.0, "block": 0.0, "skip_events": 0,
                     "total_final_resource": 0.0, "fights": 0, "total_rounds": 0,
-                    "block_events": 0  # Count of block events
+                    "block_events": 0,  # Count of block events
+                    "total_resource_generated": 0.0  # Total resource generated across all fights
                 }
             results["role_absorption"][fighter_a.role]["dodge"] += absorbed["dodge"]
             results["role_absorption"][fighter_a.role]["block"] += absorbed["block"]
             results["role_absorption"][fighter_a.role]["skip_events"] += skip_events_a
             results["role_absorption"][fighter_a.role]["total_final_resource"] += final_resource_a
+            results["role_absorption"][fighter_a.role]["total_resource_generated"] += getattr(fighter_a, 'total_resource_generated', 0.0)
             results["role_absorption"][fighter_a.role]["fights"] += 1
             results["role_absorption"][fighter_a.role]["total_rounds"] += rounds
             results["role_absorption"][fighter_a.role]["block_events"] += block_events_a
@@ -273,12 +286,14 @@ def run_level_benchmark(level: int, num_fights: int = 5000) -> Dict:
                 results["role_absorption"][fighter_b.role] = {
                     "dodge": 0.0, "block": 0.0, "skip_events": 0,
                     "total_final_resource": 0.0, "fights": 0, "total_rounds": 0,
-                    "block_events": 0  # Count of block events
+                    "block_events": 0,  # Count of block events
+                    "total_resource_generated": 0.0  # Total resource generated across all fights
                 }
             results["role_absorption"][fighter_b.role]["dodge"] += absorbed["dodge"]
             results["role_absorption"][fighter_b.role]["block"] += absorbed["block"]
             results["role_absorption"][fighter_b.role]["skip_events"] += skip_events_b
             results["role_absorption"][fighter_b.role]["total_final_resource"] += final_resource_b
+            results["role_absorption"][fighter_b.role]["total_resource_generated"] += getattr(fighter_b, 'total_resource_generated', 0.0)
             results["role_absorption"][fighter_b.role]["fights"] += 1
             results["role_absorption"][fighter_b.role]["total_rounds"] += rounds
             results["role_absorption"][fighter_b.role]["block_events"] += block_events_b
@@ -613,30 +628,73 @@ def print_level_benchmark_results(results: Dict):
                 skip_per_round = data["skip_events"] / data["total_rounds"] if data["total_rounds"] > 0 else 0
                 avg_block_events = data["block_events"] / data["fights"]
                 block_events_per_round = data["block_events"] / data["total_rounds"] if data["total_rounds"] > 0 else 0
-                sorted_absorption.append((role, avg_dodge, avg_block, total_avg, avg_skip_events, avg_final_resource, data["fights"], avg_rounds, skip_per_round, avg_block_events, block_events_per_round))
+                avg_resource_generated = data["total_resource_generated"] / data["fights"]
+                resource_generated_per_round = data["total_resource_generated"] / data["total_rounds"] if data["total_rounds"] > 0 else 0
+                sorted_absorption.append((role, avg_dodge, avg_block, total_avg, avg_skip_events, avg_final_resource, data["fights"], avg_rounds, skip_per_round, avg_block_events, block_events_per_round, avg_resource_generated, resource_generated_per_round))
 
         sorted_absorption.sort(key=lambda x: x[3], reverse=True)  # Sort by total absorption
 
         # PRIMARY METRICS (according to documentation)
-        print("Block Absorption per Fight:")
-        for role, avg_dodge, avg_block, total_avg, avg_skip_events, avg_final_resource, fights, avg_rounds, skip_per_round, avg_block_events, block_events_per_round in sorted_absorption:
+        print("Blocks per Fight:")
+        # Sort by block frequency for this section
+        sorted_by_block_events = sorted(sorted_absorption, key=lambda x: x[9], reverse=True)
+        for role, avg_dodge, avg_block, total_avg, avg_skip_events, avg_final_resource, fights, avg_rounds, skip_per_round, avg_block_events, block_events_per_round, avg_resource_generated, resource_generated_per_round in sorted_by_block_events:
+            print(f"  {role:11s}: {avg_block_events:5.1f}")
+
+        print(f"\nBlocks per round:")
+        for role, avg_dodge, avg_block, total_avg, avg_skip_events, avg_final_resource, fights, avg_rounds, skip_per_round, avg_block_events, block_events_per_round, avg_resource_generated, resource_generated_per_round in sorted_by_block_events:
+            print(f"  {role:11s}: {block_events_per_round:5.1f}")
+
+        print(f"\nAverage rounds per fight:")
+        # Sort by average fight length for this section
+        sorted_by_rounds = sorted(sorted_absorption, key=lambda x: x[7], reverse=True)
+        for data_tuple in sorted_by_rounds:
+            role = data_tuple[0]
+            avg_rounds = data_tuple[7]
+            print(f"  {role:11s}: {avg_rounds:5.1f}")
+
+        print(f"\nResource Generation per Fight:")
+        # Sort by resource generation for this section
+        sorted_by_resource = sorted(sorted_absorption, key=lambda x: x[11], reverse=True)
+        for data_tuple in sorted_by_resource:
+            role = data_tuple[0]
+            avg_resource_generated = data_tuple[11]
+            print(f"  {role:11s}: {avg_resource_generated:5.2f}")
+
+        print(f"\nResource Generation per round:")
+        for data_tuple in sorted_by_resource:
+            role = data_tuple[0]
+            resource_generated_per_round = data_tuple[12]
+            print(f"  {role:11s}: {resource_generated_per_round:5.2f}")
+
+        print(f"\nBlock Absorption per Fight:")
+        for data_tuple in sorted_absorption:
+            role = data_tuple[0]
+            avg_block = data_tuple[2]
             print(f"  {role:11s}: {avg_block:5.1f}")
 
         print(f"\nBlock Absorption per round:")
-        for role, avg_dodge, avg_block, total_avg, avg_skip_events, avg_final_resource, fights, avg_rounds, skip_per_round, avg_block_events, block_events_per_round in sorted_absorption:
+        for data_tuple in sorted_absorption:
+            role = data_tuple[0]
+            avg_block = data_tuple[2]
+            avg_rounds = data_tuple[7]
             block_per_round = avg_block / avg_rounds if avg_rounds > 0 else 0
             print(f"  {role:11s}: {block_per_round:5.1f}")
 
         print(f"\nSkip Activations per Fight:")
         # Sort by event frequency for this section
         sorted_by_events = sorted(sorted_absorption, key=lambda x: x[4], reverse=True)
-        for role, avg_dodge, avg_block, total_avg, avg_skip_events, avg_final_resource, fights, avg_rounds, skip_per_round, avg_block_events, block_events_per_round in sorted_by_events:
+        for data_tuple in sorted_by_events:
+            role = data_tuple[0]
+            avg_skip_events = data_tuple[4]
             print(f"  {role:11s}: {avg_skip_events:5.2f}")
 
         print(f"\nSkip Protection Efficiency:")
         # Sort by skip per round for efficiency comparison
         sorted_by_skip_efficiency = sorted(sorted_absorption, key=lambda x: x[8], reverse=True)
-        for role, avg_dodge, avg_block, total_avg, avg_skip_events, avg_final_resource, fights, avg_rounds, skip_per_round, avg_block_events, block_events_per_round in sorted_by_skip_efficiency:
+        for data_tuple in sorted_by_skip_efficiency:
+            role = data_tuple[0]
+            skip_per_round = data_tuple[8]
             print(f"  {role:11s}: {skip_per_round:5.3f}")
     else:
         print("No absorption data available")

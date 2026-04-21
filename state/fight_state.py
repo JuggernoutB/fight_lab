@@ -22,6 +22,7 @@ class FighterState:
         # DAMAGE ABSORPTION RESOURCE SYSTEM
         self.damage_absorption_resource = 0.0  # Resource from absorbed damage (0.0-1.0)
         self.absorption_fatigue_bonus = 0.0   # Crit/block break bonus from fatigue mechanic
+        self.total_resource_generated = 0.0   # Total resource generated this fight (for metrics)
 
 
 class FightState:

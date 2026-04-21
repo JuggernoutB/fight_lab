@@ -15,7 +15,7 @@ MAX_DEFENSE_ZONES = 2
 DEFAULT_ATTACK_ZONE = "chest"
 
 
-def simulate_fight(state, max_rounds=25, seed=None):
+def simulate_fight(state, max_rounds=25, seed=None, action_mode="normal"):
     """
     Clean game engine API - returns pure game data
 
@@ -54,7 +54,7 @@ def simulate_fight(state, max_rounds=25, seed=None):
         fight_state.round_id = round_num
 
         # Process round
-        round_events = process_round(fight_state, rng)
+        round_events = process_round(fight_state, rng, action_mode)
         log.extend(round_events)
 
         # Check end conditions
@@ -73,7 +73,7 @@ def simulate_fight(state, max_rounds=25, seed=None):
     }
 
 
-def process_round(state, rng):
+def process_round(state, rng, action_mode="normal"):
     """Process a single round and return events"""
     events = []
 
@@ -81,8 +81,8 @@ def process_round(state, rng):
     b = state.fighter_b
 
     # AI decisions
-    action_a = choose_action(a, state)
-    action_b = choose_action(b, state)
+    action_a = choose_action(a, state, action_mode)
+    action_b = choose_action(b, state, action_mode)
 
     # Convert to zones and validate
     atk_zones_a, def_zones_a = to_zones(action_a)
@@ -177,24 +177,22 @@ def process_round(state, rng):
     # Add skip events if any occurred
     all_skip_events = []
     if skip_events_a:
-        for event_type, occurred in skip_events_a.items():
-            if occurred:
-                all_skip_events.append({
-                    "type": "skip_protection",
-                    "defender": "B",  # B defended against A's attack
-                    "attacker": "A",
-                    "blocked_mechanic": event_type.replace("_skip", "")
-                })
+        for event_type in skip_events_a:
+            all_skip_events.append({
+                "type": "skip_protection",
+                "defender": "B",  # B defended against A's attack
+                "attacker": "A",
+                "blocked_mechanic": event_type.replace("_skip", "")
+            })
 
     if skip_events_b:
-        for event_type, occurred in skip_events_b.items():
-            if occurred:
-                all_skip_events.append({
-                    "type": "skip_protection",
-                    "defender": "A",  # A defended against B's attack
-                    "attacker": "B",
-                    "blocked_mechanic": event_type.replace("_skip", "")
-                })
+        for event_type in skip_events_b:
+            all_skip_events.append({
+                "type": "skip_protection",
+                "defender": "A",  # A defended against B's attack
+                "attacker": "B",
+                "blocked_mechanic": event_type.replace("_skip", "")
+            })
 
     if all_skip_events:
         round_event["skip_events"] = all_skip_events
@@ -224,7 +222,7 @@ def process_round(state, rng):
     # Add absorbed damage to resources first
     if absorbed_by_a > 0:
         # A absorbed damage - add to A's resource only if A has defense advantage
-        if a.defense > b.defense:
+        if a.defense >= b.defense + config["min_defense_advantage"]:
             opponent_max_hp = getattr(b, 'max_hp', b.hp)
             if hasattr(b, 'hp_stat'):
                 from core.modules.ehp import EHPDamageCalculator
@@ -237,11 +235,13 @@ def process_round(state, rng):
             effective_absorbed = absorbed_by_a * absorption_efficiency
 
             damage_to_resource = (effective_absorbed / opponent_max_hp) * config["damage_absorption_koef"]
-            a.damage_absorption_resource = min(1.0, a.damage_absorption_resource + damage_to_resource)
+            a.damage_absorption_resource = a.damage_absorption_resource + damage_to_resource
+            if hasattr(a, 'total_resource_generated'):
+                a.total_resource_generated += damage_to_resource
 
     if absorbed_by_b > 0:
         # B absorbed damage - add to B's resource only if B has defense advantage
-        if b.defense > a.defense:
+        if b.defense >= a.defense + config["min_defense_advantage"]:
             opponent_max_hp = getattr(a, 'max_hp', a.hp)
             if hasattr(a, 'hp_stat'):
                 from core.modules.ehp import EHPDamageCalculator
@@ -254,7 +254,9 @@ def process_round(state, rng):
             effective_absorbed = absorbed_by_b * absorption_efficiency
 
             damage_to_resource = (effective_absorbed / opponent_max_hp) * config["damage_absorption_koef"]
-            b.damage_absorption_resource = min(1.0, b.damage_absorption_resource + damage_to_resource)
+            b.damage_absorption_resource = b.damage_absorption_resource + damage_to_resource
+            if hasattr(b, 'total_resource_generated'):
+                b.total_resource_generated += damage_to_resource
 
     # NEW SKIP PROTECTION LOGIC - Skip events already handled in combat.py
     # Resource consumption for skip protection already handled there
