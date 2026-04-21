@@ -42,9 +42,12 @@ def simulate_fight(state, max_rounds=25, seed=None, action_mode="normal"):
     fight_state.round_id = 0
     fight_state.end_reason = None
 
-    # Reset absorption resources before fight begins
-    fight_state.fighter_a.damage_absorption_resource = 0.0
-    fight_state.fighter_b.damage_absorption_resource = 0.0
+    # Initialize defense-based skip protection activations for the entire fight
+    # Each point of defense advantage gives 1 skip activation for the whole fight
+    a = fight_state.fighter_a
+    b = fight_state.fighter_b
+    a.skip_activations_remaining = max(0, a.defense - b.defense)  # A's defense advantage over B
+    b.skip_activations_remaining = max(0, b.defense - a.defense)  # B's defense advantage over A
 
     # Game log for replay/UI
     log = []
@@ -88,38 +91,32 @@ def process_round(state, rng, action_mode="normal"):
     atk_zones_a, def_zones_a = to_zones(action_a)
     atk_zones_b, def_zones_b = to_zones(action_b)
 
-    # Combat resolution with absorption resource integration
-    res_a, updated_resource_a, updated_resource_b_from_a, action_costs_a, skip_events_a = process_attack(
+    # Combat resolution - defense-based skip protection
+    res_a, action_costs_a, skip_events_a, b_skip_remaining = process_attack(
         attacker={"attack": a.attack, "agility": a.agility},
         defender={"defense": b.defense, "agility": b.agility},
         attacker_stamina=a.stamina,
         defender_stamina=b.stamina,
         atk_zones=atk_zones_a,
         def_zones=def_zones_b,
-        attacker_absorption_resource=a.damage_absorption_resource,
-        defender_absorption_resource=b.damage_absorption_resource,
         attacker_fatigue_bonus=0.0,
-        opponent_defense=a.defense  # Defender's opponent (attacker) defense for skip protection comparison
+        defender_skip_activations=b.skip_activations_remaining  # B's remaining skip activations
     )
 
-    res_b, updated_resource_b, updated_resource_a_from_b, action_costs_b, skip_events_b = process_attack(
+    res_b, action_costs_b, skip_events_b, a_skip_remaining = process_attack(
         attacker={"attack": b.attack, "agility": b.agility},
         defender={"defense": a.defense, "agility": a.agility},
         attacker_stamina=b.stamina,
         defender_stamina=a.stamina,
         atk_zones=atk_zones_b,
         def_zones=def_zones_a,
-        attacker_absorption_resource=b.damage_absorption_resource,
-        defender_absorption_resource=a.damage_absorption_resource,
         attacker_fatigue_bonus=0.0,
-        opponent_defense=b.defense  # Defender's opponent (attacker) defense for skip protection comparison
+        defender_skip_activations=a.skip_activations_remaining  # A's remaining skip activations
     )
 
-    # Update fighter absorption resources
-    # A gets resource from defending against B's attacks
-    a.damage_absorption_resource = updated_resource_a_from_b
-    # B gets resource from defending against A's attacks
-    b.damage_absorption_resource = updated_resource_b_from_a
+    # Update skip activations remaining after this round
+    a.skip_activations_remaining = a_skip_remaining
+    b.skip_activations_remaining = b_skip_remaining
 
     # Build event log for this round
     round_attacks = []
@@ -163,13 +160,13 @@ def process_round(state, rng, action_mode="normal"):
                 "hp": a.hp,
                 "stamina": a.stamina,
                 "fatigue_level": get_stamina_level(a.stamina),
-                "absorption_resource": a.damage_absorption_resource
+                "skip_activations": a.skip_activations_remaining
             },
             "B": {
                 "hp": b.hp,
                 "stamina": b.stamina,
                 "fatigue_level": get_stamina_level(b.stamina),
-                "absorption_resource": b.damage_absorption_resource
+                "skip_activations": b.skip_activations_remaining
             }
         }
     }
@@ -198,73 +195,6 @@ def process_round(state, rng, action_mode="normal"):
         round_event["skip_events"] = all_skip_events
 
     events.append(round_event)
-
-    # ============================================================
-    # DAMAGE ABSORPTION RESOURCE SYSTEM
-    # ============================================================
-
-    # Calculate absorbed damage for each fighter (BLOCK ONLY - exclude dodge)
-    absorbed_by_a = 0.0  # A absorbed damage from B's attacks via blocking
-    absorbed_by_b = 0.0  # B absorbed damage from A's attacks via blocking
-
-    for zone, attack_data in res_b.items():  # B attacking A
-        if "absorbed" in attack_data:
-            absorbed_by_a += attack_data["absorbed"]["block"]  # Only block absorption
-
-    for zone, attack_data in res_a.items():  # A attacking B
-        if "absorbed" in attack_data:
-            absorbed_by_b += attack_data["absorbed"]["block"]  # Only block absorption
-
-    # Process absorption events and update resources
-    absorption_events = []
-    config = get_config()
-
-    # Add absorbed damage to resources first
-    if absorbed_by_a > 0:
-        # A absorbed damage - add to A's resource only if A has defense advantage
-        if a.defense >= b.defense + config["min_defense_advantage"]:
-            opponent_max_hp = getattr(b, 'max_hp', b.hp)
-            if hasattr(b, 'hp_stat'):
-                from core.modules.ehp import EHPDamageCalculator
-                calc = EHPDamageCalculator()
-                opponent_max_hp = calc.calculate_base_hp(b.hp_stat)
-
-            # EHP INTEGRATION: Apply absorption efficiency based on A's defense
-            from core.modules.ehp import calculate_absorption_efficiency
-            absorption_efficiency = calculate_absorption_efficiency(a.defense)
-            effective_absorbed = absorbed_by_a * absorption_efficiency
-
-            damage_to_resource = (effective_absorbed / opponent_max_hp) * config["damage_absorption_koef"]
-            a.damage_absorption_resource = a.damage_absorption_resource + damage_to_resource
-            if hasattr(a, 'total_resource_generated'):
-                a.total_resource_generated += damage_to_resource
-
-    if absorbed_by_b > 0:
-        # B absorbed damage - add to B's resource only if B has defense advantage
-        if b.defense >= a.defense + config["min_defense_advantage"]:
-            opponent_max_hp = getattr(a, 'max_hp', a.hp)
-            if hasattr(a, 'hp_stat'):
-                from core.modules.ehp import EHPDamageCalculator
-                calc = EHPDamageCalculator()
-                opponent_max_hp = calc.calculate_base_hp(a.hp_stat)
-
-            # EHP INTEGRATION: Apply absorption efficiency based on B's defense
-            from core.modules.ehp import calculate_absorption_efficiency
-            absorption_efficiency = calculate_absorption_efficiency(b.defense)
-            effective_absorbed = absorbed_by_b * absorption_efficiency
-
-            damage_to_resource = (effective_absorbed / opponent_max_hp) * config["damage_absorption_koef"]
-            b.damage_absorption_resource = b.damage_absorption_resource + damage_to_resource
-            if hasattr(b, 'total_resource_generated'):
-                b.total_resource_generated += damage_to_resource
-
-    # NEW SKIP PROTECTION LOGIC - Skip events already handled in combat.py
-    # Resource consumption for skip protection already handled there
-    # Just need to apply resource decay
-
-    # Apply resource decay to both fighters
-    a.damage_absorption_resource *= config["absorption_resource_decay"]
-    b.damage_absorption_resource *= config["absorption_resource_decay"]
 
     # ============================================================
     # APPLY DAMAGE

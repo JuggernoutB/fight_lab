@@ -63,12 +63,10 @@ CONFIG = {
     "stamina_cost_block_break": 4,    # Stamina cost for successful block break
 
     # ============================================================
-    # DAMAGE ABSORPTION RESOURCE SYSTEM
+    # SKIP PROTECTION SYSTEM (DEFENSE-BASED)
     # ============================================================
-    "damage_absorption_koef": 100.0,   # Conversion factor: absorbed_damage → resource (block-only system)
-    "absorption_resource_decay": 0.85, # Resource decay per round (15% lost per round)
-    "absorption_event_threshold": 0.4, # Minimum resource for skip protection activation (40%)
-    "min_defense_advantage": 0,        # Minimum DEF advantage required for skip protection
+    # Note: Skip protection now uses direct DEFENSE stat comparison
+    # No additional parameters needed - system uses max(0, defender_defense - attacker_defense)
 
     # ============================================================
     # EHP SCALING

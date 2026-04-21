@@ -5,7 +5,7 @@
   "level": 5,
   "fighter_a": {
     "type": "balanced",
-    "role": "BRUISER"
+    "role": "TANK"
   },
   "fighter_b": {
     "type": "balanced",

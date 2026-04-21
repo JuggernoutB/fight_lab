@@ -2,59 +2,58 @@
 
 ## Overview
 
-Skip Protection is a defensive mechanic that allows fighters with sufficient absorption resource and defense advantage to block enemy special attacks (critical hits, dodges, and block breaks). This mechanic rewards defensive playstyles and creates tactical depth in combat.
+Skip Protection is a **defense-based** defensive mechanic that allows fighters with higher DEFENSE stats to block enemy special attacks (critical hits, dodges, and block breaks). This mechanic directly rewards investment in the DEFENSE stat and creates tactical depth in combat.
 
-## How Absorption Resource is Calculated
+## How Skip Protection Works
 
-### Resource Generation
+### Defense Advantage System
 
-Absorption resource is generated **only from blocked damage** (dodge damage does not generate resource):
+Skip Protection is based purely on **DEFENSE stat comparison**:
 
 ```
-if def_defense > opponent_defense:
-    effective_absorbed = blocked_damage * absorption_efficiency
-    damage_to_resource = (effective_absorbed / opponent_max_hp) * damage_absorption_koef
-    absorption_resource = min(1.0, current_resource + damage_to_resource)
+defender_skip_activations = max(0, defender_defense - attacker_defense)
 ```
 
-### Key Parameters
+**Key Points:**
+- Each point of DEFENSE advantage gives **1 skip activation** for the entire fight
+- No resource generation or management required
+- Activations are calculated once at fight start and consumed as used
+- Simple, direct relationship between DEFENSE investment and defensive capability
 
-- **`damage_absorption_koef`**: 20.0 (conversion factor)
-- **`absorption_efficiency`**: Based on defender's DEF stat
-- **`absorption_resource_decay`**: 0.85 (15% resource lost per round)
-- **Max resource**: 1.0 (100%)
+### Example Calculations
 
-### Absorption Efficiency Formula
-
-```python
-def calculate_absorption_efficiency(defense_stat):
-    # Higher defense = better absorption efficiency
-    return base_efficiency + (defense_stat * scaling_factor)
 ```
+Fighter A: DEF=12, Fighter B: DEF=8
+→ Fighter A gets max(0, 12-8) = 4 skip activations when defending
+→ Fighter B gets max(0, 8-12) = 0 skip activations when defending
 
-Fighters with higher DEF stats convert blocked damage to absorption resource more efficiently.
+Fighter C: DEF=10, Fighter D: DEF=10
+→ Both fighters get 0 skip activations (no advantage)
+```
 
 ## Skip Protection Activation
 
 ### Requirements
 
-Skip Protection activates when **both conditions** are met:
+Skip Protection activates when:
 
-1. **Resource Threshold**: `absorption_resource >= absorption_event_threshold` (0.4)
-2. **Defense Advantage**: `defender_defense >= opponent_defense + min_defense_advantage` (1)
+1. **Defense Advantage**: Defender has higher DEFENSE than attacker
+2. **Activations Remaining**: Fighter still has unused activations for this fight
+3. **Eligible Mechanic**: Enemy attempts crit, dodge, or block break
 
 ### Blocked Mechanics
 
-When Skip Protection is active, it can block:
+Each activation can block one of these enemy mechanics:
 - **Critical Hits**: Enemy crit attempts are converted to normal hits
 - **Dodge**: Enemy dodge attempts are converted to normal hits
 - **Block Break**: Enemy block break attempts fail
 
-### Resource Consumption
+### Activation Consumption
 
-- **Cost per activation**: 0.4 absorption resource (same as threshold)
-- **Multiple uses**: Can activate multiple times per fight as resource regenerates
-- **One mechanic per activation**: Each activation blocks one enemy mechanic
+- **Cost per use**: 1 activation consumed per blocked mechanic
+- **Fight duration**: Activations last the entire fight (no decay)
+- **One mechanic per activation**: Each activation blocks exactly one enemy mechanic
+- **No restoration**: Once used, activations are gone for that fight
 
 ## Implementation Details
 
@@ -63,14 +62,24 @@ When Skip Protection is active, it can block:
 Skip Protection is checked during combat resolution in `core/modules/combat.py`:
 
 ```python
-# Check if defender has skip protection active
-defender_has_skip = (defender_absorption_resource >= config["absorption_event_threshold"])
+# Defense-based skip protection system
+skip_activations_remaining = defender_skip_activations  # Passed from game engine
 
 # Example: Block enemy crit
-if is_crit and defender_has_skip and "crit_skip" not in skip_events:
+if is_crit and skip_activations_remaining > 0:
     is_crit = False  # Block the crit
-    skip_events["crit_skip"] = True
-    defender_absorption_resource -= config["absorption_event_threshold"]
+    skip_events.append("crit_skip")
+    skip_activations_remaining -= 1  # Consume one activation
+```
+
+### Fight Initialization
+
+Skip activations are calculated once at the start of each fight in `simulation/game_engine.py`:
+
+```python
+# Initialize defense-based skip protection activations for the entire fight
+a.skip_activations_remaining = max(0, a.defense - b.defense)  # A's advantage over B
+b.skip_activations_remaining = max(0, b.defense - a.defense)  # B's advantage over A
 ```
 
 ### Event Logging
@@ -82,7 +91,7 @@ Skip events are logged in the combat log:
     "type": "skip_protection",
     "defender": "A",          # Who used skip protection
     "attacker": "B",          # Whose mechanic was blocked
-    "blocked_mechanic": "crit" # What was blocked
+    "blocked_mechanic": "crit" # What was blocked (crit/dodge/block_break)
 }
 ```
 
@@ -90,118 +99,111 @@ Skip events are logged in the combat log:
 
 ### Primary Metrics
 
-1. **Blocks per Fight**
+1. **Skip Activations per Fight**
    ```
-   blocks_per_fight = total_block_events / total_fights
+   avg_skip_per_fight = total_skip_events / total_fights
    ```
+   This shows how many defensive mechanics each role blocks on average per fight.
 
-2. **Blocks per round**
+2. **Skip Protection Efficiency**
    ```
-   blocks_per_round = total_block_events / total_rounds_fought
+   skip_per_round = total_skip_events / total_rounds_fought
    ```
-
+   This shows the rate of skip usage relative to fight duration.
 
 3. **Block Absorption per Fight**
    ```
    avg_block_absorption = total_block_absorbed / total_fights
    ```
+   Shows how much damage is mitigated through blocking (separate from skip protection).
 
 4. **Block Absorption per round**
    ```
    avg_block_absorption = total_block_absorbed / total_rounds_fought
    ```
-
-5. **Skip Activations per Fight**
-   ```
-   avg_skip_per_fight = total_skip_events / total_fights
-   ```
-
-6. **Skip Protection Efficiency (NEW)**
-   ```
-   skip_per_round = total_skip_events / total_rounds_fought
-   ```
+   Block mitigation rate relative to fight duration.
 
 ### Benchmark Output Format
 
 ```
-Skip protection activation rate by role:
-  SKIRMISHER : 0.75 avg skip per fight, 0.081 skip per round (85 total events)
-  TANK       : 0.74 avg skip per fight, 0.075 skip per round (187 total events)
+===== SKIP PROTECTION ANALYSIS =====
+Skip Activations per Fight:
+  TANK       :  1.30
+  SKIRMISHER :  1.50
+  UNIVERSAL  :  0.75
+  BRUISER    :  0.80
+  ASSASSIN   :  0.10
 
-Skip protection efficiency analysis:
-  SKIRMISHER : 0.081 skip/round,   9.2 avg rounds/fight
-  TANK       : 0.075 skip/round,   9.9 avg rounds/fight
-```
-
-### Metric Calculation Details
-
-#### Skip Per Round Calculation
-```python
-# Track total rounds per role
-results["role_absorption"][role]["total_rounds"] += fight_rounds
-
-# Calculate efficiency
-skip_per_round = total_skip_events / total_rounds if total_rounds > 0 else 0
-```
-
-#### Skip Event Distribution by Round
-```python
-# Track when skip events occur during fights
-skip_protection_by_round = {
-    round_number: event_count
-}
+Skip Protection Efficiency:
+  TANK       : 0.138
+  SKIRMISHER : 0.167
+  UNIVERSAL  : 0.085
+  BRUISER    : 0.090
+  ASSASSIN   : 0.011
 ```
 
 ## Balance Considerations
 
 ### Role Effectiveness
 
-- **TANK**: Highest defense → best against most opponents
-- **BRUISER**: Medium defense → effective against weaker roles
-- **SKIRMISHER**: Lower defense but high efficiency per round
-- **ASSASSIN**: Lowest defense → minimal skip protection usage
+The new defense-based system creates clear role differentiation:
+
+- **TANK**: Highest DEFENSE → most skip activations → best against aggressive roles
+- **BRUISER**: Medium-high DEFENSE → moderate skip protection → balanced defensive capability
+- **UNIVERSAL**: Balanced DEFENSE → some skip activations against lower-defense opponents
+- **SKIRMISHER**: Medium DEFENSE but efficient usage due to longer fights
+- **ASSASSIN**: Lowest DEFENSE → minimal skip protection → relies on offense
 
 ### Design Goals
 
-1. **Reward defensive investment** (DEF stat importance)
-2. **Create tactical depth** (resource management)
-3. **Balance offense vs defense** (skip protection vs damage output)
-4. **Provide counterplay** (not all roles can use it effectively)
+1. **Direct DEFENSE reward** - Higher DEFENSE immediately provides more defensive options
+2. **Simple and predictable** - No complex resource management or timing
+3. **Fight-long strategy** - Players must manage finite activations throughout the fight
+4. **Clear role identity** - Defensive roles get more defensive tools
+
+### Strategic Implications
+
+- **Investment clarity**: Each DEFENSE point directly translates to defensive capability
+- **Build optimization**: High-DEFENSE builds become more viable against offensive builds
+- **Counter-play**: Offensive builds can overwhelm defensive ones by forcing multiple activations
+- **Role balance**: DEFENSE-focused roles get meaningful advantages without being overpowered
 
 ## Configuration Parameters
 
 ### Core Settings (`core/config.py`)
 
-```python
-"damage_absorption_koef": 20.0,           # Damage to resource conversion
-"absorption_resource_decay": 0.85,        # Resource decay per round
-"absorption_event_threshold": 0.4,        # Minimum resource for activation
-"min_defense_advantage": 1,               # Required defense advantage
-```
+The defense-based system requires no special configuration parameters - it uses only the base DEFENSE stats.
+
+**Removed Parameters** (from old resource-based system):
+- ~~`damage_absorption_koef`~~ - No resource generation needed
+- ~~`absorption_resource_decay`~~ - No resource decay needed
+- ~~`absorption_event_threshold`~~ - No threshold needed
+- ~~`min_defense_advantage`~~ - Built into the formula
 
 ### Tuning Guidelines
 
-- **Increase `damage_absorption_koef`**: More resource generation
-- **Decrease `absorption_resource_decay`**: Longer resource retention
-- **Lower `absorption_event_threshold`**: More frequent activations
-- **Adjust `min_defense_advantage`**: Change who can use skip protection
+To adjust skip protection behavior:
+
+- **Role stat distributions**: Modify DEFENSE ranges in role definitions
+- **Level scaling**: Adjust how DEFENSE scales with fighter level
+- **Combat mechanics**: Modify which mechanics can be blocked
 
 ## Technical Implementation
 
 ### File Locations
 
-- **Core logic**: `core/modules/combat.py`
-- **Resource calculation**: `simulation/game_engine.py`
-- **Metrics tracking**: `simulation/level_benchmark.py`
-- **Event logging**: `telemetry/telemetry.py`
+- **Core logic**: `core/modules/combat.py` - Skip protection checks
+- **Fight initialization**: `simulation/game_engine.py` - Activation calculation
+- **Metrics tracking**: `simulation/level_benchmark.py` - Performance analysis
+- **Fighter state**: `state/fight_state.py` - Skip activations storage
 
 ### Integration Points
 
-1. **Combat Resolution**: Skip checks during attack processing
-2. **Resource Management**: Accumulation and decay each round
-3. **Telemetry**: Event tracking for analysis
-4. **Benchmarking**: Performance metrics calculation
+1. **Fight Start**: Calculate skip activations based on DEFENSE difference
+2. **Combat Resolution**: Check and consume activations for each mechanic
+3. **Event Logging**: Track which mechanics were blocked
+4. **Metrics**: Aggregate skip usage across roles and fights
 
 ---
 
-**Note**: This mechanic replaced the previous stamina transfer system, providing a cleaner and more balanced defensive option focused on blocking enemy special attacks rather than direct stat manipulation.
+**Note**: This defense-based system replaced the previous resource-based system, providing a simpler and more direct relationship between DEFENSE investment and defensive capability. The new system eliminates complex resource management while maintaining tactical depth through finite activation management.

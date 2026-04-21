@@ -612,7 +612,7 @@ def print_level_benchmark_results(results: Dict):
         print(f"Average total damage: {avg_total_damage:.1f}")
         print(f"DPS Range: {min(dps_list):.1f} - {max(dps_list):.1f}")
 
-    print(f"\n===== DAMAGE ABSORPTION ANALYSIS =====")
+    print(f"\n===== SKIP PROTECTION ANALYSIS =====")
     role_absorption = results.get("role_absorption", {})
     if role_absorption:
         # Sort roles by total absorption (highest first)
@@ -653,27 +653,13 @@ def print_level_benchmark_results(results: Dict):
             avg_rounds = data_tuple[7]
             print(f"  {role:11s}: {avg_rounds:5.1f}")
 
-        print(f"\nResource Generation per Fight:")
-        # Sort by resource generation for this section
-        sorted_by_resource = sorted(sorted_absorption, key=lambda x: x[11], reverse=True)
-        for data_tuple in sorted_by_resource:
-            role = data_tuple[0]
-            avg_resource_generated = data_tuple[11]
-            print(f"  {role:11s}: {avg_resource_generated:5.2f}")
-
-        print(f"\nResource Generation per round:")
-        for data_tuple in sorted_by_resource:
-            role = data_tuple[0]
-            resource_generated_per_round = data_tuple[12]
-            print(f"  {role:11s}: {resource_generated_per_round:5.2f}")
-
-        print(f"\nBlock Absorption per Fight:")
+        print(f"\nBlock Damage Mitigation per Fight:")
         for data_tuple in sorted_absorption:
             role = data_tuple[0]
             avg_block = data_tuple[2]
             print(f"  {role:11s}: {avg_block:5.1f}")
 
-        print(f"\nBlock Absorption per round:")
+        print(f"\nBlock Damage Mitigation per round:")
         for data_tuple in sorted_absorption:
             role = data_tuple[0]
             avg_block = data_tuple[2]

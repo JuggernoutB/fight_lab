@@ -20,14 +20,12 @@ def process_attack(
     atk_zones: List[str],
     def_zones: List[str],
     debug_mode: bool = False,
-    attacker_absorption_resource: float = 0.0,
-    defender_absorption_resource: float = 0.0,
     attacker_fatigue_bonus: float = 0.0,
-    opponent_defense: int = 0
-) -> tuple[Dict[str, Dict], float, float, Dict[str, int], Dict[str, any]]:
+    defender_skip_activations: int = 0
+) -> tuple[Dict[str, Dict], Dict[str, int], Dict[str, any], int]:
 
     if not atk_zones:
-        return {}, attacker_absorption_resource, defender_absorption_resource, {}, {}
+        return {}, {}, {}, defender_skip_activations
 
     # === DATA NORMALIZATION (protect against dict typos) ===
     try:
@@ -60,6 +58,10 @@ def process_attack(
     # Track skip protection events (list to allow multiple activations)
     skip_events = []
 
+    # NEW: Defense-based skip protection system
+    # Use skip activations remaining for the entire fight (passed from game engine)
+    skip_activations_remaining = defender_skip_activations
+
     # Get config for skip protection threshold
     config = CONFIG
 
@@ -79,20 +81,19 @@ def process_attack(
         is_crit = False
         crit_skipped = False
         if not is_blocked:
-            is_crit, attacker_absorption_resource = calc_crit(
+            is_crit = calc_crit(
                 atk_agility,
                 def_defense,
                 attacker_stamina,
-                attacker_absorption_resource,
                 attacker_fatigue_bonus
             )
 
-            # Check if crit is blocked by skip protection (dynamic check)
-            if is_crit and defender_absorption_resource >= config["absorption_event_threshold"]:
+            # Check if crit is blocked by skip protection (defense-based)
+            if is_crit and skip_activations_remaining > 0:
                 is_crit = False  # Block the crit
                 crit_skipped = True
                 skip_events.append("crit_skip")
-                defender_absorption_resource -= config["absorption_event_threshold"]  # Consume protection
+                skip_activations_remaining -= 1  # Consume one activation
 
         # Always check dodge (unless blocked zone)
         dodge_state = "hit"
@@ -106,12 +107,12 @@ def process_attack(
                 atk_agility
             )
 
-            # Check if dodge is blocked by skip protection (dynamic check)
-            if dodge_state in ["dodge", "glance"] and defender_absorption_resource >= config["absorption_event_threshold"]:
+            # Check if dodge is blocked by skip protection (defense-based)
+            if dodge_state in ["dodge", "glance"] and skip_activations_remaining > 0:
                 dodge_state = "hit"  # Block the dodge, make it a normal hit
                 dodge_skipped = True
                 skip_events.append("dodge_skip")
-                defender_absorption_resource -= config["absorption_event_threshold"]  # Consume protection
+                skip_activations_remaining -= 1  # Consume one activation
 
             # Don't apply dodge damage reduction yet, just remember the state
 
@@ -148,17 +149,17 @@ def process_attack(
 
         elif is_blocked:
             # Handle block logic
-            break_succeeded, attacker_absorption_resource = block_break(
-                atk_agility, def_defense, attacker_stamina, attacker_absorption_resource, attacker_fatigue_bonus
+            break_succeeded = block_break(
+                atk_agility, def_defense, attacker_stamina, attacker_fatigue_bonus
             )
 
-            # Check if block break is blocked by skip protection (dynamic check)
+            # Check if block break is blocked by skip protection (defense-based)
             block_break_skipped = False
-            if break_succeeded and defender_absorption_resource >= config["absorption_event_threshold"]:
+            if break_succeeded and skip_activations_remaining > 0:
                 break_succeeded = False  # Block the block break
                 block_break_skipped = True
                 skip_events.append("block_break_skip")
-                defender_absorption_resource -= config["absorption_event_threshold"]  # Consume protection
+                skip_activations_remaining -= 1  # Consume one activation
 
             if break_succeeded:
                 action_costs["block_break"] += 1  # Successful block break costs stamina
@@ -206,7 +207,7 @@ def process_attack(
         dodge_absorbed = 0.0
 
         if is_blocked:
-            # Block absorption = damage reduced by blocking (both block and block_break)
+            # Block mitigation = damage reduced by blocking (both block and block_break)
             block_absorbed = max(0.0, raw - dmg)
         elif dodge_state == "glance":
             # Glancing hit from dodge = damage reduced by glancing
@@ -234,10 +235,9 @@ def process_attack(
 
         results[z] = result
 
-        # Add absorbed damage to defender's total (BLOCK ONLY - dodge doesn't generate resource)
-        total_absorbed_by_defender += block_absorbed  # Only block absorption generates resource
+        # Add absorbed damage to defender's total (BLOCK ONLY - dodge is separate)
+        total_absorbed_by_defender += block_absorbed  # Only block mitigation is tracked
 
-    # NOTE: Absorption resource is now calculated in game_engine.py using proper opponent max_hp scaling
-    # This avoids double-counting and ensures correct resource calculation
+    # NOTE: Skip protection is now defense-based and managed in game_engine.py
 
-    return results, attacker_absorption_resource, defender_absorption_resource, action_costs, skip_events
+    return results, action_costs, skip_events, skip_activations_remaining

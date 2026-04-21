@@ -169,8 +169,8 @@ def print_debug_log(log_events):
             print("Fighter States:")
             for fighter_id, state in fighters.items():
                 fatigue_str = format_fatigue_level(state["fatigue_level"])
-                absorption = state.get('absorption_resource', 0.0)
-                print(f"  {fighter_id}: HP={state['hp']:.1f} | Stamina={state['stamina']} | {fatigue_str} | 🔮 Absorption={absorption:.3f}")
+                skip_activations = state.get('skip_activations', 0)
+                print(f"  {fighter_id}: HP={state['hp']:.1f} | Stamina={state['stamina']} | {fatigue_str} | 🛡️ Skip={skip_activations}")
             print()
 
         # Show attacks
@@ -202,7 +202,7 @@ def print_debug_log(log_events):
                 attacker_id = skip_event["attacker"]
                 blocked_mechanic = skip_event["blocked_mechanic"]
                 print(f"🛡️ Fighter {defender_id}: Skip Protection! Blocked {blocked_mechanic} from Fighter {attacker_id}")
-                print(f"    🚫 Mechanic '{blocked_mechanic}' was prevented by absorption resource")
+                print(f"    🚫 Mechanic '{blocked_mechanic}' was prevented by defense advantage")
 
         print()
 

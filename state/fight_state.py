@@ -19,10 +19,8 @@ class FighterState:
         self.damage_taken_last = 0
         self.last_damage_taken = 0
 
-        # DAMAGE ABSORPTION RESOURCE SYSTEM
-        self.damage_absorption_resource = 0.0  # Resource from absorbed damage (0.0-1.0)
-        self.absorption_fatigue_bonus = 0.0   # Crit/block break bonus from fatigue mechanic
-        self.total_resource_generated = 0.0   # Total resource generated this fight (for metrics)
+        # DEFENSE-BASED SKIP PROTECTION SYSTEM
+        self.skip_activations_remaining = 0   # Skip activations remaining for this fight
 
 
 class FightState:

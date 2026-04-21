@@ -3,13 +3,10 @@
 from ..config import CONFIG
 from .fatigue import get_fatigue_multiplier
 
-def calc_crit(att_agi: int, def_def: int, attacker_stamina: int, attacker_absorption_resource: float = 0.0, attacker_fatigue_bonus: float = 0.0) -> tuple[bool, float]:
+def calc_crit(att_agi: int, def_def: int, attacker_stamina: int, attacker_fatigue_bonus: float = 0.0) -> bool:
     """
-    Check if critical hit occurs using two-stage logic:
-    1. First check absorption resource (if >= 0.5)
-    2. Then check standard formula
-
-    Returns: (is_crit, updated_absorption_resource)
+    Check if critical hit occurs.
+    Returns: True if critical hit landed
     """
 
     import random
@@ -19,15 +16,10 @@ def calc_crit(att_agi: int, def_def: int, attacker_stamina: int, attacker_absorp
     fatigue_multiplier = get_fatigue_multiplier(attacker_stamina, 'crit')
     effective_chance = base_chance * fatigue_multiplier
 
-    # Apply fatigue bonus from absorption mechanic
+    # Apply fatigue bonus
     effective_chance += attacker_fatigue_bonus
 
-    if random.random() < effective_chance:
-        # Critical hit triggered by standard formula (resource unchanged)
-        return True, attacker_absorption_resource
-
-    # No critical hit (resource unchanged)
-    return False, attacker_absorption_resource
+    return random.random() < effective_chance
 
 def calc_crit_chance_only(att_agi: int, def_def: int, attacker_stamina: int) -> float:
     """Legacy function for backward compatibility - returns only chance value"""
