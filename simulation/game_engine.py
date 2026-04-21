@@ -83,6 +83,22 @@ def process_round(state, rng, action_mode="normal"):
     a = state.fighter_a
     b = state.fighter_b
 
+    # Capture fighter states BEFORE combat for accurate display
+    fighters_pre_round = {
+        "A": {
+            "hp": a.hp,
+            "stamina": a.stamina,
+            "fatigue_level": get_stamina_level(a.stamina),
+            "skip_activations": a.skip_activations_remaining
+        },
+        "B": {
+            "hp": b.hp,
+            "stamina": b.stamina,
+            "fatigue_level": get_stamina_level(b.stamina),
+            "skip_activations": b.skip_activations_remaining
+        }
+    }
+
     # AI decisions
     action_a = choose_action(a, state, action_mode)
     action_b = choose_action(b, state, action_mode)
@@ -92,7 +108,8 @@ def process_round(state, rng, action_mode="normal"):
     atk_zones_b, def_zones_b = to_zones(action_b)
 
     # Combat resolution - defense-based skip protection
-    res_a, action_costs_a, skip_events_a, b_skip_remaining = process_attack(
+    # CORRECTED: Attacker uses their skip activations to bypass defender's mechanics
+    res_a, action_costs_a, skip_events_a, a_skip_remaining_attack = process_attack(
         attacker={"attack": a.attack, "agility": a.agility},
         defender={"defense": b.defense, "agility": b.agility},
         attacker_stamina=a.stamina,
@@ -100,10 +117,10 @@ def process_round(state, rng, action_mode="normal"):
         atk_zones=atk_zones_a,
         def_zones=def_zones_b,
         attacker_fatigue_bonus=0.0,
-        defender_skip_activations=b.skip_activations_remaining  # B's remaining skip activations
+        defender_skip_activations=a.skip_activations_remaining  # A uses A's skip to bypass B's defense
     )
 
-    res_b, action_costs_b, skip_events_b, a_skip_remaining = process_attack(
+    res_b, action_costs_b, skip_events_b, b_skip_remaining_attack = process_attack(
         attacker={"attack": b.attack, "agility": b.agility},
         defender={"defense": a.defense, "agility": a.agility},
         attacker_stamina=b.stamina,
@@ -111,12 +128,13 @@ def process_round(state, rng, action_mode="normal"):
         atk_zones=atk_zones_b,
         def_zones=def_zones_a,
         attacker_fatigue_bonus=0.0,
-        defender_skip_activations=a.skip_activations_remaining  # A's remaining skip activations
+        defender_skip_activations=b.skip_activations_remaining  # B uses B's skip to bypass A's defense
     )
 
     # Update skip activations remaining after this round
-    a.skip_activations_remaining = a_skip_remaining
-    b.skip_activations_remaining = b_skip_remaining
+    # A spent activations when attacking B, B spent activations when attacking A
+    a.skip_activations_remaining = a_skip_remaining_attack  # A's remaining after attacking B
+    b.skip_activations_remaining = b_skip_remaining_attack  # B's remaining after attacking A
 
     # Build event log for this round
     round_attacks = []
@@ -151,24 +169,11 @@ def process_round(state, rng, action_mode="normal"):
 
         round_attacks.append(attack_event)
 
-    # Add round event with fighter states
+    # Add round event with fighter states (captured before combat)
     round_event = {
         "round": state.round_id,
         "attacks": round_attacks,
-        "fighters_pre_round": {
-            "A": {
-                "hp": a.hp,
-                "stamina": a.stamina,
-                "fatigue_level": get_stamina_level(a.stamina),
-                "skip_activations": a.skip_activations_remaining
-            },
-            "B": {
-                "hp": b.hp,
-                "stamina": b.stamina,
-                "fatigue_level": get_stamina_level(b.stamina),
-                "skip_activations": b.skip_activations_remaining
-            }
-        }
+        "fighters_pre_round": fighters_pre_round
     }
 
     # Add skip events if any occurred
@@ -177,8 +182,8 @@ def process_round(state, rng, action_mode="normal"):
         for event_type in skip_events_a:
             all_skip_events.append({
                 "type": "skip_protection",
-                "defender": "B",  # B defended against A's attack
-                "attacker": "A",
+                "skip_user": "A",  # A spent skip activations
+                "target": "B",     # A bypassed B's defensive mechanic
                 "blocked_mechanic": event_type.replace("_skip", "")
             })
 
@@ -186,8 +191,8 @@ def process_round(state, rng, action_mode="normal"):
         for event_type in skip_events_b:
             all_skip_events.append({
                 "type": "skip_protection",
-                "defender": "A",  # A defended against B's attack
-                "attacker": "B",
+                "skip_user": "B",  # B spent skip activations
+                "target": "A",     # B bypassed A's defensive mechanic
                 "blocked_mechanic": event_type.replace("_skip", "")
             })
 

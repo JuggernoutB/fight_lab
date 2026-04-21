@@ -40,6 +40,7 @@ def process_attack(
 
     # BASE (no fatigue yet)
     base = calc.calculate_damage_output(atk_attack)
+    original_base = base
     base /= len(atk_zones)
 
     # apply fatigue ONCE (correct)
@@ -94,6 +95,9 @@ def process_attack(
                 crit_skipped = True
                 skip_events.append("crit_skip")
                 skip_activations_remaining -= 1  # Consume one activation
+                print(f"[DEBUG] Skip used: crit blocked, remaining={skip_activations_remaining}")
+            elif is_crit and skip_activations_remaining == 0:
+                print(f"[DEBUG] Skip depleted: crit allowed, remaining={skip_activations_remaining}")
 
         # Always check dodge (unless blocked zone)
         dodge_state = "hit"
@@ -113,6 +117,9 @@ def process_attack(
                 dodge_skipped = True
                 skip_events.append("dodge_skip")
                 skip_activations_remaining -= 1  # Consume one activation
+                print(f"[DEBUG] Skip used: dodge blocked, remaining={skip_activations_remaining}")
+            elif dodge_state in ["dodge", "glance"] and skip_activations_remaining == 0:
+                print(f"[DEBUG] Skip depleted: dodge allowed, remaining={skip_activations_remaining}")
 
             # Don't apply dodge damage reduction yet, just remember the state
 
@@ -201,6 +208,8 @@ def process_attack(
         # =========================
         # Round damage using probabilistic rounding
         final_damage = round_damage_probabilistic(dmg)
+
+
 
         # Calculate absorbed damage
         block_absorbed = 0.0

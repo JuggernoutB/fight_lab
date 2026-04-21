@@ -198,11 +198,11 @@ def print_debug_log(log_events):
         # Show skip protection events if any
         if "skip_events" in event:
             for skip_event in event["skip_events"]:
-                defender_id = skip_event["defender"]
-                attacker_id = skip_event["attacker"]
+                skip_user = skip_event["skip_user"]
+                target = skip_event["target"]
                 blocked_mechanic = skip_event["blocked_mechanic"]
-                print(f"🛡️ Fighter {defender_id}: Skip Protection! Blocked {blocked_mechanic} from Fighter {attacker_id}")
-                print(f"    🚫 Mechanic '{blocked_mechanic}' was prevented by defense advantage")
+                print(f"🛡️ Fighter {skip_user}: Skip Protection! Bypassed {target}'s {blocked_mechanic}")
+                print(f"    ⚡ Mechanic '{blocked_mechanic}' was bypassed using defense advantage")
 
         print()
 
