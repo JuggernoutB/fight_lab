@@ -24,8 +24,10 @@ def apply_dodge(dmg: float, atk_attack: int, def_agility: int, defender_stamina:
     chance = base_chance * fatigue_multiplier
 
     roll = random.random()
-    if roll < chance * CONFIG["full_dodge_ratio"]:
-        return 0.0, "dodge"
-    if roll < chance:
-        return dmg * CONFIG["glance_damage_ratio"], "glance"
-    return dmg, "none"
+    # NEW: Simplified dodge logic - either full dodge (0 damage) or no dodge
+    # Combined old dodge + glance chances into single dodge chance
+    total_dodge_chance = chance  # Full chance for dodge (no partial hits)
+
+    if roll < total_dodge_chance:
+        return 0.0, "dodge"  # Full dodge - 0 damage
+    return dmg, "hit"  # No dodge - full damage

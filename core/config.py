@@ -4,24 +4,19 @@
 
 CONFIG = {
     # ============================================================
-    # ENGINE
-    # ============================================================
-    "block_break_damage_ratio": 0.85,  # Damage ratio when block is broken (85%)
-
-    # ============================================================
     # CRITICAL HITS
     # ============================================================
-    "base_crit_chance": 0.15,         # Base crit chance (8%)
-    "agi_diff_crit_scale": 0.025,     # Agility difference scaling for crit
-    "crit_damage_multiplier": 1.5,    # Damage multiplier for crits
+    "base_crit_chance": 0.1,         # Base crit chance (8%)
+    "agi_diff_crit_scale": 0.02,     # Agility difference scaling for crit
+    "crit_damage_multiplier": 1.4,    # Damage multiplier for crits
     "min_crit_chance": 0.005,         # Minimum possible crit chance (0.5%)
-    "max_crit_chance": 0.32,          # Maximum possible crit chance (35%)
+    "max_crit_chance": 0.3,          # Maximum possible crit chance (35%)
 
     # ============================================================
     # DODGE
     # ============================================================
-    "base_dodge_chance": 0.2,        # Base dodge chance (22%)
-    "agi_diff_dodge_scale": 0.1,     # Agility difference scaling for dodge
+    "base_dodge_chance": 0.1,        # Base dodge chance (22%)
+    "agi_diff_dodge_scale": 0.05,     # Agility difference scaling for dodge
     "min_dodge_chance": 0.05,         # Minimum possible dodge chance (2%)
     "max_dodge_chance": 0.55,          # Maximum possible dodge chance (40%)
     "full_dodge_ratio": 0.5,          # Ratio of total dodge chance that results in full dodge
@@ -38,6 +33,7 @@ CONFIG = {
     "agi_block_break_scale": 0.1,    # Agility scaling for block break
     "min_block_break_chance": 0.05,   # Minimum block break chance
     "max_block_break_chance": 0.7,    # Maximum block break chance
+    "block_break_damage_ratio": 0.85,  # Damage ratio when block is broken (85%)
 
     # ============================================================
     # FATIGUE SYSTEM
@@ -58,9 +54,9 @@ CONFIG = {
     "stamina_regen_per_round": 5,     # Stamina regenerated per round
 
     # Action-based stamina costs (for successful mechanics)
-    "stamina_cost_dodge": 4,          # Stamina cost for successful dodge
-    "stamina_cost_crit": 4,           # Stamina cost for successful critical hit
-    "stamina_cost_block_break": 4,    # Stamina cost for successful block break
+    "stamina_cost_dodge": 3,          # Stamina cost for successful dodge
+    "stamina_cost_crit": 3,           # Stamina cost for successful critical hit
+    "stamina_cost_block_break": 3,    # Stamina cost for successful block break
 
     # ============================================================
     # SKIP PROTECTION SYSTEM (DEFENSE-BASED)

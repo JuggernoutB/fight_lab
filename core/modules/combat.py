@@ -34,16 +34,15 @@ def process_attack(
         def_defense = defender["defense"]
         def_agility = defender["agility"]
     except KeyError as e:
-        raise ValueError(f"Missing required stat in fighter data: {e}")
+        raise ValueError(f"Missing required stat in fighter data. KeyError: {e}. Attacker keys: {list(attacker.keys())}, Defender keys: {list(defender.keys())}")
 
     calc = EHPDamageCalculator()
 
     # BASE (no fatigue yet)
     base = calc.calculate_damage_output(atk_attack)
-    original_base = base
     base /= len(atk_zones)
 
-    # apply fatigue ONCE (correct)
+    # apply fatigue ONCE
     base *= get_fatigue_multiplier(attacker_stamina, "attack")
 
     results = {}
@@ -63,190 +62,158 @@ def process_attack(
     # Use skip activations remaining for the entire fight (passed from game engine)
     skip_activations_remaining = defender_skip_activations
 
-    # Get config for skip protection threshold
-    config = CONFIG
-
     for z in atk_zones:
 
-        raw = base * ZONE_MULTIPLIERS[z]   # true pre-mitigation snapshot
-        dmg = raw
+        # =========================
+        # STEP 1: Base damage calculation
+        # =========================
+        raw_damage = base * ZONE_MULTIPLIERS[z]   # true pre-mitigation snapshot
 
         # =========================
-        # STEP 1: ROLL ALL MECHANICS (independent checks)
+        # STEP 2: Roll dodge (with skip protection)
         # =========================
+        is_dodged = False
 
-        # Check if zone is blocked
+        # Check if zone is blocked (dodge doesn't apply to blocked zones)
         is_blocked = z in def_zones
 
-        # Always check crit (unless blocked zone)
-        is_crit = False
-        crit_skipped = False
         if not is_blocked:
-            is_crit = calc_crit(
-                atk_agility,
-                def_defense,
-                attacker_stamina,
-                attacker_fatigue_bonus
-            )
+            # Calculate dodge chance
+            dmg_temp, dodge_state = apply_dodge(raw_damage, atk_attack, def_agility, defender_stamina, atk_agility)
 
-            # Check if crit is blocked by skip protection (defense-based)
-            if is_crit and skip_activations_remaining > 0:
-                is_crit = False  # Block the crit
-                crit_skipped = True
-                skip_events.append("crit_skip")
-                skip_activations_remaining -= 1  # Consume one activation
-                print(f"[DEBUG] Skip used: crit blocked, remaining={skip_activations_remaining}")
-            elif is_crit and skip_activations_remaining == 0:
-                print(f"[DEBUG] Skip depleted: crit allowed, remaining={skip_activations_remaining}")
-
-        # Always check dodge (unless blocked zone)
-        dodge_state = "hit"
-        dodge_skipped = False
-        if not is_blocked:
-            dmg_temp, dodge_state = apply_dodge(
-                dmg,
-                atk_attack,
-                def_agility,
-                defender_stamina,
-                atk_agility
-            )
-
-            # Check if dodge is blocked by skip protection (defense-based)
-            if dodge_state in ["dodge", "glance"] and skip_activations_remaining > 0:
-                dodge_state = "hit"  # Block the dodge, make it a normal hit
-                dodge_skipped = True
+            # Apply skip protection to dodge
+            if dodge_state == "dodge" and skip_activations_remaining > 0:
+                # Skip protection blocks the dodge
                 skip_events.append("dodge_skip")
-                skip_activations_remaining -= 1  # Consume one activation
-                print(f"[DEBUG] Skip used: dodge blocked, remaining={skip_activations_remaining}")
-            elif dodge_state in ["dodge", "glance"] and skip_activations_remaining == 0:
-                print(f"[DEBUG] Skip depleted: dodge allowed, remaining={skip_activations_remaining}")
+                skip_activations_remaining -= 1
+                dodge_state = "hit"  # Convert to normal hit
 
-            # Don't apply dodge damage reduction yet, just remember the state
+            # Process dodge result
+            if dodge_state == "dodge":  # Full dodge only
+                is_dodged = True
+                action_costs["dodge"] += 1
+                # Full dodge: all damage absorbed, END here
+                result = {
+                    "damage": 0,
+                    "event": "dodge",
+                    "absorbed": {
+                        "block": 0.0,
+                        "dodge": raw_damage  # All raw damage absorbed by dodge
+                    }
+                }
+
+                if debug_mode:
+                    result.update({
+                        "raw": raw_damage,
+                        "mitigated": raw_damage,
+                        "damage_before_rounding": 0.0,
+                        "is_crit": False,
+                        "is_blocked": False,
+                        "is_dodged": True
+                    })
+
+                results[z] = result
+                continue  # Skip to next zone
 
         # =========================
-        # STEP 2: RESOLVE FINAL OUTCOME
+        # STEP 3: Apply crit (ALWAYS, if hit occurred)
         # =========================
+        is_crit = calc_crit(
+            atk_agility,
+            def_defense,
+            attacker_stamina,
+            attacker_fatigue_bonus
+        )
 
-        # Priority: dodge > block > crit hit
-        if not is_blocked and dodge_state == "dodge":
-            # Full dodge - all damage absorbed, but crit still counted!
-            action_costs["dodge"] += 1  # Successful dodge costs stamina
-            if is_crit:
-                action_costs["crit"] += 1  # Successful crit costs stamina
+        # Apply skip protection to crit
+        if is_crit and skip_activations_remaining > 0:
+            is_crit = False  # Block the crit
+            skip_events.append("crit_skip")
+            skip_activations_remaining -= 1
 
-            result = {
-                "damage": 0,
-                "event": "crit_dodge" if is_crit else "dodge",
-                "absorbed": {
-                    "block": 0.0,
-                    "dodge": raw
-                },
-                "crit_rolled": is_crit  # Track crit for statistics
-            }
-            if debug_mode:
-                result.update({
-                    "raw": raw,
-                    "mitigated": raw,
-                    "is_crit": is_crit,
-                    "is_blocked": False,
-                    "is_dodged": True
-                })
-            results[z] = result
-            continue
+        # Apply crit multiplier to raw damage
+        if is_crit:
+            action_costs["crit"] += 1
+            raw_damage *= CONFIG["crit_damage_multiplier"]
 
-        elif is_blocked:
-            # Handle block logic
+        # =========================
+        # STEP 4: Apply block (if zone is defended)
+        # =========================
+        blocked_damage = raw_damage  # Start with full damage
+        event = "hit"  # Default event
+
+        if is_blocked:
+            # Check block break with skip protection
             break_succeeded = block_break(
                 atk_agility, def_defense, attacker_stamina, attacker_fatigue_bonus
             )
 
-            # Check if block break is blocked by skip protection (defense-based)
-            block_break_skipped = False
+            # Apply skip protection to block break
             if break_succeeded and skip_activations_remaining > 0:
                 break_succeeded = False  # Block the block break
-                block_break_skipped = True
                 skip_events.append("block_break_skip")
-                skip_activations_remaining -= 1  # Consume one activation
+                skip_activations_remaining -= 1
 
             if break_succeeded:
-                action_costs["block_break"] += 1  # Successful block break costs stamina
-                dmg *= CONFIG["block_break_damage_ratio"]
+                action_costs["block_break"] += 1
+                blocked_damage = raw_damage * CONFIG["block_break_damage_ratio"]
                 event = "crit_block_break" if is_crit else "block_break"
-                if is_crit:
-                    action_costs["crit"] += 1  # Successful crit costs stamina
-                    dmg *= CONFIG["crit_damage_multiplier"]
             else:
-                dmg = apply_block(dmg, atk_attack, def_defense, defender_stamina)
+                blocked_damage = apply_block(raw_damage, atk_attack, def_defense, defender_stamina)
                 event = "crit_block" if is_crit else "block"
-                if is_crit:
-                    action_costs["crit"] += 1  # Successful crit costs stamina
-                    dmg *= CONFIG["crit_damage_multiplier"]
-
         else:
-            # Regular hit or glancing hit
-            if dodge_state == "glance":
-                dmg, _ = apply_dodge(dmg, atk_attack, def_agility, defender_stamina, atk_agility)
-                event = "crit_glance" if is_crit else "glance"
-                if is_crit:
-                    action_costs["crit"] += 1  # Successful crit costs stamina
-            else:
-                event = "crit" if is_crit else "hit"
-
-            if is_crit:
-                action_costs["crit"] += 1  # Successful crit costs stamina
-                dmg *= CONFIG["crit_damage_multiplier"]
+            # No block, full damage goes through
+            event = "crit" if is_crit else "hit"
 
         # =========================
-        # EHP MITIGATION - Apply defense-based damage reduction
+        # STEP 5: Apply DEF (EHP mitigation)
         # =========================
-        # Apply EHP-based mitigation (hidden defense effectiveness)
         from core.modules.ehp import apply_defense_reduction
-        dmg = apply_defense_reduction(dmg, def_defense)
+        final_damage_float = apply_defense_reduction(blocked_damage, def_defense)
 
         # =========================
-        # FINAL OUTPUT - Stable API Contract
+        # STEP 6: Final damage and absorption calculation
         # =========================
-        # Round damage using probabilistic rounding
-        final_damage = round_damage_probabilistic(dmg)
+        final_damage = round_damage_probabilistic(final_damage_float)
 
+        # Calculate total absorbed damage (KEY CHANGE: total absorption)
+        absorbed_total = raw_damage - final_damage_float  # Before rounding
 
-
-        # Calculate absorbed damage
-        block_absorbed = 0.0
-        dodge_absorbed = 0.0
-
+        # Split absorption between block and defense for tracking
         if is_blocked:
-            # Block mitigation = damage reduced by blocking (both block and block_break)
-            block_absorbed = max(0.0, raw - dmg)
-        elif dodge_state == "glance":
-            # Glancing hit from dodge = damage reduced by glancing
-            dodge_absorbed = max(0.0, raw - dmg)
+            block_absorbed = max(0.0, raw_damage - blocked_damage)
+            defense_absorbed = max(0.0, blocked_damage - final_damage_float)
+        else:
+            block_absorbed = 0.0
+            defense_absorbed = absorbed_total
 
+        # =========================
+        # STEP 7: Build result
+        # =========================
         result = {
             "damage": final_damage,
             "event": event,
             "absorbed": {
                 "block": block_absorbed,
-                "dodge": dodge_absorbed
+                "dodge": 0.0  # No partial dodge in new system
             }
         }
 
         # Debug information only when requested
         if debug_mode:
             result.update({
-                "raw": raw,
-                "mitigated": max(0.0, raw - dmg),
-                "damage_before_rounding": dmg,  # Show damage before probabilistic rounding
+                "raw": raw_damage,
+                "mitigated": absorbed_total,
+                "damage_before_rounding": final_damage_float,
                 "is_crit": is_crit,
                 "is_blocked": is_blocked,
-                "is_dodged": dodge_state in ("dodge", "glance")
+                "is_dodged": False  # Already handled above for full dodge
             })
 
         results[z] = result
 
-        # Add absorbed damage to defender's total (BLOCK ONLY - dodge is separate)
-        total_absorbed_by_defender += block_absorbed  # Only block mitigation is tracked
+        # Add absorbed damage to defender's total (TOTAL ABSORPTION now)
+        total_absorbed_by_defender += absorbed_total
 
-    # NOTE: Skip protection is now defense-based and managed in game_engine.py
-
+    # Return updated values
     return results, action_costs, skip_events, skip_activations_remaining

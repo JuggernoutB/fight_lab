@@ -46,8 +46,8 @@ def simulate_fight(state, max_rounds=25, seed=None, action_mode="normal"):
     # Each point of defense advantage gives 1 skip activation for the whole fight
     a = fight_state.fighter_a
     b = fight_state.fighter_b
-    a.skip_activations_remaining = max(0, a.defense - b.defense)  # A's defense advantage over B
-    b.skip_activations_remaining = max(0, b.defense - a.defense)  # B's defense advantage over A
+    a.skip_activations_remaining = max(0, a.defense - b.defense - 2)  # A's defense advantage over B
+    b.skip_activations_remaining = max(0, b.defense - a.defense - 2)  # B's defense advantage over A
 
     # Game log for replay/UI
     log = []
@@ -184,6 +184,7 @@ def process_round(state, rng, action_mode="normal"):
                 "type": "skip_protection",
                 "skip_user": "A",  # A spent skip activations
                 "target": "B",     # A bypassed B's defensive mechanic
+                "defender": "B",   # For telemetry compatibility
                 "blocked_mechanic": event_type.replace("_skip", "")
             })
 
@@ -193,6 +194,7 @@ def process_round(state, rng, action_mode="normal"):
                 "type": "skip_protection",
                 "skip_user": "B",  # B spent skip activations
                 "target": "A",     # B bypassed A's defensive mechanic
+                "defender": "A",   # For telemetry compatibility
                 "blocked_mechanic": event_type.replace("_skip", "")
             })
 
