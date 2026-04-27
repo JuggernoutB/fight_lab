@@ -235,8 +235,9 @@ class Telemetry:
         skip_event_count = len(self.skip_events)
         skip_events_by_fighter = {"A": 0, "B": 0}
         for event in self.skip_events:
-            if event["defender"] in skip_events_by_fighter:
-                skip_events_by_fighter[event["defender"]] += 1
+            # Count by skip_user (who actually used skip protection), not by defender
+            if event["skip_user"] in skip_events_by_fighter:
+                skip_events_by_fighter[event["skip_user"]] += 1
 
         # -------------------------
         # NEW CRIT METRICS
