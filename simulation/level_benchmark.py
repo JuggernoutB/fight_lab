@@ -299,7 +299,6 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
             results["role_absorption"][fighter_b.role]["block_events"] += block_events_b
 
         # Track skip protection events by round from telemetry
-        stamina_reached_zero = False
         for round_event in telemetry.events:
             round_num = round_event["round"]
 
@@ -309,15 +308,8 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
                     results["skip_protection_by_round"][round_num] = 0
                 results["skip_protection_by_round"][round_num] += len(round_event["skip_events"])
 
-            # Check if any fighter reached 0 stamina during this round
-            if "fighters_pre_round" in round_event:
-                fighters_state = round_event["fighters_pre_round"]
-                if (fighters_state.get("A", {}).get("stamina", 100) == 0 or
-                    fighters_state.get("B", {}).get("stamina", 100) == 0):
-                    stamina_reached_zero = True
-
-        # Count this fight if someone reached 0 stamina
-        if stamina_reached_zero:
+        # Count this fight if it ended due to stamina exhaustion
+        if final_state.end_reason == "stamina_exhaustion":
             results["stamina_exhaustion_fights"] += 1
 
         # Store result
