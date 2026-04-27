@@ -5,25 +5,9 @@ from ..config import CONFIG
 
 DEFAULT_ZONE = "chest"            # Default zone for action conversion
 
-# Legacy exports for backwards compatibility
-ATTACK_COST = CONFIG["attack_stamina_cost_per_zone"]
-DEFENSE_COST = CONFIG["defense_stamina_cost_per_zone"]
-REGEN = CONFIG["stamina_regen_per_round"]
-
 def get_initial_stamina() -> int:
       """Get initial stamina value for new fighters"""
       return CONFIG["initial_stamina"]
-
-def calculate_action_cost(atk_zones: List[str], def_zones: List[str]) -> int:
-    return len(atk_zones) * ATTACK_COST + len(def_zones) * DEFENSE_COST
-
-def can_act(stamina: int, atk_zones: List[str], def_zones: List[str]) -> bool:
-    return stamina >= calculate_action_cost(atk_zones, def_zones)
-
-def update_stamina(stamina: int, atk_zones: List[str], def_zones: List[str]) -> int:
-    cost = calculate_action_cost(atk_zones, def_zones)
-    stamina = stamina - cost + REGEN
-    return max(0, min(CONFIG["initial_stamina"], stamina))
 
 def apply_stamina(stamina: int, action: dict) -> int:
     """Apply stamina changes based on action dictionary"""
@@ -40,4 +24,11 @@ def apply_stamina(stamina: int, action: dict) -> int:
         atk_zones = [DEFAULT_ZONE] * attack_count  # Use default zone for attacks
         def_zones = [DEFAULT_ZONE] * defense_count # Use default zone for defense
 
-    return update_stamina(stamina, atk_zones, def_zones)
+    # Inline stamina calculation (removed helper functions)
+    attack_cost = CONFIG["attack_stamina_cost_per_zone"]
+    defense_cost = CONFIG["defense_stamina_cost_per_zone"]
+    regen = CONFIG["stamina_regen_per_round"]
+
+    cost = len(atk_zones) * attack_cost + len(def_zones) * defense_cost
+    stamina = stamina - cost + regen
+    return max(0, min(CONFIG["initial_stamina"], stamina))

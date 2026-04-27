@@ -5,10 +5,10 @@
   "level": 5,
   "fighter_a": {
     "type": "balanced",
-    "role": "TANK"
+    "role": "BRUISER"
   },
   "fighter_b": {
     "type": "balanced",
-    "role": "ASSASSIN"
+    "role": "SKIRMISHER"
   }
 }
