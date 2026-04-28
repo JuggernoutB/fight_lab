@@ -94,7 +94,8 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
         "rounds_distribution": {},  # Track detailed round distribution
         "role_absorption": {},  # Track damage absorption by role
         "skip_protection_by_round": {},  # Track skip protection events by round
-        "stamina_exhaustion_fights": 0  # Track fights where someone reached 0 stamina
+        "stamina_exhaustion_fights": 0,  # Track fights where someone reached 0 stamina
+        "builds_by_role": {}  # Track all builds by role with confidence
     }
 
     # ============================================================
@@ -190,7 +191,7 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
         results["builds_used"][build_a] = results["builds_used"].get(build_a, 0) + 1
         results["builds_used"][build_b] = results["builds_used"].get(build_b, 0) + 1
 
-        # Track role confidence
+        # Track role confidence and builds by role
         from state.fighter_factory import classify_build_role
         _, confidence_a = classify_build_role(
             getattr(fighter_a, 'hp_stat', 0), fighter_a.attack, fighter_a.defense, fighter_a.agility
@@ -199,6 +200,37 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
             getattr(fighter_b, 'hp_stat', 0), fighter_b.attack, fighter_b.defense, fighter_b.agility
         )
         results["role_confidences"].extend([confidence_a, confidence_b])
+
+        # Track builds by role for HTML export
+        for fighter, confidence in [(fighter_a, confidence_a), (fighter_b, confidence_b)]:
+            role = fighter.role
+            if role not in results["builds_by_role"]:
+                results["builds_by_role"][role] = []
+
+            build_data = {
+                "hp_stat": getattr(fighter, 'hp_stat', 0),
+                "hp": getattr(fighter, 'hp_stat', 0),  # Both for compatibility
+                "attack": fighter.attack,
+                "defense": fighter.defense,
+                "agility": fighter.agility,
+                "confidence": confidence,
+                "fights": 1
+            }
+
+            # Check if this exact build already exists for this role
+            existing_build = None
+            for existing in results["builds_by_role"][role]:
+                if (existing["hp_stat"] == build_data["hp_stat"] and
+                    existing["attack"] == build_data["attack"] and
+                    existing["defense"] == build_data["defense"] and
+                    existing["agility"] == build_data["agility"]):
+                    existing_build = existing
+                    break
+
+            if existing_build:
+                existing_build["fights"] += 1
+            else:
+                results["builds_by_role"][role].append(build_data)
 
         # Calculate metrics
         rounds = final_state.round_id
@@ -337,6 +369,14 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
 
     # Analyze results
     results.update(analyze_level_results(results["fights"]))
+
+    # Generate HTML export
+    try:
+        from output.html_export import export_benchmark_to_html
+        html_path = export_benchmark_to_html(results, level, num_fights, action_mode)
+        print(f"\n📄 HTML report saved: {html_path}")
+    except Exception as e:
+        print(f"\n⚠️ Failed to generate HTML report: {e}")
 
     return results
 
