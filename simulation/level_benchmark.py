@@ -93,6 +93,7 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
         "total_damage_data": [],  # Track total damage values
         "rounds_distribution": {},  # Track detailed round distribution
         "role_absorption": {},  # Track damage absorption by role
+        "role_mechanics": {},  # Track all mechanics by role (hit, crit, dodge, block, etc)
         "skip_protection_by_round": {},  # Track skip protection events by round
         "stamina_exhaustion_fights": 0,  # Track fights where someone reached 0 stamina
         "builds_by_role": {}  # Track all builds by role with confidence
@@ -329,6 +330,163 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
             results["role_absorption"][fighter_b.role]["fights"] += 1
             results["role_absorption"][fighter_b.role]["total_rounds"] += rounds
             results["role_absorption"][fighter_b.role]["block_events"] += block_events_b
+
+        # NEW: Track all mechanics by role
+        summary = telemetry.summary()
+        mechanics = summary.get("mechanics", {})
+        damage_split = summary.get("damage_split", {})
+        crit_metrics = summary.get("crit_metrics", {})
+
+        # Track mechanics for fighter A
+        if fighter_a.role not in results["role_mechanics"]:
+            results["role_mechanics"][fighter_a.role] = {
+                "hit": 0, "crit": 0, "dodge": 0, "block": 0, "block_break": 0,
+                "crit_damage": 0.0, "total_damage": 0.0,
+                "block_prevented": 0.0, "dodge_prevented": 0.0, "total_prevented": 0.0,
+                "crit_bonus_damage": 0.0, "block_break_bonus": 0.0,
+                "net_value": 0.0,
+                "fights": 0, "total_rounds": 0
+            }
+
+        # Track mechanics for fighter B
+        if fighter_b.role not in results["role_mechanics"]:
+            results["role_mechanics"][fighter_b.role] = {
+                "hit": 0, "crit": 0, "dodge": 0, "block": 0, "block_break": 0,
+                "crit_damage": 0.0, "total_damage": 0.0,
+                "block_prevented": 0.0, "dodge_prevented": 0.0, "total_prevented": 0.0,
+                "crit_bonus_damage": 0.0, "block_break_bonus": 0.0,
+                "net_value": 0.0,
+                "fights": 0, "total_rounds": 0
+            }
+
+        # Count mechanics by tracking attacks in telemetry
+        fighter_a_mechanics = {"hit": 0, "crit": 0, "dodge": 0, "block": 0, "block_break": 0}
+        fighter_b_mechanics = {"hit": 0, "crit": 0, "dodge": 0, "block": 0, "block_break": 0}
+        fighter_a_damage = {"crit": 0.0, "total": 0.0}
+        fighter_b_damage = {"crit": 0.0, "total": 0.0}
+
+        # NEW: Track damage prevention and bonus damage
+        fighter_a_prevention = {"block": 0.0, "dodge": 0.0}
+        fighter_b_prevention = {"block": 0.0, "dodge": 0.0}
+        fighter_a_bonus = {"crit": 0.0, "block_break": 0.0}
+        fighter_b_bonus = {"crit": 0.0, "block_break": 0.0}
+
+        for event in telemetry.events:
+            for attack in event.get("attacks", []):
+                event_type = attack["event"]
+                damage = attack["damage"]
+                attacker = attack.get("attacker", "")
+
+                # Determine which fighter performed the action
+                if attacker == "A":
+                    # Fighter A is attacking
+                    if event_type in fighter_a_mechanics:
+                        fighter_a_mechanics[event_type] += 1
+                    fighter_a_damage["total"] += damage
+                    if "crit" in event_type:
+                        fighter_a_damage["crit"] += damage
+                elif attacker == "B":
+                    # Fighter B is attacking
+                    if event_type in fighter_b_mechanics:
+                        fighter_b_mechanics[event_type] += 1
+                    fighter_b_damage["total"] += damage
+                    if "crit" in event_type:
+                        fighter_b_damage["crit"] += damage
+
+                # For defensive actions (block, dodge), track for defender
+                if event_type in ["block", "dodge", "block_break"]:
+                    defender = "B" if attacker == "A" else "A"
+                    if defender == "A":
+                        fighter_a_mechanics[event_type] += 1
+                    elif defender == "B":
+                        fighter_b_mechanics[event_type] += 1
+
+                # NEW: Calculate damage prevention and bonus damage
+                absorbed_data = attack.get("absorbed", {})
+
+                # Calculate damage prevented through defense mechanisms
+                if absorbed_data:
+                    if "block" in absorbed_data:
+                        prevented = absorbed_data["block"]
+                        defender = "B" if attacker == "A" else "A"
+                        if defender == "A":
+                            fighter_a_prevention["block"] += prevented
+                        elif defender == "B":
+                            fighter_b_prevention["block"] += prevented
+
+                    if "dodge" in absorbed_data:
+                        prevented = absorbed_data["dodge"]
+                        defender = "B" if attacker == "A" else "A"
+                        if defender == "A":
+                            fighter_a_prevention["dodge"] += prevented
+                        elif defender == "B":
+                            fighter_b_prevention["dodge"] += prevented
+
+                # Calculate crit bonus damage (crit_damage - what would be normal damage)
+                if "crit" in event_type:
+                    # Estimate base damage (crit damage / 1.4 from config)
+                    from core.config import CONFIG
+                    base_damage = damage / CONFIG["crit_damage_multiplier"]
+                    crit_bonus = damage - base_damage
+
+                    if attacker == "A":
+                        fighter_a_bonus["crit"] += crit_bonus
+                    elif attacker == "B":
+                        fighter_b_bonus["crit"] += crit_bonus
+
+                # Calculate block break bonus (extra damage through breaking blocks)
+                if event_type == "block_break":
+                    # Block break allows 85% damage instead of reduced damage
+                    # Bonus = actual_damage - what_would_be_if_blocked
+                    # For simplicity, estimate bonus as percentage of damage
+                    block_break_bonus = damage * 0.15  # Rough estimate
+
+                    if attacker == "A":
+                        fighter_a_bonus["block_break"] += block_break_bonus
+                    elif attacker == "B":
+                        fighter_b_bonus["block_break"] += block_break_bonus
+
+        # Update role mechanics for fighter A
+        for mech, count in fighter_a_mechanics.items():
+            results["role_mechanics"][fighter_a.role][mech] += count
+        results["role_mechanics"][fighter_a.role]["crit_damage"] += fighter_a_damage["crit"]
+        results["role_mechanics"][fighter_a.role]["total_damage"] += fighter_a_damage["total"]
+
+        # NEW: Update prevention and bonus damage
+        results["role_mechanics"][fighter_a.role]["block_prevented"] += fighter_a_prevention["block"]
+        results["role_mechanics"][fighter_a.role]["dodge_prevented"] += fighter_a_prevention["dodge"]
+        results["role_mechanics"][fighter_a.role]["total_prevented"] += fighter_a_prevention["block"] + fighter_a_prevention["dodge"]
+        results["role_mechanics"][fighter_a.role]["crit_bonus_damage"] += fighter_a_bonus["crit"]
+        results["role_mechanics"][fighter_a.role]["block_break_bonus"] += fighter_a_bonus["block_break"]
+
+        # Calculate net value (damage dealt + damage prevented)
+        damage_dealt = fighter_a_damage["total"]
+        damage_prevented = fighter_a_prevention["block"] + fighter_a_prevention["dodge"]
+        results["role_mechanics"][fighter_a.role]["net_value"] += damage_dealt + damage_prevented
+
+        results["role_mechanics"][fighter_a.role]["fights"] += 1
+        results["role_mechanics"][fighter_a.role]["total_rounds"] += rounds
+
+        # Update role mechanics for fighter B
+        for mech, count in fighter_b_mechanics.items():
+            results["role_mechanics"][fighter_b.role][mech] += count
+        results["role_mechanics"][fighter_b.role]["crit_damage"] += fighter_b_damage["crit"]
+        results["role_mechanics"][fighter_b.role]["total_damage"] += fighter_b_damage["total"]
+
+        # NEW: Update prevention and bonus damage
+        results["role_mechanics"][fighter_b.role]["block_prevented"] += fighter_b_prevention["block"]
+        results["role_mechanics"][fighter_b.role]["dodge_prevented"] += fighter_b_prevention["dodge"]
+        results["role_mechanics"][fighter_b.role]["total_prevented"] += fighter_b_prevention["block"] + fighter_b_prevention["dodge"]
+        results["role_mechanics"][fighter_b.role]["crit_bonus_damage"] += fighter_b_bonus["crit"]
+        results["role_mechanics"][fighter_b.role]["block_break_bonus"] += fighter_b_bonus["block_break"]
+
+        # Calculate net value (damage dealt + damage prevented)
+        damage_dealt = fighter_b_damage["total"]
+        damage_prevented = fighter_b_prevention["block"] + fighter_b_prevention["dodge"]
+        results["role_mechanics"][fighter_b.role]["net_value"] += damage_dealt + damage_prevented
+
+        results["role_mechanics"][fighter_b.role]["fights"] += 1
+        results["role_mechanics"][fighter_b.role]["total_rounds"] += rounds
 
         # Track skip protection events by round from telemetry
         for round_event in telemetry.events:

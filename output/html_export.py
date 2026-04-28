@@ -62,7 +62,7 @@ def generate_html_content(results: Dict, level: int, num_fights: int, action_mod
             <button class="tab-button" onclick="openTab(event, 'roles')">⚔️ Roles & Winrates</button>
             <button class="tab-button" onclick="openTab(event, 'balance')">⚖️ Balance Analysis</button>
             <button class="tab-button" onclick="openTab(event, 'builds')">🏗️ Builds by Role</button>
-            <button class="tab-button" onclick="openTab(event, 'combat')">⚡ Combat Metrics</button>
+            <button class="tab-button" onclick="openTab(event, 'combat')">⚡ Mechanics Analysis</button>
         </nav>
 
         {generate_overview_tab(results, level, num_fights, action_mode)}
@@ -182,7 +182,7 @@ def generate_balance_tab(results: Dict) -> str:
             <div class="grid-2">
                 <div class="card">
                     <h3>⚡ Combat Mechanics</h3>
-                    {generate_mechanics_table(results)}
+                    {generate_old_mechanics_table(results)}
                 </div>
 
                 <div class="card">
@@ -237,7 +237,7 @@ def generate_builds_tab(results: Dict) -> str:
     """
 
 def generate_combat_tab(results: Dict) -> str:
-    """Generate combat metrics tab"""
+    """Generate mechanics analysis tab"""
 
     return f"""
         <div id="combat" class="tab-content">
@@ -249,14 +249,257 @@ def generate_combat_tab(results: Dict) -> str:
 
                 <div class="card">
                     <h3>💥 Critical Hit Analysis</h3>
-                    {generate_crit_analysis(results)}
+                    {generate_mechanics_table(results, "crit")}
                 </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h3>🎯 Hit Analysis</h3>
+                    {generate_mechanics_table(results, "hit")}
+                </div>
+
+                <div class="card">
+                    <h3>🦘 Dodge Analysis</h3>
+                    {generate_mechanics_table(results, "dodge")}
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h3>🛡️ Block Analysis</h3>
+                    {generate_mechanics_table(results, "block")}
+                </div>
+
+                <div class="card">
+                    <h3>💥 Block Break Analysis</h3>
+                    {generate_mechanics_table(results, "block_break")}
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🔥 Damage Prevention Analysis</h3>
+                {generate_damage_prevention_table(results)}
+            </div>
+
+            <div class="card">
+                <h3>💎 Net Value Analysis</h3>
+                {generate_net_value_table(results)}
             </div>
 
             <div class="card">
                 <h3>⏱️ Stamina Distribution</h3>
                 {generate_stamina_chart(results)}
             </div>
+        </div>
+    """
+
+def generate_mechanics_table(results: Dict, mechanic_type: str):
+    """Generate mechanics analysis table for specific mechanic"""
+    role_mechanics = results.get("role_mechanics", {})
+
+    if not role_mechanics:
+        return f"<p>No {mechanic_type} data available</p>"
+
+    rows = ""
+    for role in sorted(role_mechanics.keys()):
+        data = role_mechanics[role]
+        fights = data.get("fights", 1)
+        total_rounds = data.get("total_rounds", 1)
+        mechanic_count = data.get(mechanic_type, 0)
+
+        # Calculate metrics
+        per_fight = mechanic_count / fights if fights > 0 else 0
+        per_round = mechanic_count / total_rounds if total_rounds > 0 else 0
+
+        # Special handling for crit damage
+        if mechanic_type == "crit":
+            crit_damage = data.get("crit_damage", 0.0)
+            avg_crit_damage = crit_damage / mechanic_count if mechanic_count > 0 else 0
+            rows += f"""
+                <tr>
+                    <td><strong>{role}</strong></td>
+                    <td>{per_fight:.2f}</td>
+                    <td>{per_round:.3f}</td>
+                    <td>{avg_crit_damage:.1f}</td>
+                    <td>{mechanic_count}</td>
+                    <td>{fights}</td>
+                </tr>
+            """
+        else:
+            rows += f"""
+                <tr>
+                    <td><strong>{role}</strong></td>
+                    <td>{per_fight:.2f}</td>
+                    <td>{per_round:.3f}</td>
+                    <td>{mechanic_count}</td>
+                    <td>{fights}</td>
+                </tr>
+            """
+
+    # Generate table headers based on mechanic type
+    if mechanic_type == "crit":
+        headers = """
+            <th>Role</th>
+            <th>Crits per Fight</th>
+            <th>Crits per Round</th>
+            <th>Avg Crit Damage</th>
+            <th>Total Crits</th>
+            <th>Fights</th>
+        """
+    else:
+        mechanic_name = mechanic_type.replace("_", " ").title()
+        headers = f"""
+            <th>Role</th>
+            <th>{mechanic_name}s per Fight</th>
+            <th>{mechanic_name}s per Round</th>
+            <th>Total {mechanic_name}s</th>
+            <th>Fights</th>
+        """
+
+    return f"""
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        {headers}
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows}
+                </tbody>
+            </table>
+        </div>
+    """
+
+def generate_damage_prevention_table(results: Dict):
+    """Generate damage prevention analysis table"""
+    role_mechanics = results.get("role_mechanics", {})
+
+    if not role_mechanics:
+        return "<p>No damage prevention data available</p>"
+
+    rows = ""
+    for role in sorted(role_mechanics.keys()):
+        data = role_mechanics[role]
+        fights = data.get("fights", 1)
+        total_rounds = data.get("total_rounds", 1)
+
+        block_prevented = data.get("block_prevented", 0.0)
+        dodge_prevented = data.get("dodge_prevented", 0.0)
+        total_prevented = data.get("total_prevented", 0.0)
+
+        # Calculate per-fight and per-round metrics
+        block_per_fight = block_prevented / fights if fights > 0 else 0
+        dodge_per_fight = dodge_prevented / fights if fights > 0 else 0
+        total_per_fight = total_prevented / fights if fights > 0 else 0
+
+        block_per_round = block_prevented / total_rounds if total_rounds > 0 else 0
+        dodge_per_round = dodge_prevented / total_rounds if total_rounds > 0 else 0
+        total_per_round = total_prevented / total_rounds if total_rounds > 0 else 0
+
+        rows += f"""
+            <tr>
+                <td><strong>{role}</strong></td>
+                <td>{block_per_fight:.1f}</td>
+                <td>{dodge_per_fight:.1f}</td>
+                <td>{total_per_fight:.1f}</td>
+                <td>{block_per_round:.2f}</td>
+                <td>{dodge_per_round:.2f}</td>
+                <td>{total_per_round:.2f}</td>
+                <td>{fights}</td>
+            </tr>
+        """
+
+    return f"""
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Role</th>
+                        <th>Block Prevented/Fight</th>
+                        <th>Dodge Prevented/Fight</th>
+                        <th>Total Prevented/Fight</th>
+                        <th>Block Prevented/Round</th>
+                        <th>Dodge Prevented/Round</th>
+                        <th>Total Prevented/Round</th>
+                        <th>Fights</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows}
+                </tbody>
+            </table>
+        </div>
+    """
+
+def generate_net_value_table(results: Dict):
+    """Generate net value analysis table (damage dealt + damage prevented)"""
+    role_mechanics = results.get("role_mechanics", {})
+
+    if not role_mechanics:
+        return "<p>No net value data available</p>"
+
+    rows = ""
+    # Sort roles by net value per fight (highest first)
+    role_data = []
+    for role, data in role_mechanics.items():
+        fights = data.get("fights", 1)
+        net_value = data.get("net_value", 0.0)
+        net_per_fight = net_value / fights if fights > 0 else 0
+        role_data.append((role, data, net_per_fight))
+
+    role_data.sort(key=lambda x: x[2], reverse=True)
+
+    for role, data, net_per_fight in role_data:
+        fights = data.get("fights", 1)
+        total_rounds = data.get("total_rounds", 1)
+
+        net_value = data.get("net_value", 0.0)
+        total_damage = data.get("total_damage", 0.0)
+        total_prevented = data.get("total_prevented", 0.0)
+        crit_bonus = data.get("crit_bonus_damage", 0.0)
+        block_break_bonus = data.get("block_break_bonus", 0.0)
+
+        # Calculate metrics
+        damage_per_fight = total_damage / fights if fights > 0 else 0
+        prevented_per_fight = total_prevented / fights if fights > 0 else 0
+        net_per_round = net_value / total_rounds if total_rounds > 0 else 0
+
+        # Calculate efficiency (net value per action)
+        total_actions = data.get("hit", 0) + data.get("crit", 0) + data.get("dodge", 0) + data.get("block", 0)
+        efficiency = net_value / total_actions if total_actions > 0 else 0
+
+        rows += f"""
+            <tr>
+                <td><strong>{role}</strong></td>
+                <td>{net_per_fight:.1f}</td>
+                <td>{net_per_round:.2f}</td>
+                <td>{damage_per_fight:.1f}</td>
+                <td>{prevented_per_fight:.1f}</td>
+                <td>{efficiency:.2f}</td>
+                <td>{fights}</td>
+            </tr>
+        """
+
+    return f"""
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Role</th>
+                        <th>Net Value/Fight</th>
+                        <th>Net Value/Round</th>
+                        <th>Damage Dealt/Fight</th>
+                        <th>Damage Prevented/Fight</th>
+                        <th>Efficiency (Value/Action)</th>
+                        <th>Fights</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows}
+                </tbody>
+            </table>
         </div>
     """
 
@@ -956,8 +1199,8 @@ def generate_balance_metrics_html(results):
         </style>
     """
 
-def generate_mechanics_table(results):
-    """Generate combat mechanics table"""
+def generate_old_mechanics_table(results):
+    """Generate combat mechanics table (old version)"""
 
     # Calculate mechanics averages same way as console output
     total = results.get("summary", {}).get("total_fights", 1)
@@ -1179,14 +1422,16 @@ def generate_crit_analysis(results):
 
 def generate_stamina_chart(results):
     """Generate stamina distribution visualization"""
-    stamina_avg = results.get("stamina_avg", {})
+    stamina_data = results.get("stamina_data", {})
 
-    if not stamina_avg:
+    if not stamina_data:
         return "<p>No stamina data available</p>"
 
-    high = stamina_avg.get("stamina_high", 0) * 100
-    mid = stamina_avg.get("stamina_mid", 0) * 100
-    low = stamina_avg.get("stamina_low", 0) * 100
+    # Calculate percentages from stamina time distribution
+    total_time = sum(stamina_data.values()) or 1
+    high = (stamina_data.get("high", 0) / total_time) * 100
+    mid = (stamina_data.get("mid", 0) / total_time) * 100
+    low = (stamina_data.get("low", 0) / total_time) * 100
 
     return f"""
         <div class="stamina-chart">
