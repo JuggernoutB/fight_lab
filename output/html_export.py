@@ -156,13 +156,13 @@ def generate_roles_tab(results: Dict) -> str:
     return f"""
         <div id="roles" class="tab-content">
             <div class="card">
-                <h3>⚔️ Role Distribution</h3>
-                {roles_table}
+                <h3>🏆 Winrate Matrix</h3>
+                {winrate_table}
             </div>
 
             <div class="card">
-                <h3>🏆 Winrate Matrix</h3>
-                {winrate_table}
+                <h3>⚔️ Role Distribution</h3>
+                {roles_table}
             </div>
         </div>
     """
@@ -1100,34 +1100,40 @@ def generate_balance_metrics_html(results):
     # Import validation logic
     try:
         from balance.validator import validate_single_metric
+        from balance.targets import TARGETS
     except ImportError:
         return "<p>Balance validator not available</p>"
 
-    # Define metrics to validate
+    # Define metrics to validate with actual target ranges
     validation_metrics = [
-        ("rounds_avg", avg_rounds, "8.0 - 10.0"),
-        ("dps_avg", avg_dps, "20.0 - 25.0"),
-        ("draw_rate", draw_rate, "0.08 - 0.16"),
-        ("stamina_exhaustion_rate", stamina_exhaustion_rate, "0.0 - 0.02"),
+        ("rounds_avg", avg_rounds, f"{TARGETS['rounds_avg'][0]} - {TARGETS['rounds_avg'][1]}"),
+        ("dps_avg", avg_dps, f"{TARGETS['dps_avg'][0]} - {TARGETS['dps_avg'][1]}"),
+        ("draw_rate", draw_rate, f"{TARGETS['draw_rate'][0]} - {TARGETS['draw_rate'][1]}"),
+        ("stamina_exhaustion_rate", stamina_exhaustion_rate, f"{TARGETS['stamina_exhaustion_rate'][0]} - {TARGETS['stamina_exhaustion_rate'][1]}"),
     ]
 
     # Add mechanics validation
     for mechanic in ['dodge', 'block', 'block_break', 'hit']:
-        if mechanic in mechanics_avg:
-            validation_metrics.append((mechanic, mechanics_avg[mechanic], "varies"))
+        if mechanic in mechanics_avg and mechanic in TARGETS:
+            low, high = TARGETS[mechanic]
+            validation_metrics.append((mechanic, mechanics_avg[mechanic], f"{low} - {high}"))
 
     # Add damage validation
     for damage_type in ['crit_dmg', 'normal_dmg', 'blocked_dmg']:
-        if damage_type in damage_avg:
-            validation_metrics.append((damage_type, damage_avg[damage_type], "varies"))
+        if damage_type in damage_avg and damage_type in TARGETS:
+            low, high = TARGETS[damage_type]
+            validation_metrics.append((damage_type, damage_avg[damage_type], f"{low} - {high}"))
 
     # Add stamina validation
     for stamina_level in ['stamina_high', 'stamina_mid', 'stamina_low']:
-        if stamina_level in stamina_avg:
-            validation_metrics.append((stamina_level, stamina_avg[stamina_level], "varies"))
+        if stamina_level in stamina_avg and stamina_level in TARGETS:
+            low, high = TARGETS[stamina_level]
+            validation_metrics.append((stamina_level, stamina_avg[stamina_level], f"{low} - {high}"))
 
     # Add role balance
-    validation_metrics.append(("role_balance_spread", role_balance_spread, "0.0 - 0.06"))
+    if 'role_balance_spread' in TARGETS:
+        low, high = TARGETS['role_balance_spread']
+        validation_metrics.append(("role_balance_spread", role_balance_spread, f"{low} - {high}"))
 
     # Run validation
     rows = ""

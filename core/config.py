@@ -29,7 +29,7 @@ CONFIG = {
     "def_diff_block_scale": 0.075,    # Defense difference scaling for blocking
     "min_block_reduction": 0.2,       # Minimum block damage reduction
     "max_block_reduction": 0.8,       # Maximum block damage reduction
-    "base_block_break_chance": 0.1,  # Base block break chance
+    "base_block_break_chance": 0.15,  # Base block break chance
     "agi_block_break_scale": 0.05,    # Agility scaling for block break
     "min_block_break_chance": 0.05,   # Minimum block break chance
     "max_block_break_chance": 0.5,    # Maximum block break chance
