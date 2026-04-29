@@ -63,3 +63,7 @@ docs/_build/
 *.tmp
 *.temp
 *.log
+
+# Output reports
+output/benchmark_*.html
+output/*.html

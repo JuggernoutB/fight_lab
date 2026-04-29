@@ -46,8 +46,8 @@ def simulate_fight(state, max_rounds=25, seed=None, action_mode="normal"):
     # Each point of defense advantage gives 1 skip activation for the whole fight
     a = fight_state.fighter_a
     b = fight_state.fighter_b
-    a.skip_activations_remaining = max(0, a.defense - b.defense - 2)  # A's defense advantage over B
-    b.skip_activations_remaining = max(0, b.defense - a.defense - 2)  # B's defense advantage over A
+    a.skip_activations_remaining = max(0, a.defense - b.defense - 3)  # A's defense advantage over B
+    b.skip_activations_remaining = max(0, b.defense - a.defense - 3)  # B's defense advantage over A
 
     # Game log for replay/UI
     log = []
