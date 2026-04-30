@@ -44,10 +44,8 @@ final_damage = critical_damage * (1.4 = 140% damage)
 ### Event Types
 Critical hits create specific telemetry events:
 - `crit`: Standard critical hit
-- `crit_dodge`: Critical hit that was dodged (0 damage)
 - `crit_block`: Critical hit that was blocked (reduced damage)
 - `crit_block_break`: Critical hit that broke through block (partial damage)
-- `crit_glance`: Critical hit that glanced (legacy, unused in current system)
 
 ## Advanced Critical Analysis
 

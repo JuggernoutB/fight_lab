@@ -25,8 +25,8 @@ def apply_dodge(dmg: float, atk_attack: int, def_agility: int, defender_stamina:
 
     roll = random.random()
     # NEW: Simplified dodge logic - either full dodge (0 damage) or no dodge
-    # Combined old dodge + glance chances into single dodge chance
-    total_dodge_chance = chance  # Full chance for dodge (no partial hits)
+    # Binary outcome system - no partial hits
+    total_dodge_chance = chance  # Full chance for dodge
 
     if roll < total_dodge_chance:
         return 0.0, "dodge"  # Full dodge - 0 damage

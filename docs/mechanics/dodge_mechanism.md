@@ -38,7 +38,7 @@ Dodge effectiveness is affected by defender's stamina:
 ### Full Dodge
 When dodge succeeds:
 - **Damage dealt**: 0.0
-- **Event type**: "dodge" or "crit_dodge" (if crit was rolled)
+- **Event type**: "dodge"
 - **Result**: Complete attack negation
 
 ### No Dodge
@@ -50,17 +50,17 @@ When dodge fails:
 ## Legacy vs Modern System
 
 ### Historical Changes
-The system has evolved from a complex glance/dodge system to a simplified binary outcome:
+The system has evolved from a complex multi-outcome system to a simplified binary outcome:
 
 #### Old System (Deprecated)
-- Partial dodges ("glance") with reduced damage
+- Partial dodges with reduced damage
 - Complex damage ratio calculations
 - Multiple dodge outcome types
 
 #### Current System
 - Binary outcome: full dodge (0 damage) or full hit
 - Simplified logic for better balance
-- Combined old dodge + glance chances into single dodge chance
+- Single dodge chance mechanism
 
 ## Analytics & Metrics
 
@@ -69,7 +69,6 @@ The system tracks dodge-related events in telemetry:
 
 #### Event Counters
 - `dodge`: Successful full dodges
-- `crit_dodge`: Critical hits that were dodged
 - `hit`: Attacks that were not dodged
 
 #### Damage Absorption
@@ -82,9 +81,9 @@ The system tracks dodge-related events in telemetry:
 - **Effective Dodge Rate**: Dodge rate accounting for fatigue states
 - **Agility Advantage Impact**: Correlation between agility difference and dodge success
 
-#### Crit Interaction Analysis
-- **Crit Dodge Rate**: Rate of critical hits being dodged
-- **Crit vs Regular Dodge**: Comparison of dodge rates for different attack types
+#### Damage Type Analysis
+- **Dodge vs All Attacks**: Dodge effectiveness regardless of attack type
+- **Damage Prevention**: Total damage prevented through successful dodging
 
 #### Stamina Correlation
 - **Dodge by Stamina State**: Dodge rates in fresh/tired/exhausted states
@@ -130,7 +129,7 @@ def apply_dodge(
 
 ### Interaction with Other Mechanics
 - **vs Blocking**: Dodge prevents all damage, block reduces damage
-- **vs Critical Hits**: Critical hits can be dodged (crit_dodge events)
+- **vs Critical Hits**: Critical hits can be completely avoided by dodging
 - **vs Skip Protection**: Dodge happens before skip protection checks
 - **vs Fatigue**: Heavy fatigue makes dodging much less reliable
 

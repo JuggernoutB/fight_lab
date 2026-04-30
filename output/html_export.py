@@ -179,16 +179,9 @@ def generate_balance_tab(results: Dict) -> str:
                 </div>
             </div>
 
-            <div class="grid-2">
-                <div class="card">
-                    <h3>⚡ Combat Mechanics</h3>
-                    {generate_old_mechanics_table(results)}
-                </div>
-
-                <div class="card">
-                    <h3>🎯 Damage Distribution</h3>
-                    {generate_damage_table(results)}
-                </div>
+            <div class="card">
+                <h3>⚡ Combat Mechanics</h3>
+                {generate_old_mechanics_table(results)}
             </div>
         </div>
     """
@@ -1120,15 +1113,17 @@ def generate_balance_metrics_html(results):
 
     # Add damage validation
     for damage_type in ['crit_dmg', 'normal_dmg', 'blocked_dmg']:
-        if damage_type in damage_avg and damage_type in TARGETS:
+        damage_key = damage_type.replace('_dmg', '')
+        if damage_key in damage_avg and damage_type in TARGETS:
             low, high = TARGETS[damage_type]
-            validation_metrics.append((damage_type, damage_avg[damage_type], f"{low} - {high}"))
+            validation_metrics.append((damage_type, damage_avg[damage_key], f"{low} - {high}"))
 
     # Add stamina validation
     for stamina_level in ['stamina_high', 'stamina_mid', 'stamina_low']:
-        if stamina_level in stamina_avg and stamina_level in TARGETS:
+        stamina_key = stamina_level.replace('stamina_', '')
+        if stamina_key in stamina_avg and stamina_level in TARGETS:
             low, high = TARGETS[stamina_level]
-            validation_metrics.append((stamina_level, stamina_avg[stamina_level], f"{low} - {high}"))
+            validation_metrics.append((stamina_level, stamina_avg[stamina_key], f"{low} - {high}"))
 
     # Add role balance
     if 'role_balance_spread' in TARGETS:
@@ -1219,7 +1214,7 @@ def generate_old_mechanics_table(results):
         return "<p>No mechanics data available</p>"
 
     rows = ""
-    for mechanic in ['hit', 'crit', 'dodge', 'block', 'block_break', 'glance', 'crit_dodge', 'crit_block', 'crit_block_break', 'crit_glance']:
+    for mechanic in ['hit', 'crit', 'dodge', 'block', 'block_break', 'crit_block', 'crit_block_break']:
         if mechanic in mechanics_avg:
             value = mechanics_avg[mechanic]
             percentage = value * 100
@@ -1232,7 +1227,7 @@ def generate_old_mechanics_table(results):
                 color_class = "success"
             elif mechanic in ['dodge', 'block']:
                 color_class = "info"
-            elif mechanic in ['block_break', 'glance']:
+            elif mechanic in ['block_break']:
                 color_class = "warning"
 
             # Format display name

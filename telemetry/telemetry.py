@@ -11,11 +11,8 @@ class Telemetry:
             "block": 0,
             "block_break": 0,
             "hit": 0,
-            "crit_dodge": 0,
             "crit_block": 0,
             "crit_block_break": 0,
-            "crit_glance": 0,
-            "glance": 0,
         }
 
         # NEW: Separate crit tracking for proper metrics
@@ -85,7 +82,7 @@ class Telemetry:
                     self.crit_stats["crit_rolls"] += 1
 
                 # Track hits that dealt damage (not dodged)
-                if event_type != "dodge" and event_type != "crit_dodge":
+                if event_type != "dodge":
                     self.crit_stats["successful_hits"] += 1
 
                     # Track crits that dealt damage
