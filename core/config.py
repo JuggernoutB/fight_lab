@@ -19,13 +19,12 @@ CONFIG = {
     "agi_diff_dodge_scale": 0.03,     # Agility difference scaling for dodge
     "min_dodge_chance": 0.05,         # Minimum possible dodge chance
     "max_dodge_chance": 0.35,          # Maximum possible dodge chance
-    "full_dodge_ratio": 0.5,          # Ratio of total dodge chance that results in full dodge
 
     # ============================================================
     # BLOCKING
     # ============================================================
-    "base_block_reduction": 0.1,     # Base damage reduction from blocking
-    "def_diff_block_scale": 0.075,    # Defense difference scaling for blocking
+    "base_block_reduction": 0.15,     # Base damage reduction from blocking
+    "def_diff_block_scale": 0.07,    # Defense difference scaling for blocking
     "min_block_reduction": 0.1,       # Minimum block damage reduction
     "max_block_reduction": 0.85,       # Maximum block damage reduction
     "base_block_break_chance": 0.1,  # Base block break chance
