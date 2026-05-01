@@ -95,7 +95,8 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
         "role_absorption": {},  # Track damage absorption by role
         "role_mechanics": {},  # Track all mechanics by role (hit, crit, dodge, block, etc)
         "skip_protection_by_round": {},  # Track skip protection events by round
-        "stamina_exhaustion_fights": 0,  # Track fights where someone reached 0 stamina
+        "stamina_exhaustion_fights": 0,  # Track fights that ended due to stamina exhaustion (both players can't attack)
+        "zero_stamina_encounters": 0,    # Track fights where at least one player reached 0 stamina during the fight
         "builds_by_role": {}  # Track all builds by role with confidence
     }
 
@@ -502,6 +503,16 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
         if final_state.end_reason == "stamina_exhaustion":
             results["stamina_exhaustion_fights"] += 1
 
+        # Check if any player reached 0 stamina during the fight (even if fight didn't end due to exhaustion)
+        zero_stamina_encountered = False
+        for stamina_a, stamina_b in telemetry.stamina_samples:
+            if stamina_a <= 0 or stamina_b <= 0:
+                zero_stamina_encountered = True
+                break
+
+        if zero_stamina_encountered:
+            results["zero_stamina_encounters"] += 1
+
         # Store result
         fight_result = {
             "fighter_a": {
@@ -783,8 +794,12 @@ def print_level_benchmark_results(results: Dict):
     # NEW: Stamina exhaustion analysis
     exhaustion_fights = results["stamina_exhaustion_fights"]
     exhaustion_rate = (exhaustion_fights / total) * 100 if total > 0 else 0
+    zero_stamina_fights = results["zero_stamina_encounters"]
+    zero_stamina_rate = (zero_stamina_fights / total) * 100 if total > 0 else 0
+
     print(f"\n===== STAMINA EXHAUSTION ANALYSIS =====")
-    print(f"Fights with 0 stamina: {exhaustion_fights:4d} ({exhaustion_rate:5.1f}%)")
+    print(f"Fights ending in stamina draw (both can't attack): {exhaustion_fights:4d} ({exhaustion_rate:5.1f}%)")
+    print(f"Fights with 0 stamina encounters:                  {zero_stamina_fights:4d} ({zero_stamina_rate:5.1f}%)")
 
     print(f"\n===== DPS VARIANCE =====")
     if results["dps_data"]:

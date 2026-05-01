@@ -113,7 +113,7 @@ def generate_overview_tab(results: Dict, level: int, num_fights: int, action_mod
                             <span class="stat-value">{draw_rate:.1%}</span>
                         </div>
                         <div class="stat">
-                            <span class="stat-label">Stamina Exhaustion Rate</span>
+                            <span class="stat-label">Stamina Draw Rate</span>
                             <span class="stat-value">{stamina_exhaustion_rate:.1%}</span>
                         </div>
                     </div>
@@ -142,8 +142,80 @@ def generate_overview_tab(results: Dict, level: int, num_fights: int, action_mod
                 </div>
             </div>
 
+            {generate_stamina_overview(results)}
             {generate_rounds_distribution_chart(results)}
         </div>
+    """
+
+def generate_stamina_overview(results):
+    """Generate stamina overview for main tab"""
+    stamina_data = results.get("stamina_data", {})
+    total_fights = results.get("summary", {}).get("total_fights", 1)
+    stamina_exhaustion_fights = results.get("stamina_exhaustion_fights", 0)
+    zero_stamina_encounters = results.get("zero_stamina_encounters", 0)
+
+    # Calculate percentages for stamina distribution
+    if stamina_data:
+        total_time = sum(stamina_data.values()) or 1
+        high = (stamina_data.get("high", 0) / total_time) * 100
+        mid = (stamina_data.get("mid", 0) / total_time) * 100
+        low = (stamina_data.get("low", 0) / total_time) * 100
+    else:
+        high = mid = low = 0
+
+    # Calculate percentages for zero stamina analysis
+    exhaustion_rate = (stamina_exhaustion_fights / total_fights * 100) if total_fights > 0 else 0
+    zero_stamina_rate = (zero_stamina_encounters / total_fights * 100) if total_fights > 0 else 0
+
+    return f"""
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>⚡ Stamina Analysis</h3>
+            <div class="grid-2" style="margin-bottom: 20px;">
+                <div>
+                    <h4 style="margin: 0 0 15px 0; color: #374151;">⏱️ Stamina Distribution</h4>
+                    <div class="stamina-chart-overview">
+                        <div class="stamina-bar-overview">
+                            <div class="stamina-segment-overview high" style="width: {high:.1f}%">
+                                Fresh: {high:.1f}%
+                            </div>
+                            <div class="stamina-segment-overview mid" style="width: {mid:.1f}%">
+                                Tired: {mid:.1f}%
+                            </div>
+                            <div class="stamina-segment-overview low" style="width: {low:.1f}%">
+                                Exhausted: {low:.1f}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h4 style="margin: 0 0 15px 0; color: #374151;">💥 Zero Stamina Analysis</h4>
+                    <div class="zero-stamina-overview">
+                        <div class="overview-metric-row">
+                            <span class="overview-metric-label">Fights ending in stamina draw:</span>
+                            <span class="overview-metric-value">{stamina_exhaustion_fights} ({exhaustion_rate:.1f}%)</span>
+                        </div>
+                        <div class="overview-metric-row">
+                            <span class="overview-metric-label">Fights with 0 stamina encounters:</span>
+                            <span class="overview-metric-value">{zero_stamina_encounters} ({zero_stamina_rate:.1f}%)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <style>
+        .stamina-chart-overview {{ margin: 15px 0; }}
+        .stamina-bar-overview {{ display: flex; height: 35px; border-radius: 6px; overflow: hidden; border: 1px solid #e5e7eb; }}
+        .stamina-segment-overview {{ display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.8rem; }}
+        .stamina-segment-overview.high {{ background: #10b981; }}
+        .stamina-segment-overview.mid {{ background: #f59e0b; }}
+        .stamina-segment-overview.low {{ background: #ef4444; }}
+        .zero-stamina-overview {{ }}
+        .overview-metric-row {{ display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f3f4f6; }}
+        .overview-metric-row:last-child {{ border-bottom: none; }}
+        .overview-metric-label {{ font-size: 0.85rem; color: #6b7280; }}
+        .overview-metric-value {{ font-weight: bold; color: #374151; font-size: 0.9rem; }}
+        </style>
     """
 
 def generate_roles_tab(results: Dict) -> str:
@@ -280,10 +352,6 @@ def generate_combat_tab(results: Dict) -> str:
                 {generate_net_value_table(results)}
             </div>
 
-            <div class="card">
-                <h3>⏱️ Stamina Distribution</h3>
-                {generate_stamina_chart(results)}
-            </div>
         </div>
     """
 
@@ -1455,6 +1523,40 @@ def generate_stamina_chart(results):
         .stamina-segment.high {{ background: #10b981; }}
         .stamina-segment.mid {{ background: #f59e0b; }}
         .stamina-segment.low {{ background: #ef4444; }}
+        </style>
+    """
+
+def generate_zero_stamina_encounters(results):
+    """Generate zero stamina encounters metrics"""
+    total_fights = results.get("summary", {}).get("total_fights", 1)
+    stamina_exhaustion_fights = results.get("stamina_exhaustion_fights", 0)
+    zero_stamina_encounters = results.get("zero_stamina_encounters", 0)
+
+    # Calculate percentages
+    exhaustion_rate = (stamina_exhaustion_fights / total_fights * 100) if total_fights > 0 else 0
+    zero_stamina_rate = (zero_stamina_encounters / total_fights * 100) if total_fights > 0 else 0
+
+    return f"""
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <h4 style="margin: 0 0 15px 0; color: #374151;">💥 Zero Stamina Analysis</h4>
+            <div class="zero-stamina-metrics">
+                <div class="metric-row">
+                    <span class="metric-label">Fights ending in stamina draw (both can't attack):</span>
+                    <span class="metric-value">{stamina_exhaustion_fights} ({exhaustion_rate:.1f}%)</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Fights with 0 stamina encounters:</span>
+                    <span class="metric-value">{zero_stamina_encounters} ({zero_stamina_rate:.1f}%)</span>
+                </div>
+            </div>
+        </div>
+
+        <style>
+        .zero-stamina-metrics {{ margin: 10px 0; }}
+        .metric-row {{ display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }}
+        .metric-row:last-child {{ border-bottom: none; }}
+        .metric-label {{ font-size: 0.9rem; color: #6b7280; }}
+        .metric-value {{ font-weight: bold; color: #374151; }}
         </style>
     """
 
