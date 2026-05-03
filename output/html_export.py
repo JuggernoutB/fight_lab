@@ -223,13 +223,27 @@ def generate_roles_tab(results: Dict) -> str:
 
     # Extract role data directly from results
     roles_table = generate_role_distribution_table(results)
-    winrate_table = generate_winrate_matrix_table(results)
+
+    # Generate filtered winrate tables
+    winrate_table_2stat = generate_winrate_matrix_table_filtered(results, "2stat")
+    winrate_table_3stat = generate_winrate_matrix_table_filtered(results, "3stat")
+    winrate_table_extreme = generate_winrate_matrix_table_filtered(results, "extreme")
 
     return f"""
         <div id="roles" class="tab-content">
             <div class="card">
-                <h3>🏆 Winrate Matrix</h3>
-                {winrate_table}
+                <h3>🏆 Winrate Matrix - 2-Stat Builds + Universal</h3>
+                {winrate_table_2stat}
+            </div>
+
+            <div class="card">
+                <h3>🏆 Winrate Matrix - 3-Stat Builds + Universal</h3>
+                {winrate_table_3stat}
+            </div>
+
+            <div class="card">
+                <h3>🏆 Winrate Matrix - Extreme Builds + Universal</h3>
+                {winrate_table_extreme}
             </div>
 
             <div class="card">
@@ -1020,17 +1034,50 @@ def generate_role_distribution_table(results):
         </div>
     """
 
-def generate_winrate_matrix_table(results):
-    """Generate winrate matrix table"""
+def categorize_roles(roles):
+    """Categorize roles into 2-stat, 3-stat, extreme, and universal"""
+    extreme_builds = {"ATK", "AGI", "DEF", "HP"}
+    universal_builds = {"UNIVERSAL"}
+
+    # 2-stat builds have exactly 2 underscores in name (e.g., ATK_DEF)
+    two_stat_builds = set()
+    three_stat_builds = set()
+
+    for role in roles:
+        if role in extreme_builds or role in universal_builds:
+            continue
+
+        underscore_count = role.count('_')
+        if underscore_count == 1:  # ATK_DEF, AGI_HP, etc.
+            two_stat_builds.add(role)
+        elif underscore_count == 2:  # ATK_HP_DEF, AGI_DEF_ATK, etc.
+            three_stat_builds.add(role)
+
+    return {
+        "2stat": two_stat_builds | universal_builds,
+        "3stat": three_stat_builds | universal_builds,
+        "extreme": extreme_builds | universal_builds
+    }
+
+def generate_winrate_matrix_table_filtered(results, role_filter):
+    """Generate winrate matrix table with role filtering"""
     role_analysis = results.get("role_analysis", {})
     role_matchups = results.get("role_matchups", {})
 
     if not role_analysis:
         return "<p>No winrate data available</p>"
 
-    # Get all roles that appear in fights (same logic as console output)
+    # Get all roles that appear in fights and filter by category
     all_roles = set(role_analysis.keys())
-    sorted_roles_list = sorted(all_roles)
+    role_categories = categorize_roles(all_roles)
+
+    # Filter roles based on the requested filter
+    if role_filter in role_categories:
+        filtered_roles = role_categories[role_filter] & all_roles  # Only roles that actually appear in data
+    else:
+        filtered_roles = all_roles
+
+    sorted_roles_list = sorted(filtered_roles)
 
     if not sorted_roles_list:
         return "<p>No winrate data available</p>"
@@ -1038,10 +1085,11 @@ def generate_winrate_matrix_table(results):
     # Calculate overall winrates for each role
     overall_winrates = {}
     for role, stats in role_analysis.items():
-        overall_winrates[role] = {
-            "winrate": stats["winrate"],
-            "total": stats["fights"]
-        }
+        if role in filtered_roles:  # Only include filtered roles
+            overall_winrates[role] = {
+                "winrate": stats["winrate"],
+                "total": stats["fights"]
+            }
 
     # Helper function to get matchup winrate
     def get_matchup_winrate(role_a, role_b):
@@ -1117,6 +1165,10 @@ def generate_winrate_matrix_table(results):
         .winrate-matrix td {{ text-align: center; }}
         </style>
     """
+
+def generate_winrate_matrix_table(results):
+    """Generate winrate matrix table (original function for compatibility)"""
+    return generate_winrate_matrix_table_filtered(results, "all")
 
 def generate_balance_metrics_html(results):
     """Generate balance validation metrics"""
