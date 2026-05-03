@@ -88,8 +88,36 @@ def create_fighter_balanced_level(role: str, level: int = 12) -> FighterState:
         # AGI focused, balanced other stats
         agi_stat = total_stats // 4 + 3   # Higher AGI
         atk_stat = total_stats // 4 + 1   # Slightly higher ATK
-        def_stat = total_stats // 4       # Average DEF
+        def_stat = total_stats // 4 + 1   # Slightly higher DEF
         hp_stat = total_stats - agi_stat - atk_stat - def_stat  # Remaining points
+
+    elif role == "ATK_DEF":
+        # Attack + Defense focused
+        atk_stat = total_stats // 4 + 4   # Higher ATK
+        def_stat = total_stats // 4 + 4   # Higher DEF
+        hp_stat = total_stats // 4 - 2    # Lower HP
+        agi_stat = total_stats - atk_stat - def_stat - hp_stat  # Remaining points
+
+    elif role == "AGI_DEF":
+        # Agility + Defense focused
+        agi_stat = total_stats // 4 + 4   # Higher AGI
+        def_stat = total_stats // 4 + 4   # Higher DEF
+        hp_stat = total_stats // 4 - 2    # Lower HP
+        atk_stat = total_stats - agi_stat - def_stat - hp_stat  # Remaining points
+
+    elif role == "AGI_HP":
+        # Agility + HP focused
+        agi_stat = total_stats // 4 + 4   # Higher AGI
+        hp_stat = total_stats // 4 + 4    # Higher HP
+        atk_stat = total_stats // 4 - 2   # Lower ATK
+        def_stat = total_stats - agi_stat - hp_stat - atk_stat  # Remaining points
+
+    elif role == "ATK_HP":
+        # Attack + HP focused
+        atk_stat = total_stats // 4 + 4   # Higher ATK
+        hp_stat = total_stats // 4 + 4    # Higher HP
+        def_stat = total_stats // 4 - 2   # Lower DEF
+        agi_stat = total_stats - atk_stat - hp_stat - def_stat  # Remaining points
 
     else:  # UNIVERSAL or unknown
         # All stats equal
@@ -129,6 +157,14 @@ def create_fighter_balanced(role: str) -> FighterState:
         return create_fighter(hp_stat=12, attack_stat=14, defense_stat=12, agility_stat=14, role=role)
     elif role == "UNIVERSAL":
         return create_fighter(hp_stat=12, attack_stat=12, defense_stat=12, agility_stat=12, role=role)
+    elif role == "ATK_DEF":
+        return create_fighter(hp_stat=10, attack_stat=16, defense_stat=16, agility_stat=8, role=role)
+    elif role == "AGI_DEF":
+        return create_fighter(hp_stat=8, attack_stat=10, defense_stat=16, agility_stat=16, role=role)
+    elif role == "AGI_HP":
+        return create_fighter(hp_stat=16, attack_stat=8, defense_stat=10, agility_stat=16, role=role)
+    elif role == "ATK_HP":
+        return create_fighter(hp_stat=16, attack_stat=16, defense_stat=8, agility_stat=10, role=role)
     else:
         # Default balanced
         return create_fighter(hp_stat=12, attack_stat=12, defense_stat=12, agility_stat=12, role=role)
@@ -175,10 +211,16 @@ def classify_build_role(hp_stat: int, attack_stat: int, defense_stat: int, agili
 
     # SKIRMISHER: Agility focused with some offense
     scores["SKIRMISHER"] = (
-        agi_n * 0.6 +
-        atk_n * 0.2 +
-        def_n * 0.2
+        agi_n * 0.5 +
+        atk_n * 0.25 +
+        def_n * 0.25
     )
+
+    # NEW HYBRID ROLES
+    scores["ATK_DEF"] = atk_n * 0.5 + def_n * 0.5
+    scores["AGI_DEF"] = agi_n * 0.5 + def_n * 0.5
+    scores["AGI_HP"] = agi_n * 0.5 + hp_n * 0.5
+    scores["ATK_HP"] = atk_n * 0.5 + hp_n * 0.5
 
     # UNIVERSAL: Balanced builds (high when stats are even)
     stat_range = max([hp_n, atk_n, def_n, agi_n]) - min([hp_n, atk_n, def_n, agi_n])

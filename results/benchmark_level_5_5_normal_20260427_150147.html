@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benchmark Results - Level 5</title>
+    <style>
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .meta-info {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+
+        .tab-button:hover {
+            background: #f0f0f0;
+        }
+
+        .tab-button.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .card h3 {
+            margin-bottom: 20px;
+            color: #4a5568;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .meta-info {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .builds-table th,
+        .builds-table td {
+            text-align: center;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        .confidence.high-conf {
+            background: #10b981;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .confidence.mid-conf {
+            background: #f59e0b;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .confidence.low-conf {
+            background: #ef4444;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .role-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .role-tab {
+            background: #f1f5f9;
+            border: none;
+            padding: 10px 15px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .role-tab:hover {
+            background: #e2e8f0;
+        }
+
+        .role-tab.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .role-content {
+            display: none;
+        }
+
+        .role-content.active {
+            display: block;
+        }
+
+        .builds-summary {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        pre {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        button {
+            font-family: inherit;
+        }
+    
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Level 5 Benchmark Results</h1>
+            <div class="meta-info">
+                <span>📊 28 stat points | 🥊 5 fights | 🎮 normal mode</span>
+                <span>⏱️ Generated: 2026-04-27 15:01:47</span>
+            </div>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-button active" onclick="openTab(event, 'overview')">📋 Overview</button>
+            <button class="tab-button" onclick="openTab(event, 'roles')">⚔️ Roles & Winrates</button>
+            <button class="tab-button" onclick="openTab(event, 'balance')">⚖️ Balance Analysis</button>
+            <button class="tab-button" onclick="openTab(event, 'builds')">🏗️ Builds by Role</button>
+            <button class="tab-button" onclick="openTab(event, 'combat')">⚡ Combat Metrics</button>
+            <button class="tab-button" onclick="openTab(event, 'raw')">🔧 Raw Data</button>
+        </nav>
+
+        
+        <div id="overview" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h3>📊 Fight Statistics</h3>
+                    <div class="stat-grid">
+                        <div class="stat">
+                            <span class="stat-label">Average Fight Length</span>
+                            <span class="stat-value">0.0 rounds</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Average DPS</span>
+                            <span class="stat-value">0.0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Draw Rate</span>
+                            <span class="stat-value">0.0%</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Stamina Exhaustion Rate</span>
+                            <span class="stat-value">0.0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>🎲 Build Analysis</h3>
+                    <div class="stat-grid">
+                        <div class="stat">
+                            <span class="stat-label">Unique Builds</span>
+                            <span class="stat-value">0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Pure Builds (>15% conf)</span>
+                            <span class="stat-value">0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Hybrid Builds (<5% conf)</span>
+                            <span class="stat-value">0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Average Confidence</span>
+                            <span class="stat-value">0.000</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+        <div class="card">
+            <h3>📊 Fight Duration Distribution</h3>
+            <p><strong>Average:</strong> 0.0 rounds | <strong>Total:</strong> 5 fights</p>
+            <div class="rounds-chart">
+                
+            <div class="round-bar">
+                <span class="round-label">7 rounds</span>
+                <div class="bar-container">
+                    <div class="bar-fill" style="width: 50.0%"></div>
+                    <span class="bar-text">1 fights (20.0%)</span>
+                </div>
+            </div>
+        
+            <div class="round-bar">
+                <span class="round-label">8 rounds</span>
+                <div class="bar-container">
+                    <div class="bar-fill" style="width: 50.0%"></div>
+                    <span class="bar-text">1 fights (20.0%)</span>
+                </div>
+            </div>
+        
+            <div class="round-bar">
+                <span class="round-label">9 rounds</span>
+                <div class="bar-container">
+                    <div class="bar-fill" style="width: 100.0%"></div>
+                    <span class="bar-text">2 fights (40.0%)</span>
+                </div>
+            </div>
+        
+            <div class="round-bar">
+                <span class="round-label">10 rounds</span>
+                <div class="bar-container">
+                    <div class="bar-fill" style="width: 50.0%"></div>
+                    <span class="bar-text">1 fights (20.0%)</span>
+                </div>
+            </div>
+        
+            </div>
+        </div>
+        <style>
+        .rounds-chart { margin: 15px 0; }
+        .round-bar { margin: 8px 0; }
+        .round-label { display: inline-block; width: 80px; font-weight: bold; }
+        .bar-container { position: relative; background: #f3f4f6; height: 25px; border-radius: 4px; margin-left: 10px; display: inline-block; width: calc(100% - 90px); }
+        .bar-fill { position: absolute; background: #3b82f6; height: 100%; border-radius: 4px; transition: width 0.3s; }
+        .bar-text { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 0.85rem; z-index: 1; }
+        </style>
+    
+        </div>
+    
+        
+        <div id="roles" class="tab-content">
+            <div class="card">
+                <h3>⚔️ Role Distribution</h3>
+                <p>No role data available</p>
+            </div>
+
+            <div class="card">
+                <h3>🏆 Winrate Matrix</h3>
+                <p>No winrate data available</p>
+            </div>
+        </div>
+    
+        
+        <div id="balance" class="tab-content">
+            <div class="card">
+                <h3>⚖️ Balance Validation</h3>
+                <div class="balance-grid">
+                    <p>No balance validation data available</p>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h3>⚡ Combat Mechanics</h3>
+                    <p>No mechanics data available</p>
+                </div>
+
+                <div class="card">
+                    <h3>🎯 Damage Distribution</h3>
+                    <p>No damage data available</p>
+                </div>
+            </div>
+        </div>
+    
+        
+        <div id="builds" class="tab-content">
+            <div class="card">
+                <h3>🏗️ Builds by Role</h3>
+                <div class="role-tabs">
+                    <button class="role-tab active" onclick="openRoleTab(event, 'UNIVERSAL')">UNIVERSAL</button>
+<button class="role-tab " onclick="openRoleTab(event, 'ASSASSIN')">ASSASSIN</button>
+<button class="role-tab " onclick="openRoleTab(event, 'TANK')">TANK</button>
+<button class="role-tab " onclick="openRoleTab(event, 'BRUISER')">BRUISER</button>
+
+                </div>
+                <div class="role-contents">
+                    
+            <div id="UNIVERSAL" class="role-content active">
+                
+        <div class="builds-summary">
+            <p><strong>6</strong> unique UNIVERSAL builds found</p>
+            <p>Average confidence: <strong>0.263</strong></p>
+        </div>
+        <div class="table-wrapper">
+            <table class="builds-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>HP</th>
+                        <th>ATK</th>
+                        <th>DEF</th>
+                        <th>AGI</th>
+                        <th>Total</th>
+                        <th>Confidence</th>
+                        <th>Fights</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+            <tr>
+                <td>1</td>
+                <td>8</td>
+                <td>9</td>
+                <td>7</td>
+                <td>8</td>
+                <td>32</td>
+                <td><span class="confidence high-conf">0.484</span></td>
+                <td>1</td>
+            </tr>
+        
+            <tr>
+                <td>2</td>
+                <td>7</td>
+                <td>7</td>
+                <td>10</td>
+                <td>8</td>
+                <td>32</td>
+                <td><span class="confidence high-conf">0.359</span></td>
+                <td>1</td>
+            </tr>
+        
+            <tr>
+                <td>3</td>
+                <td>8</td>
+                <td>7</td>
+                <td>10</td>
+                <td>7</td>
+                <td>32</td>
+                <td><span class="confidence high-conf">0.344</span></td>
+                <td>1</td>
+            </tr>
+        
+            <tr>
+                <td>4</td>
+                <td>5</td>
+                <td>9</td>
+                <td>9</td>
+                <td>9</td>
+                <td>32</td>
+                <td><span class="confidence high-conf">0.219</span></td>
+                <td>1</td>
+            </tr>
+        
+            <tr>
+                <td>5</td>
+                <td>11</td>
+                <td>8</td>
+                <td>7</td>
+                <td>6</td>
+                <td>32</td>
+                <td><span class="confidence mid-conf">0.094</span></td>
+                <td>1</td>
+            </tr>
+        
+            <tr>
+                <td>6</td>
+                <td>6</td>
+                <td>7</td>
+                <td>8</td>
+                <td>11</td>
+                <td>32</td>
+                <td><span class="confidence mid-conf">0.075</span></td>
+                <td>1</td>
+            </tr>
+        
+                </tbody>
+            </table>
+        </div>
+    
+            </div>
+        
+            <div id="ASSASSIN" class="role-content ">
+                
+        <div class="builds-summary">
+            <p><strong>1</strong> unique ASSASSIN builds found</p>
+            <p>Average confidence: <strong>0.019</strong></p>
+        </div>
+        <div class="table-wrapper">
+            <table class="builds-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>HP</th>
+                        <th>ATK</th>
+                        <th>DEF</th>
+                        <th>AGI</th>
+                        <th>Total</th>
+                        <th>Confidence</th>
+                        <th>Fights</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+            <tr>
+                <td>1</td>
+                <td>7</td>
+                <td>9</td>
+                <td>5</td>
+                <td>11</td>
+                <td>32</td>
+                <td><span class="confidence low-conf">0.019</span></td>
+                <td>1</td>
+            </tr>
+        
+                </tbody>
+            </table>
+        </div>
+    
+            </div>
+        
+            <div id="TANK" class="role-content ">
+                
+        <div class="builds-summary">
+            <p><strong>1</strong> unique TANK builds found</p>
+            <p>Average confidence: <strong>0.023</strong></p>
+        </div>
+        <div class="table-wrapper">
+            <table class="builds-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>HP</th>
+                        <th>ATK</th>
+                        <th>DEF</th>
+                        <th>AGI</th>
+                        <th>Total</th>
+                        <th>Confidence</th>
+                        <th>Fights</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+            <tr>
+                <td>1</td>
+                <td>11</td>
+                <td>8</td>
+                <td>8</td>
+                <td>5</td>
+                <td>32</td>
+                <td><span class="confidence low-conf">0.023</span></td>
+                <td>1</td>
+            </tr>
+        
+                </tbody>
+            </table>
+        </div>
+    
+            </div>
+        
+            <div id="BRUISER" class="role-content ">
+                
+        <div class="builds-summary">
+            <p><strong>2</strong> unique BRUISER builds found</p>
+            <p>Average confidence: <strong>0.031</strong></p>
+        </div>
+        <div class="table-wrapper">
+            <table class="builds-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>HP</th>
+                        <th>ATK</th>
+                        <th>DEF</th>
+                        <th>AGI</th>
+                        <th>Total</th>
+                        <th>Confidence</th>
+                        <th>Fights</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+            <tr>
+                <td>1</td>
+                <td>9</td>
+                <td>11</td>
+                <td>7</td>
+                <td>5</td>
+                <td>32</td>
+                <td><span class="confidence low-conf">0.047</span></td>
+                <td>1</td>
+            </tr>
+        
+            <tr>
+                <td>2</td>
+                <td>12</td>
+                <td>9</td>
+                <td>4</td>
+                <td>7</td>
+                <td>32</td>
+                <td><span class="confidence low-conf">0.016</span></td>
+                <td>1</td>
+            </tr>
+        
+                </tbody>
+            </table>
+        </div>
+    
+            </div>
+        
+                </div>
+            </div>
+        </div>
+    
+        
+        <div id="combat" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <h3>🛡️ Skip Protection Analysis</h3>
+                    
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Role</th>
+                        <th>Skip per Fight</th>
+                        <th>Efficiency</th>
+                        <th>Total Skip Events</th>
+                        <th>Fights</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+            <tr>
+                <td><strong>ASSASSIN</strong></td>
+                <td>0.00</td>
+                <td>0.000</td>
+                <td>0</td>
+                <td>1</td>
+            </tr>
+        
+            <tr>
+                <td><strong>BRUISER</strong></td>
+                <td>0.50</td>
+                <td>0.050</td>
+                <td>1</td>
+                <td>2</td>
+            </tr>
+        
+            <tr>
+                <td><strong>TANK</strong></td>
+                <td>0.00</td>
+                <td>0.000</td>
+                <td>0</td>
+                <td>1</td>
+            </tr>
+        
+            <tr>
+                <td><strong>UNIVERSAL</strong></td>
+                <td>0.33</td>
+                <td>0.040</td>
+                <td>2</td>
+                <td>6</td>
+            </tr>
+        
+                </tbody>
+            </table>
+        </div>
+    
+                </div>
+
+                <div class="card">
+                    <h3>💥 Critical Hit Analysis</h3>
+                    <p>No critical hit data available</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>⏱️ Stamina Distribution</h3>
+                <p>No stamina data available</p>
+            </div>
+        </div>
+    
+        
+        <div id="raw" class="tab-content">
+            <div class="card">
+                <h3>🔧 Raw Data (JSON)</h3>
+                <pre id="raw-json">{
+  "fights": [
+    {
+      "fighter_a": {
+        "role": "UNIVERSAL",
+        "hp_stat": 8,
+        "atk": 9,
+        "def": 7,
+        "agi": 8
+      },
+      "fighter_b": {
+        "role": "UNIVERSAL",
+        "hp_stat": 5,
+        "atk": 9,
+        "def": 9,
+        "agi": 9
+      },
+      "winner": "DRAW_TIMEOUT",
+      "rounds": 8,
+      "telemetry": {
+        "rounds": 8,
+        "total_damage": 168.0,
+        "avg_stamina_a": 65.0,
+        "avg_stamina_b": 65.0,
+        "mechanics": {
+          "crit": 0.09375,
+          "dodge": 0.0625,
+          "block": 0.125,
+          "block_break": 0.03125,
+          "hit": 0.65625,
+          "crit_dodge": 0.0,
+          "crit_block": 0.03125,
+          "crit_block_break": 0.0,
+          "crit_glance": 0.0,
+          "glance": 0.0
+        },
+        "damage_split": {
+          "crit": 0.19642857142857142,
+          "normal": 0.6845238095238095,
+          "blocked": 0.11904761904761904
+        },
+        "crit_metrics": {
+          "raw_crit_rate": 0.14285714285714285,
+          "effective_crit_rate": 0.15384615384615385,
+          "crit_damage_ratio": 0.19642857142857142,
+          "total_rolls": 28,
+          "crit_rolls": 4,
+          "successful_hits": 26,
+          "crit_hits": 4
+        },
+        "stamina_distribution": {
+          "high": 0.375,
+          "mid": 0.625,
+          "low": 0.0
+        },
+        "damage_absorbed": {
+          "dodge": 11.419440351583342,
+          "block": 5.102858488536097
+        },
+        "absorption_events": {
+          "total": 0,
+          "by_fighter": {
+            "A": 0,
+            "B": 0
+          },
+          "events": []
+        },
+        "skip_events": {
+          "total": 0,
+          "by_fighter": {
+            "A": 0,
+            "B": 0
+          },
+          "events": []
+        }
+      }
+    },
+    {
+      "fighter_a": {
+        "role": "UNIVERSAL",
+        "hp_stat": 8,
+        "atk": 7,
+        "def": 10,
+        "agi": 7
+      },
+      "fighter_b": {
+        "role": "ASSASSIN",
+        "hp_stat": 7,
+        "atk": 9,
+        "def": 5,
+        "agi": 11
+      },
+      "winner": "A",
+      "rounds": 7,
+      "telemetry": {
+        "rounds": 7,
+        "total_damage": 188.0,
+        "avg_stamina_a": 70.0,
+        "avg_stamina_b": 70.0,
+        "mechanics": {
+          "crit": 0.05555555555555555,
+          "dodge": 0.05555555555555555,
+          "block": 0.0,
+          "block_break": 0.0,
+          "hit": 0.8333333333333334,
+          "crit_dodge": 0.0,
+          "crit_block": 0.05555555555555555,
+          "crit_block_break": 0.0,
+          "crit_glance": 0.0,
+          "glance": 0.0
+        },
+        "damage_split": {
+          "crit": 0.1595744680851064,
+          "normal": 0.8404255319148937,
+          "blocked": 0.0
+        },
+        "crit_metrics": {
+          "raw_crit_rate": 0.1111111111111111,
+          "effective_crit_rate": 0.11764705882352941,
+          "crit_damage_ratio": 0.1595744680851064,
+          "total_rolls": 18,
+          "crit_rolls": 2,
+          "successful_hits": 17,
+          "crit_hits": 2
+        },
+        "stamina_distribution": {
+          "high": 0.42857142857142855,
+          "mid": 0.5714285714285714,
+          "low": 0.0
+        },
+        "damage_absorbed": {
+          "dodge": 8.156743108273815,
+          "block": 7.1942474214975025
+        },
+        "absorption_events": {
+          "total": 0,
+          "by_fighter": {
+            "A": 0,
+            "B": 0
+          },
+          "events": []
+        },
+        "skip_events": {
+          "total": 2,
+          "by_fighter": {
+            "A": 2,
+            "B": 0
+          },
+          "events": [
+            {
+              "type": "skip_protection",
+              "skip_user": "A",
+              "target": "B",
+              "defender": "B",
+              "blocked_mechanic": "crit"
+            },
+            {
+              "type": "skip_protection",
+              "skip_user": "A",
+              "target": "B",
+              "defender": "B",
+              "blocked_mechanic": "dodge"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "fighter_a": {
+        "role": "TANK",
+        "hp_stat": 11,
+        "atk": 8,
+        "def": 8,
+        "agi": 5
+      },
+      "fighter_b": {
+        "role": "UNIVERSAL",
+        "hp_stat": 7,
+        "atk": 7,
+        "def": 10,
+        "agi": 8
+      },
+      "winner": "DRAW_TIMEOUT",
+      "rounds": 9,
+      "telemetry": {
+        "rounds": 9,
+        "total_damage": 146.0,
+        "avg_stamina_a": 60.0,
+        "avg_stamina_b": 60.0,
+        "mechanics": {
+          "crit": 0.03571428571428571,
+          "dodge": 0.21428571428571427,
+          "block": 0.14285714285714285,
+          "block_break": 0.0,
+          "hit": 0.5714285714285714,
+          "crit_dodge": 0.0,
+          "crit_block": 0.03571428571428571,
+          "crit_block_break": 0.0,
+          "crit_glance": 0.0,
+          "glance": 0.0
+        },
+        "damage_split": {
+          "crit": 0.0958904109589041,
+          "normal": 0.7808219178082192,
+          "blocked": 0.1232876712328767
+        },
+        "crit_metrics": {
+          "raw_crit_rate": 0.08333333333333333,
+          "effective_crit_rate": 0.1111111111111111,
+          "crit_damage_ratio": 0.0958904109589041,
+          "total_rolls": 24,
+          "crit_rolls": 2,
+          "successful_hits": 18,
+          "crit_hits": 2
+        },
+        "stamina_distribution": {
+          "high": 0.3333333333333333,
+          "mid": 0.5555555555555556,
+          "low": 0.1111111111111111
+        },
+        "damage_absorbed": {
+          "dodge": 44.19688054744008,
+          "block": 8.58514211813679
+        },
+        "absorption_events": {
+          "total": 0,
+          "by_fighter": {
+            "A": 0,
+            "B": 0
+          },
+          "events": []
+        },
+        "skip_events": {
+          "total": 0,
+          "by_fighter": {
+            "A": 0,
+            "B": 0
+          },
+          "events": []
+        }
+      }
+    },
+    {
+      "fighter_a": {
+        "role": "BRUISER",
+        "hp_stat": 9,
+        "atk": 11,
+        "def": 7,
+        "agi": 5
+      },
+      "fighter_b": {
+        "role": "BRUISER",
+        "hp_stat": 12,
+        "atk": 9,
+        "def": 4,
+        "agi": 7
+      },
+      "winner": "DRAW_TIMEOUT",
+      "rounds": 10,
+      "telemetry": {
+        "rounds": 10,
+        "total_damage": 206.0,
+        "avg_stamina_a": 55.0,
+        "avg_stamina_b": 55.0,
+        "mechanics": {
+          "crit": 0.0,
+          "dodge": 0.06666666666666667,
+          "block": 0.13333333333333333,
+          "block_break": 0.03333333333333333,
+          "hit": 0.7333333333333333,
+          "crit_dodge": 0.0,
+          "crit_block": 0.03333333333333333,
+          "crit_block_break": 0.0,
+          "crit_glance": 0.0,
+          "glance": 0.0
+        },
+        "damage_split": {
+          "crit": 0.043689320388349516,
+          "normal": 0.8495145631067961,
+          "blocked": 0.10679611650485436
+        },
+        "crit_metrics": {
+          "raw_crit_rate": 0.038461538461538464,
+          "effective_crit_rate": 0.041666666666666664,
+          "crit_damage_ratio": 0.043689320388349516,
+          "total_rolls": 26,
+          "crit_rolls": 1,
+          "successful_hits": 24,
+          "crit_hits": 1
+        },
+        "stamina_distribution": {
+          "high": 0.3,
+          "mid": 0.5,
+          "low": 0.2
+        },
+        "damage_absorbed": {
+          "dodge": 19.991669115240192,
+          "block": 4.4176453542222704
+        },
+        "absorption_events": {
+          "total": 0,
+          "by_fighter": {
+            "A": 0,
+            "B": 0
+          },
+          "events": []
+        },
+        "skip_events": {
+          "total": 1,
+          "by_fighter": {
+            "A": 1,
+            "B": 0
+          },
+          "events": [
+            {
+              "type": "skip_protection",
+              "skip_user": "A",
+              "target": "B",
+              "defender": "B",
+              "blocked_mechanic": "dodge"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "fighter_a": {
+        "role": "UNIVERSAL",
+        "hp_stat": 6,
+        "atk": 7,
+        "def": 8,
+        "agi": 11
+      },
+      "fighter_b": {
+        "role": "UNIVERSAL",
+        "hp_stat": 11,
+        "atk": 8,
+        "def": 7,
+        "agi": 6
+      },
+      "winner": "A",
+      "rounds": 9,
+      "telemetry": {
+        "rounds": 9,
+        "total_damage": 204.0,
+        "avg_stamina_a": 60.0,
+        "avg_stamina_b": 60.0,
+        "mechanics": {
+          "crit": 0.17391304347826086,
+          "dodge": 0.13043478260869565,
+          "block": 0.13043478260869565,
+          "block_break": 0.0,
+          "hit": 0.5217391304347826,
+          "crit_dodge": 0.0,
+          "crit_block": 0.043478260869565216,
+          "crit_block_break": 0.0,
+          "crit_glance": 0.0,
+          "glance": 0.0
+        },
+        "damage_split": {
+          "crit": 0.2647058823529412,
+          "normal": 0.5882352941176471,
+          "blocked": 0.14705882352941177
+        },
+        "crit_metrics": {
+          "raw_crit_rate": 0.25,
+          "effective_crit_rate": 0.29411764705882354,
+          "crit_damage_ratio": 0.2647058823529412,
+          "total_rolls": 20,
+          "crit_rolls": 5,
+          "successful_hits": 17,
+          "crit_hits": 5
+        },
+        "stamina_distribution": {
+          "high": 0.3333333333333333,
+          "mid": 0.5555555555555556,
+          "low": 0.1111111111111111
+        },
+        "damage_absorbed": {
+          "dodge": 33.022866523231194,
+          "block": 11.132957546133555
+        },
+        "absorption_events": {
+          "total": 0,
+          "by_fighter": {
+            "A": 0,
+            "B": 0
+          },
+          "events": []
+        },
+        "skip_events": {
+          "total": 0,
+          "by_fighter": {
+            "A": 0,
+            "B": 0
+          },
+          "events": []
+        }
+      }
+    }
+  ],
+  "role_stats": {},
+  "level_info": {
+    "level": 5,
+    "stat_budget": 32
+  },
+  "builds_used": {
+    "(8, 9, 7, 8)": 1,
+    "(5, 9, 9, 9)": 1,
+    "(8, 7, 10, 7)": 1,
+    "(7, 9, 5, 11)": 1,
+    "(11, 8, 8, 5)": 1,
+    "(7, 7, 10, 8)": 1,
+    "(9, 11, 7, 5)": 1,
+    "(12, 9, 4, 7)": 1,
+    "(6, 7, 8, 11)": 1,
+    "(11, 8, 7, 6)": 1
+  },
+  "role_confidences": [
+    0.484375,
+    0.21875,
+    0.34375,
+    0.01874999999999999,
+    0.0234375,
+    0.359375,
+    0.046875,
+    0.015625,
+    0.07500000000000001,
+    0.09375
+  ],
+  "mechanics_data": {
+    "crit": 0.35893288474810214,
+    "dodge": 0.5294427191166321,
+    "block": 0.5316252587991719,
+    "block_break": 0.06458333333333333,
+    "hit": 3.316084368530021,
+    "crit_dodge": 0.0,
+    "crit_block": 0.19933143547273982,
+    "crit_block_break": 0.0,
+    "crit_glance": 0.0,
+    "glance": 0.0
+  },
+  "damage_data": {
+    "crit": 0.7602886532138726,
+    "normal": 3.7435211164713658,
+    "blocked": 0.49619023031476184
+  },
+  "stamina_data": {
+    "high": 1.7702380952380952,
+    "mid": 2.807539682539683,
+    "low": 0.4222222222222222
+  },
+  "dps_data": [
+    21.0,
+    26.857142857142858,
+    16.22222222222222,
+    20.6,
+    22.666666666666668
+  ],
+  "total_damage_data": [
+    168.0,
+    188.0,
+    146.0,
+    206.0,
+    204.0
+  ],
+  "rounds_distribution": {
+    "8": 1,
+    "7": 1,
+    "9": 2,
+    "10": 1
+  },
+  "role_absorption": {
+    "UNIVERSAL": {
+      "dodge": 141.23823740534297,
+      "block": 48.251021608973595,
+      "skip_events": 2,
+      "total_final_resource": 0.0,
+      "fights": 6,
+      "total_rounds": 50,
+      "block_events": 14,
+      "total_resource_generated": 0.0
+    },
+    "ASSASSIN": {
+      "dodge": 8.156743108273815,
+      "block": 7.1942474214975025,
+      "skip_events": 0,
+      "total_final_resource": 0.0,
+      "fights": 1,
+      "total_rounds": 7,
+      "block_events": 0,
+      "total_resource_generated": 0.0
+    },
+    "TANK": {
+      "dodge": 44.19688054744008,
+      "block": 8.58514211813679,
+      "skip_events": 0,
+      "total_final_resource": 0.0,
+      "fights": 1,
+      "total_rounds": 9,
+      "block_events": 1,
+      "total_resource_generated": 0.0
+    },
+    "BRUISER": {
+      "dodge": 39.983338230480385,
+      "block": 8.835290708444541,
+      "skip_events": 1,
+      "total_final_resource": 0.0,
+      "fights": 2,
+      "total_rounds": 20,
+      "block_events": 5,
+      "total_resource_generated": 0.0
+    }
+  },
+  "skip_protection_by_round": {
+    "1": 1,
+    "2": 2
+  },
+  "stamina_exhaustion_fights": 3,
+  "builds_by_role": {
+    "UNIVERSAL": [
+      {
+        "hp_stat": 8,
+        "hp": 8,
+        "attack": 9,
+        "defense": 7,
+        "agility": 8,
+        "confidence": 0.484375,
+        "fights": 1
+      },
+      {
+        "hp_stat": 5,
+        "hp": 5,
+        "attack": 9,
+        "defense": 9,
+        "agility": 9,
+        "confidence": 0.21875,
+        "fights": 1
+      },
+      {
+        "hp_stat": 8,
+        "hp": 8,
+        "attack": 7,
+        "defense": 10,
+        "agility": 7,
+        "confidence": 0.34375,
+        "fights": 1
+      },
+      {
+        "hp_stat": 7,
+        "hp": 7,
+        "attack": 7,
+        "defense": 10,
+        "agility": 8,
+        "confidence": 0.359375,
+        "fights": 1
+      },
+      {
+        "hp_stat": 6,
+        "hp": 6,
+        "attack": 7,
+        "defense": 8,
+        "agility": 11,
+        "confidence": 0.07500000000000001,
+        "fights": 1
+      },
+      {
+        "hp_stat": 11,
+        "hp": 11,
+        "attack": 8,
+        "defense": 7,
+        "agility": 6,
+        "confidence": 0.09375,
+        "fights": 1
+      }
+    ],
+    "ASSASSIN": [
+      {
+        "hp_stat": 7,
+        "hp": 7,
+        "attack": 9,
+        "defense": 5,
+        "agility": 11,
+        "confidence": 0.01874999999999999,
+        "fights": 1
+      }
+    ],
+    "TANK": [
+      {
+        "hp_stat": 11,
+        "hp": 11,
+        "attack": 8,
+        "defense": 8,
+        "agility": 5,
+        "confidence": 0.0234375,
+        "fights": 1
+      }
+    ],
+    "BRUISER": [
+      {
+        "hp_stat": 9,
+        "hp": 9,
+        "attack": 11,
+        "defense": 7,
+        "agility": 5,
+        "confidence": 0.046875,
+        "fights": 1
+      },
+      {
+        "hp_stat": 12,
+        "hp": 12,
+        "attack": 9,
+        "defense": 4,
+        "agility": 7,
+        "confidence": 0.015625,
+        "fights": 1
+      }
+    ]
+  },
+  "crit_metrics_data": {
+    "raw_crit_rate": 0.6257631257631258,
+    "effective_crit_rate": 0.7183886375062847,
+    "crit_damage_ratio": 0.7602886532138726,
+    "total_rolls": 116,
+    "crit_rolls": 14,
+    "successful_hits": 102,
+    "crit_hits": 14
+  },
+  "summary": {
+    "total_fights": 5,
+    "winners": {
+      "A": 2,
+      "B": 0,
+      "DRAW_TIMEOUT": 3,
+      "DRAW_MUTUAL_DEATH": 0
+    },
+    "avg_rounds": 8.6,
+    "min_rounds": 7,
+    "max_rounds": 10
+  },
+  "role_analysis": {
+    "UNIVERSAL": {
+      "wins": 2,
+      "losses": 1,
+      "draws": 3,
+      "fights": 6,
+      "winrate": 0.5833333333333334
+    },
+    "ASSASSIN": {
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "fights": 1,
+      "winrate": 0.0
+    },
+    "TANK": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 1,
+      "fights": 1,
+      "winrate": 0.5
+    },
+    "BRUISER": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 2,
+      "fights": 2,
+      "winrate": 0.5
+    }
+  },
+  "role_matchups": {
+    "UNIVERSAL_vs_UNIVERSAL": {
+      "wins": 1,
+      "losses": 1,
+      "draws": 2,
+      "total": 4
+    },
+    "UNIVERSAL_vs_ASSASSIN": {
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "total": 1
+    },
+    "ASSASSIN_vs_UNIVERSAL": {
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "total": 1
+    },
+    "TANK_vs_UNIVERSAL": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 1,
+      "total": 1
+    },
+    "UNIVERSAL_vs_TANK": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 1,
+      "total": 1
+    },
+    "BRUISER_vs_BRUISER": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 2,
+      "total": 2
+    }
+  }
+}</pre>
+                <button onclick="copyRawData()">📋 Copy to Clipboard</button>
+            </div>
+        </div>
+    
+    </div>
+
+    <script>
+        
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
+            }
+
+            tablinks = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
+            }
+
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        function openRoleTab(evt, roleName) {
+            var i, rolecontent, rolelinks;
+
+            rolecontent = document.getElementsByClassName("role-content");
+            for (i = 0; i < rolecontent.length; i++) {
+                rolecontent[i].classList.remove("active");
+            }
+
+            rolelinks = document.getElementsByClassName("role-tab");
+            for (i = 0; i < rolelinks.length; i++) {
+                rolelinks[i].classList.remove("active");
+            }
+
+            document.getElementById(roleName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        function copyRawData() {
+            const rawData = document.getElementById('raw-json').textContent;
+            navigator.clipboard.writeText(rawData).then(function() {
+                alert('Raw data copied to clipboard!');
+            });
+        }
+    
+    </script>
+</body>
+</html>
