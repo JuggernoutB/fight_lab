@@ -226,22 +226,25 @@ def process_round(state, rng, action_mode="normal"):
     # Apply HP advantage stamina bonus (new mechanic)
     config = get_config()
     hp_bonus_multiplier = config["hp_stamina_regen_bonus"]
+    hp_bonus_frequency = config["hp_stamina_regen_frequency"]
 
-    # Calculate HP stat differences and apply bonuses
-    a_hp_stat = getattr(a, 'hp_stat', a.attack)  # Fallback to attack if hp_stat not found
-    b_hp_stat = getattr(b, 'hp_stat', b.attack)  # Fallback to attack if hp_stat not found
+    # Check if HP bonus should be applied this round
+    if state.round_id % hp_bonus_frequency == 0:
+        # Calculate HP stat differences and apply bonuses
+        a_hp_stat = getattr(a, 'hp_stat', a.attack)  # Fallback to attack if hp_stat not found
+        b_hp_stat = getattr(b, 'hp_stat', b.attack)  # Fallback to attack if hp_stat not found
 
-    # Fighter A gets bonus if their HP stat is higher than B's
-    if a_hp_stat > b_hp_stat:
-        hp_advantage_a = a_hp_stat - b_hp_stat
-        stamina_bonus_a = hp_advantage_a * hp_bonus_multiplier
-        a.stamina = min(config["initial_stamina"], a.stamina + stamina_bonus_a)
+        # Fighter A gets bonus if their HP stat is higher than B's
+        if a_hp_stat > b_hp_stat:
+            hp_advantage_a = a_hp_stat - b_hp_stat
+            stamina_bonus_a = hp_advantage_a * hp_bonus_multiplier
+            a.stamina = min(config["initial_stamina"], a.stamina + stamina_bonus_a)
 
-    # Fighter B gets bonus if their HP stat is higher than A's
-    if b_hp_stat > a_hp_stat:
-        hp_advantage_b = b_hp_stat - a_hp_stat
-        stamina_bonus_b = hp_advantage_b * hp_bonus_multiplier
-        b.stamina = min(config["initial_stamina"], b.stamina + stamina_bonus_b)
+        # Fighter B gets bonus if their HP stat is higher than A's
+        if b_hp_stat > a_hp_stat:
+            hp_advantage_b = b_hp_stat - a_hp_stat
+            stamina_bonus_b = hp_advantage_b * hp_bonus_multiplier
+            b.stamina = min(config["initial_stamina"], b.stamina + stamina_bonus_b)
 
     # Apply stamina costs for successful combat mechanics
 
