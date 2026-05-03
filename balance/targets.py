@@ -48,18 +48,5 @@ TARGETS = {
     # =========================
     # ROLE BALANCE
     # =========================
-    "role_balance_spread": (0.0, 0.06),  # Max 6% spread (relaxed for new scoring system)
-
-    # Role distribution targets (percentage of total fights)
-    "role_distribution": {
-        "TANK": (0.10, 0.25),        # 10-25% of builds
-        "BRUISER": (0.08, 0.18),     # 8-18% of builds
-        "SKIRMISHER": (0.08, 0.18),  # 8-18% of builds
-        "ASSASSIN": (0.10, 0.20),    # 10-20% of builds
-        "UNIVERSAL": (0.15, 0.30),   # 15-30% of builds (balanced builds common)
-        "ATK_DEF": (0.05, 0.15),     # 5-15% of builds (hybrid)
-        "AGI_DEF": (0.05, 0.15),     # 5-15% of builds (hybrid)
-        "AGI_HP": (0.05, 0.15),      # 5-15% of builds (hybrid)
-        "ATK_HP": (0.05, 0.15),      # 5-15% of builds (hybrid)
-    },
+    "role_balance_spread": (0.0, 0.15),  # Max 15% spread (relaxed for new system)
 }

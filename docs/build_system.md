@@ -58,22 +58,29 @@ def classify_build_role(hp_stat, attack_stat, defense_stat, agility_stat):
     # Calculate role scores using weighted combinations
     scores = {}
 
-    # TANK: HP + Defense focused
-    scores["TANK"] = hp_n * 0.5 + def_n * 0.5
+    # 3 stat builds
+    scores["ATK_HP_DEF"] = atk_n * 0.5 + hp_n * 0.25 + def_n * 0.25
+    scores["ATK_HP_AGI"] = atk_n * 0.5 + hp_n * 0.25 + agi_n * 0.25
+    scores["ATK_DEF_AGI"] = atk_n * 0.5 + def_n * 0.25 + agi_n * 0.25
+    scores["AGI_HP_DEF"] = agi_n * 0.5 + def_n * 0.25 + hp_n * 0.25
+    scores["AGI_HP_ATK"] = agi_n * 0.5 + atk_n * 0.25 + hp_n * 0.25
+    scores["AGI_DEF_ATK"] = agi_n * 0.5 + atk_n * 0.25 + def_n * 0.25
+    scores["DEF_HP_AGI"] = def_n * 0.5 + agi_n * 0.25 + hp_n * 0.25
+    scores["DEF_HP_ATK"] = def_n * 0.5 + atk_n * 0.25 + hp_n * 0.25
+    scores["DEF_AGI_ATK"] = def_n * 0.5 + atk_n * 0.25 + agi_n * 0.25
+    scores["HP_ATK_DEF"] = hp_n * 0.5 + atk_n * 0.25 + def_n * 0.25
+    scores["HP_ATK_AGI"] = hp_n * 0.5 + atk_n * 0.25 + agi_n * 0.25
+    scores["HP_AGI_DEF"] = hp_n * 0.5 + def_n * 0.25 + agi_n * 0.25
 
-    # BRUISER: Attack + moderate survivability
-    scores["BRUISER"] = atk_n * 0.5 + hp_n * 0.25 + def_n * 0.25
-
-    # ASSASSIN: Attack + Agility combination
-    scores["ASSASSIN"] = atk_n * 0.5 + agi_n * 0.5
-
-    # SKIRMISHER: Agility focused with some offense
-    scores["SKIRMISHER"] = agi_n * 0.5 + atk_n * 0.25 + def_n * 0.25
-
+    # 2 stat builds
+    scores["ATK_AGI"] = atk_n * 0.5 + agi_n * 0.5
     scores["ATK_DEF"] = atk_n * 0.5 + def_n * 0.5
+    scores["ATK_HP"] = atk_n * 0.5 + hp_n * 0.5
     scores["AGI_DEF"] = agi_n * 0.5 + def_n * 0.5
     scores["AGI_HP"] = agi_n * 0.5 + hp_n * 0.5
-    scores["ATK_HP"] = atk_n * 0.5 + hp_n * 0.5
+    scores["HP_DEF"] = hp_n * 0.5 + def_n * 0.5
+
+    # 1 stat extreme builds
 
     # UNIVERSAL: Balanced builds (high when stats are even)
     stat_range = max([hp_n, atk_n, def_n, agi_n]) - min([hp_n, atk_n, def_n, agi_n])

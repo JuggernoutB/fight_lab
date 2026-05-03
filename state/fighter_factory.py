@@ -145,29 +145,65 @@ def create_fighter_balanced(role: str) -> FighterState:
         role: Fighter role
 
     Returns:
-        FighterState with balanced 12-14 stat range
+        FighterState with appropriate stat distribution
     """
-    if role == "BRUISER":
-        return create_fighter(hp_stat=15, attack_stat=12, defense_stat=15, agility_stat=8, role=role)
-    elif role == "ASSASSIN":
-        return create_fighter(hp_stat=10, attack_stat=16, defense_stat=8, agility_stat=16, role=role)
-    elif role == "TANK":
-        return create_fighter(hp_stat=18, attack_stat=8, defense_stat=18, agility_stat=8, role=role)
-    elif role == "SKIRMISHER":
-        return create_fighter(hp_stat=12, attack_stat=14, defense_stat=12, agility_stat=14, role=role)
-    elif role == "UNIVERSAL":
-        return create_fighter(hp_stat=12, attack_stat=12, defense_stat=12, agility_stat=12, role=role)
+    # Extreme builds (1 stat)
+    if role == "ATK":
+        return create_fighter(hp_stat=3, attack_stat=18, defense_stat=3, agility_stat=3, role=role)
+    elif role == "AGI":
+        return create_fighter(hp_stat=3, attack_stat=3, defense_stat=3, agility_stat=18, role=role)
+    elif role == "DEF":
+        return create_fighter(hp_stat=3, attack_stat=3, defense_stat=18, agility_stat=3, role=role)
+    elif role == "HP":
+        return create_fighter(hp_stat=18, attack_stat=3, defense_stat=3, agility_stat=3, role=role)
+
+    # 2-stat builds
+    elif role == "ATK_AGI":
+        return create_fighter(hp_stat=3, attack_stat=15, defense_stat=3, agility_stat=12, role=role)
     elif role == "ATK_DEF":
-        return create_fighter(hp_stat=10, attack_stat=16, defense_stat=16, agility_stat=8, role=role)
-    elif role == "AGI_DEF":
-        return create_fighter(hp_stat=8, attack_stat=10, defense_stat=16, agility_stat=16, role=role)
-    elif role == "AGI_HP":
-        return create_fighter(hp_stat=16, attack_stat=8, defense_stat=10, agility_stat=16, role=role)
+        return create_fighter(hp_stat=3, attack_stat=15, defense_stat=12, agility_stat=3, role=role)
     elif role == "ATK_HP":
-        return create_fighter(hp_stat=16, attack_stat=16, defense_stat=8, agility_stat=10, role=role)
+        return create_fighter(hp_stat=12, attack_stat=15, defense_stat=3, agility_stat=3, role=role)
+    elif role == "AGI_DEF":
+        return create_fighter(hp_stat=3, attack_stat=3, defense_stat=15, agility_stat=12, role=role)
+    elif role == "AGI_HP":
+        return create_fighter(hp_stat=12, attack_stat=3, defense_stat=3, agility_stat=15, role=role)
+    elif role == "HP_DEF":
+        return create_fighter(hp_stat=15, attack_stat=3, defense_stat=12, agility_stat=3, role=role)
+
+    # 3-stat builds
+    elif role == "ATK_HP_DEF":
+        return create_fighter(hp_stat=6, attack_stat=15, defense_stat=6, agility_stat=3, role=role)
+    elif role == "ATK_HP_AGI":
+        return create_fighter(hp_stat=6, attack_stat=15, defense_stat=3, agility_stat=6, role=role)
+    elif role == "ATK_DEF_AGI":
+        return create_fighter(hp_stat=3, attack_stat=15, defense_stat=6, agility_stat=6, role=role)
+    elif role == "AGI_HP_DEF":
+        return create_fighter(hp_stat=6, attack_stat=3, defense_stat=6, agility_stat=15, role=role)
+    elif role == "AGI_HP_ATK":
+        return create_fighter(hp_stat=6, attack_stat=6, defense_stat=3, agility_stat=15, role=role)
+    elif role == "AGI_DEF_ATK":
+        return create_fighter(hp_stat=3, attack_stat=6, defense_stat=6, agility_stat=15, role=role)
+    elif role == "DEF_HP_AGI":
+        return create_fighter(hp_stat=6, attack_stat=3, defense_stat=15, agility_stat=6, role=role)
+    elif role == "DEF_HP_ATK":
+        return create_fighter(hp_stat=6, attack_stat=6, defense_stat=15, agility_stat=3, role=role)
+    elif role == "DEF_AGI_ATK":
+        return create_fighter(hp_stat=3, attack_stat=6, defense_stat=15, agility_stat=6, role=role)
+    elif role == "HP_ATK_DEF":
+        return create_fighter(hp_stat=15, attack_stat=6, defense_stat=6, agility_stat=3, role=role)
+    elif role == "HP_ATK_AGI":
+        return create_fighter(hp_stat=15, attack_stat=6, defense_stat=3, agility_stat=6, role=role)
+    elif role == "HP_AGI_DEF":
+        return create_fighter(hp_stat=15, attack_stat=3, defense_stat=6, agility_stat=6, role=role)
+
+    # Universal
+    elif role == "UNIVERSAL":
+        return create_fighter(hp_stat=8, attack_stat=8, defense_stat=8, agility_stat=8, role=role)
+
     else:
-        # Default balanced
-        return create_fighter(hp_stat=12, attack_stat=12, defense_stat=12, agility_stat=12, role=role)
+        # Default universal
+        return create_fighter(hp_stat=8, attack_stat=8, defense_stat=8, agility_stat=8, role=role)
 
 
 def classify_build_role(hp_stat: int, attack_stat: int, defense_stat: int, agility_stat: int) -> tuple[str, float]:
@@ -190,37 +226,34 @@ def classify_build_role(hp_stat: int, attack_stat: int, defense_stat: int, agili
     # Calculate role scores using weighted combinations
     scores = {}
 
-    # TANK: HP + Defense focused
-    scores["TANK"] = (
-        hp_n * 0.5 +
-        def_n * 0.5
-    )
+    # 3 stat builds
+    scores["ATK_HP_DEF"] = atk_n * 0.5 + hp_n * 0.25 + def_n * 0.25
+    scores["ATK_HP_AGI"] = atk_n * 0.5 + hp_n * 0.25 + agi_n * 0.25
+    scores["ATK_DEF_AGI"] = atk_n * 0.5 + def_n * 0.25 + agi_n * 0.25
+    scores["AGI_HP_DEF"] = agi_n * 0.5 + def_n * 0.25 + hp_n * 0.25
+    scores["AGI_HP_ATK"] = agi_n * 0.5 + atk_n * 0.25 + hp_n * 0.25
+    scores["AGI_DEF_ATK"] = agi_n * 0.5 + atk_n * 0.25 + def_n * 0.25
+    scores["DEF_HP_AGI"] = def_n * 0.5 + agi_n * 0.25 + hp_n * 0.25
+    scores["DEF_HP_ATK"] = def_n * 0.5 + atk_n * 0.25 + hp_n * 0.25
+    scores["DEF_AGI_ATK"] = def_n * 0.5 + atk_n * 0.25 + agi_n * 0.25
+    scores["HP_ATK_DEF"] = hp_n * 0.5 + atk_n * 0.25 + def_n * 0.25
+    scores["HP_ATK_AGI"] = hp_n * 0.5 + atk_n * 0.25 + agi_n * 0.25
+    scores["HP_AGI_DEF"] = hp_n * 0.5 + def_n * 0.25 + agi_n * 0.25
 
-    # BRUISER: Attack + moderate survivability
-    scores["BRUISER"] = (
-        atk_n * 0.5 +
-        hp_n * 0.25 +
-        def_n * 0.25
-    )
-
-    # ASSASSIN: Attack + Agility combination
-    scores["ASSASSIN"] = (
-        atk_n * 0.5 +
-        agi_n * 0.5
-    )
-
-    # SKIRMISHER: Agility focused with some offense
-    scores["SKIRMISHER"] = (
-        agi_n * 0.5 +
-        atk_n * 0.25 +
-        def_n * 0.25
-    )
-
-    # NEW HYBRID ROLES
+    # 2 stat builds
+    scores["ATK_AGI"] = atk_n * 0.5 + agi_n * 0.5
     scores["ATK_DEF"] = atk_n * 0.5 + def_n * 0.5
+    scores["ATK_HP"] = atk_n * 0.5 + hp_n * 0.5
     scores["AGI_DEF"] = agi_n * 0.5 + def_n * 0.5
     scores["AGI_HP"] = agi_n * 0.5 + hp_n * 0.5
-    scores["ATK_HP"] = atk_n * 0.5 + hp_n * 0.5
+    scores["HP_DEF"] = hp_n * 0.5 + def_n * 0.5
+
+    # 1 stat extreme builds (all points in one stat)
+    # Lower multiplier to allow mixed builds to compete
+    scores["ATK"] = atk_n * 0.65
+    scores["AGI"] = agi_n * 0.65
+    scores["DEF"] = def_n * 0.65
+    scores["HP"] = hp_n * 0.65
 
     # UNIVERSAL: Balanced builds (high when stats are even)
     stat_range = max([hp_n, atk_n, def_n, agi_n]) - min([hp_n, atk_n, def_n, agi_n])
