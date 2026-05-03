@@ -1144,7 +1144,7 @@ def generate_winrate_matrix_table_filtered(results, role_filter):
                 overall_color = "warning"   # Yellow - slightly unbalanced
             else:
                 overall_color = "extreme"   # Red - extreme values
-            row += f'<td><span class="winrate {overall_color}"><strong>{overall_pct:.1f}%</strong> ({overall["total"]} fights)</span></td>'
+            row += f'<td><span class="winrate {overall_color}"><strong>{overall_pct:.1f}%</strong></span></td>'
         else:
             row += '<td>-</td>'
 
