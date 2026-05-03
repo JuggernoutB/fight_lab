@@ -24,9 +24,9 @@ CONFIG = {
     # BLOCKING
     # ============================================================
     "base_block_reduction": 0.1,     # Base damage reduction from blocking
-    "def_diff_block_scale": 0.07,    # Defense difference scaling for blocking
+    "def_diff_block_scale": 0.075,    # Defense difference scaling for blocking
     "min_block_reduction": 0.1,       # Minimum block damage reduction
-    "max_block_reduction": 0.8,       # Maximum block damage reduction
+    "max_block_reduction": 0.85,       # Maximum block damage reduction
     "base_block_break_chance": 0.025,  # Base block break chance
     "agi_block_break_scale": 0.05,    # Agility scaling for block break
     "min_block_break_chance": 0.1,   # Minimum block break chance
@@ -36,11 +36,11 @@ CONFIG = {
     # ============================================================
     # FATIGUE SYSTEM
     # ============================================================
-    "stamina_fresh_threshold": 65,    # Above this = Fresh (no penalties)
-    "stamina_tired_threshold": 25,    # Above this = Tired, below = Exhausted
+    "stamina_fresh_threshold": 70,    # Above this = Fresh (no penalties)
+    "stamina_tired_threshold": 30,    # Above this = Tired, below = Exhausted
     "fresh_multiplier": 1.0,          # No fatigue penalty (100%)
-    "tired_multiplier": 0.8,         # Tired penalty (75% effectiveness)
-    "exhausted_multiplier": 0.6,      # Exhausted penalty (50% effectiveness)
+    "tired_multiplier": 0.75,         # Tired penalty (75% effectiveness)
+    "exhausted_multiplier": 0.5,      # Exhausted penalty (50% effectiveness)
 
 
     # ============================================================
@@ -67,10 +67,10 @@ CONFIG = {
     # ============================================================
     # EHP SCALING
     # ============================================================
-    "hp_scaling_base": 9.5,         # Base health multiplier
+    "hp_scaling_base": 10.0,         # Base health multiplier
     "hp_scaling_constant": 24,        # Constant added to health stat
-    "hp_scaling_exponent": 0.7,      # Exponent for health scaling curve
-    "damage_scaling_base": 1.35,      # Base damage multiplier
+    "hp_scaling_exponent": 0.68,      # Exponent for health scaling curve
+    "damage_scaling_base": 1.4,      # Base damage multiplier
     "damage_scaling_constant": 50.0,    # Constant added to attack stat
     "damage_scaling_exponent": 0.55,  # Exponent for damage scaling curve
     "defense_scaling_multiplier": 40.0, # Defense stat divider for EHP calculation
@@ -79,5 +79,5 @@ CONFIG = {
     # ============================================================
     # DEFENSE (EHP INTEGRATION)
     # ============================================================
-    "defense_effectiveness": 0.2,   # 0.0 = disabled, 1.0 = full power (start conservative)
+    "defense_effectiveness": 0.35,
 }

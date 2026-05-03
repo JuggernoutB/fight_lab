@@ -46,7 +46,8 @@ TARGETS = {
     "stamina_low": (0.10, 0.20),
 
     # =========================
-    # ROLE BALANCE
+    # BUILD TYPE BALANCE
     # =========================
-    "role_balance_spread": (0.0, 0.15),  # Max 15% spread (relaxed for new system)
+    "2_stat_builds_spread": (0.0, 0.03),  # Max 3% spread for 2-stat builds + Universal
+    "3_stat_builds_spread": (0.0, 0.15),  # Max 15% spread for 3-stat builds + Universal
 }

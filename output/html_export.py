@@ -227,23 +227,22 @@ def generate_roles_tab(results: Dict) -> str:
     # Generate filtered winrate tables
     winrate_table_2stat = generate_winrate_matrix_table_filtered(results, "2stat")
     winrate_table_3stat = generate_winrate_matrix_table_filtered(results, "3stat")
-    winrate_table_extreme = generate_winrate_matrix_table_filtered(results, "extreme")
+
+    # Calculate build type spread metrics for display
+    build_spread_metrics = generate_build_spread_metrics(results)
 
     return f"""
         <div id="roles" class="tab-content">
             <div class="card">
                 <h3>🏆 Winrate Matrix - 2-Stat Builds + Universal</h3>
                 {winrate_table_2stat}
+                {build_spread_metrics["2stat"]}
             </div>
 
             <div class="card">
                 <h3>🏆 Winrate Matrix - 3-Stat Builds + Universal</h3>
                 {winrate_table_3stat}
-            </div>
-
-            <div class="card">
-                <h3>🏆 Winrate Matrix - Extreme Builds + Universal</h3>
-                {winrate_table_extreme}
+                {build_spread_metrics["3stat"]}
             </div>
 
             <div class="card">
@@ -1035,16 +1034,15 @@ def generate_role_distribution_table(results):
     """
 
 def categorize_roles(roles):
-    """Categorize roles into 2-stat, 3-stat, extreme, and universal"""
-    extreme_builds = {"ATK", "AGI", "DEF", "HP"}
+    """Categorize roles into 2-stat, 3-stat, and universal (extreme builds removed)"""
     universal_builds = {"UNIVERSAL"}
 
-    # 2-stat builds have exactly 2 underscores in name (e.g., ATK_DEF)
+    # 2-stat builds have exactly 1 underscore in name (e.g., ATK_DEF)
     two_stat_builds = set()
     three_stat_builds = set()
 
     for role in roles:
-        if role in extreme_builds or role in universal_builds:
+        if role in universal_builds:
             continue
 
         underscore_count = role.count('_')
@@ -1055,8 +1053,74 @@ def categorize_roles(roles):
 
     return {
         "2stat": two_stat_builds | universal_builds,
-        "3stat": three_stat_builds | universal_builds,
-        "extreme": extreme_builds | universal_builds
+        "3stat": three_stat_builds | universal_builds
+    }
+
+def generate_build_spread_metrics(results):
+    """Generate build spread metrics for HTML display"""
+    role_analysis = results.get("role_analysis", {})
+
+    if not role_analysis:
+        return {"2stat": "", "3stat": ""}
+
+    # Get roles and categorize them
+    all_roles = set(role_analysis.keys())
+    role_categories = categorize_roles(all_roles)
+
+    # Calculate 2-stat builds spread
+    stat_2_spread = 0.0
+    stat_2_roles_list = []
+    if "2stat" in role_categories:
+        stat_2_roles = role_categories["2stat"] & all_roles
+        if len(stat_2_roles) >= 2:
+            winrates_2stat = [role_analysis[role]["winrate"] for role in stat_2_roles]
+            stat_2_spread = max(winrates_2stat) - min(winrates_2stat)
+        stat_2_roles_list = sorted(stat_2_roles)
+
+    # Calculate 3-stat builds spread
+    stat_3_spread = 0.0
+    stat_3_roles_list = []
+    if "3stat" in role_categories:
+        stat_3_roles = role_categories["3stat"] & all_roles
+        if len(stat_3_roles) >= 2:
+            winrates_3stat = [role_analysis[role]["winrate"] for role in stat_3_roles]
+            stat_3_spread = max(winrates_3stat) - min(winrates_3stat)
+        stat_3_roles_list = sorted(stat_3_roles)
+
+    # Import targets for validation
+    try:
+        from balance.targets import TARGETS
+        target_2 = TARGETS.get('2_stat_builds_spread', (0.0, 0.03))[1]
+        target_3 = TARGETS.get('3_stat_builds_spread', (0.0, 0.15))[1]
+    except:
+        target_2 = 0.03
+        target_3 = 0.15
+
+    # Generate HTML for 2-stat spread
+    stat_2_status = "✅" if stat_2_spread <= target_2 else "❌"
+    stat_2_html = f"""
+        <div style="margin-top: 15px; padding: 10px; background: #f8fafc; border-radius: 6px;">
+            <strong>📊 Build Type Balance:</strong> {stat_2_status} Winrate Spread = {stat_2_spread:.1%} (target ≤ {target_2:.1%})
+            <div style="font-size: 0.85rem; color: #6b7280; margin-top: 5px;">
+                Roles: {', '.join(stat_2_roles_list)} ({len(stat_2_roles_list)} builds)
+            </div>
+        </div>
+    """
+
+    # Generate HTML for 3-stat spread
+    stat_3_status = "✅" if stat_3_spread <= target_3 else "❌"
+    stat_3_html = f"""
+        <div style="margin-top: 15px; padding: 10px; background: #f8fafc; border-radius: 6px;">
+            <strong>📊 Build Type Balance:</strong> {stat_3_status} Winrate Spread = {stat_3_spread:.1%} (target ≤ {target_3:.1%})
+            <div style="font-size: 0.85rem; color: #6b7280; margin-top: 5px;">
+                Roles: {', '.join(stat_3_roles_list)} ({len(stat_3_roles_list)} builds)
+            </div>
+        </div>
+    """
+
+    return {
+        "2stat": stat_2_html,
+        "3stat": stat_3_html
     }
 
 def generate_winrate_matrix_table_filtered(results, role_filter):

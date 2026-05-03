@@ -147,18 +147,8 @@ def create_fighter_balanced(role: str) -> FighterState:
     Returns:
         FighterState with appropriate stat distribution
     """
-    # Extreme builds (1 stat)
-    if role == "ATK":
-        return create_fighter(hp_stat=3, attack_stat=18, defense_stat=3, agility_stat=3, role=role)
-    elif role == "AGI":
-        return create_fighter(hp_stat=3, attack_stat=3, defense_stat=3, agility_stat=18, role=role)
-    elif role == "DEF":
-        return create_fighter(hp_stat=3, attack_stat=3, defense_stat=18, agility_stat=3, role=role)
-    elif role == "HP":
-        return create_fighter(hp_stat=18, attack_stat=3, defense_stat=3, agility_stat=3, role=role)
-
     # 2-stat builds
-    elif role == "ATK_AGI":
+    if role == "ATK_AGI":
         return create_fighter(hp_stat=3, attack_stat=15, defense_stat=3, agility_stat=12, role=role)
     elif role == "ATK_DEF":
         return create_fighter(hp_stat=3, attack_stat=15, defense_stat=12, agility_stat=3, role=role)
@@ -248,12 +238,7 @@ def classify_build_role(hp_stat: int, attack_stat: int, defense_stat: int, agili
     scores["AGI_HP"] = agi_n * 0.5 + hp_n * 0.5
     scores["HP_DEF"] = hp_n * 0.5 + def_n * 0.5
 
-    # 1 stat extreme builds (all points in one stat)
-    # Lower multiplier to allow mixed builds to compete
-    scores["ATK"] = atk_n * 0.65
-    scores["AGI"] = agi_n * 0.65
-    scores["DEF"] = def_n * 0.65
-    scores["HP"] = hp_n * 0.65
+    # Extreme builds removed - focus on mixed builds only
 
     # UNIVERSAL: Balanced builds (high when stats are even)
     stat_range = max([hp_n, atk_n, def_n, agi_n]) - min([hp_n, atk_n, def_n, agi_n])

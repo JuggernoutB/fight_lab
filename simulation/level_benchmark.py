@@ -925,6 +925,29 @@ def print_level_benchmark_results(results: Dict):
         if len(winrates) >= 2:
             role_balance_spread = max(winrates) - min(winrates)
 
+    # Calculate build type balance spread (new metrics)
+    from output.html_export import categorize_roles
+
+    # Get roles and categorize them
+    all_roles = set(overall_winrates.keys()) if overall_winrates else set()
+    role_categories = categorize_roles(all_roles)
+
+    # Calculate 2-stat builds spread
+    stat_2_spread = 0.0
+    if "2stat" in role_categories:
+        stat_2_roles = role_categories["2stat"] & all_roles
+        if len(stat_2_roles) >= 2:
+            winrates_2stat = [overall_winrates[role]["winrate"] for role in stat_2_roles]
+            stat_2_spread = max(winrates_2stat) - min(winrates_2stat)
+
+    # Calculate 3-stat builds spread
+    stat_3_spread = 0.0
+    if "3stat" in role_categories:
+        stat_3_roles = role_categories["3stat"] & all_roles
+        if len(stat_3_roles) >= 2:
+            winrates_3stat = [overall_winrates[role]["winrate"] for role in stat_3_roles]
+            stat_3_spread = max(winrates_3stat) - min(winrates_3stat)
+
     # Import validation logic
     from balance.validator import validate_single_metric
 
@@ -965,13 +988,20 @@ def print_level_benchmark_results(results: Dict):
                         range_text = " not in (0.4, 0.55)"
                 print(f"[{'OK' if result else 'FAIL'}]   {metric}: {stamina_avg[stamina_key]:.4f}{range_text}")
 
-    # Role balance validation
-    role_result = validate_single_metric('role_balance_spread', role_balance_spread)
-    # Get actual targets for proper error message
+    # Build type balance validation (replacing role_balance_spread)
     from balance.targets import TARGETS
-    target_range = TARGETS.get('role_balance_spread', (0.0, 0.15))
-    range_text = "" if role_result else f" not in {target_range}"
-    print(f"[{'OK' if role_result else 'FAIL'}]   role_balance_spread: {role_balance_spread:.4f}{range_text}")
+
+    # Validate 2-stat builds spread
+    stat_2_result = validate_single_metric('2_stat_builds_spread', stat_2_spread)
+    target_2_range = TARGETS.get('2_stat_builds_spread', (0.0, 0.03))
+    range_text_2 = "" if stat_2_result else f" not in {target_2_range}"
+    print(f"[{'OK' if stat_2_result else 'FAIL'}]   2_stat_builds_spread: {stat_2_spread:.4f}{range_text_2}")
+
+    # Validate 3-stat builds spread
+    stat_3_result = validate_single_metric('3_stat_builds_spread', stat_3_spread)
+    target_3_range = TARGETS.get('3_stat_builds_spread', (0.0, 0.15))
+    range_text_3 = "" if stat_3_result else f" not in {target_3_range}"
+    print(f"[{'OK' if stat_3_result else 'FAIL'}]   3_stat_builds_spread: {stat_3_spread:.4f}{range_text_3}")
 
     # NEW: Advanced crit metrics
     if results.get("crit_metrics_data"):
@@ -997,7 +1027,7 @@ def print_level_benchmark_results(results: Dict):
                   validate_single_metric('dps_avg', avg_dps) and
                   validate_single_metric('draw_rate', draw_rate) and
                   validate_single_metric('stamina_exhaustion_rate', stamina_exhaustion_rate) and
-                  role_result)
+                  stat_2_result and stat_3_result)
 
     # Add mechanics validation to final check
     if mechanics_avg:
