@@ -1159,10 +1159,35 @@ def generate_winrate_matrix_table_filtered(results, role_filter):
             </table>
         </div>
         <style>
-        .winrate.balanced {{ background: #10b981; color: white; padding: 2px 6px; border-radius: 3px; }}  /* Green: 40-60% */
-        .winrate.warning {{ background: #f59e0b; color: white; padding: 2px 6px; border-radius: 3px; }}   /* Yellow: 35-40% and 60-65% */
-        .winrate.extreme {{ background: #ef4444; color: white; padding: 2px 6px; border-radius: 3px; }}   /* Red: <35% or >65% */
-        .winrate-matrix td {{ text-align: center; }}
+        .winrate.balanced {{ background: #10b981; color: white; padding: 2px 4px; border-radius: 3px; font-size: 0.85rem; }}  /* Green: 40-60% */
+        .winrate.warning {{ background: #f59e0b; color: white; padding: 2px 4px; border-radius: 3px; font-size: 0.85rem; }}   /* Yellow: 35-40% and 60-65% */
+        .winrate.extreme {{ background: #ef4444; color: white; padding: 2px 4px; border-radius: 3px; font-size: 0.85rem; }}   /* Red: <35% or >65% */
+        .winrate-matrix {{ font-size: 0.9rem; }}
+        .winrate-matrix td {{ text-align: center; padding: 8px 4px; }}
+        .winrate-matrix th {{ text-align: center; padding: 8px 4px; font-size: 0.85rem; }}
+        .winrate-matrix th:first-child {{ min-width: 100px; }}
+        .winrate-matrix th {{ white-space: nowrap; }}
+
+        /* Responsive design for narrow screens */
+        @media (max-width: 1400px) {{
+            .winrate-matrix {{ font-size: 0.85rem; }}
+            .winrate-matrix th, .winrate-matrix td {{ padding: 6px 3px; }}
+            .winrate.balanced, .winrate.warning, .winrate.extreme {{ font-size: 0.8rem; padding: 1px 3px; }}
+        }}
+
+        @media (max-width: 1200px) {{
+            .winrate-matrix {{ font-size: 0.8rem; }}
+            .winrate-matrix th, .winrate-matrix td {{ padding: 6px 2px; }}
+            .winrate.balanced, .winrate.warning, .winrate.extreme {{ font-size: 0.75rem; padding: 1px 3px; }}
+            .winrate-matrix th:first-child {{ min-width: 90px; }}
+        }}
+
+        @media (max-width: 768px) {{
+            .winrate-matrix {{ font-size: 0.75rem; }}
+            .winrate-matrix th, .winrate-matrix td {{ padding: 4px 1px; }}
+            .winrate.balanced, .winrate.warning, .winrate.extreme {{ font-size: 0.7rem; padding: 1px 2px; }}
+            .winrate-matrix th:first-child {{ min-width: 70px; }}
+        }}
         </style>
     """
 
