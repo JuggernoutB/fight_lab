@@ -128,6 +128,7 @@ def run_system_test():
     print("=" * 50)
     print("Running comprehensive test across levels 1-10")
     print("Each level: 100,000 fights with AI action mode")
+    print("⚠️ Test stops at first failed level")
     print()
 
     # Create test results directory
@@ -176,6 +177,11 @@ def run_system_test():
             print(f"\nLevel {level} balance test: {status}")
             print(f"HTML report: {html_path}")
 
+            # Stop testing if this level failed
+            if not balance_passed:
+                print(f"\n🛑 STOPPING: Level {level} failed balance validation!")
+                break
+
         except Exception as e:
             print(f"\n❌ ERROR testing level {level}: {e}")
             failed_levels.append(level)
@@ -184,6 +190,8 @@ def run_system_test():
                 "passed": False,
                 "error": str(e)
             })
+            print(f"\n🛑 STOPPING: Level {level} encountered an error!")
+            break
 
         print("\n" + "=" * 50)
         print()
@@ -195,10 +203,14 @@ def run_system_test():
     total_levels = len(test_results)
     passed_levels = [r for r in test_results if r.get("passed", False)]
     passed_count = len(passed_levels)
+    was_stopped = total_levels < 10  # Test was stopped early
 
-    print(f"Total levels tested: {total_levels}")
+    print(f"Total levels tested: {total_levels}/10")
     print(f"Levels passed: {passed_count}")
     print(f"Levels failed: {len(failed_levels)}")
+
+    if was_stopped:
+        print(f"⚠️ Test stopped early after level {total_levels} failure")
     print()
 
     if failed_levels:
