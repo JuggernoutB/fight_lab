@@ -1338,16 +1338,12 @@ def generate_balance_metrics_html(results, level: int):
     if not TARGETS:
         return "<p>Balance validator not available</p>"
 
-    # Import validation function
-    try:
-        from balance.validator import validate_single_metric
-    except ImportError:
-        # Use internal validation if validator not available
-        def validate_single_metric(name, value):
-            if name not in TARGETS:
-                return True
-            low, high = TARGETS[name]
-            return low <= value <= high
+    # Use level-specific validation (don't import from balance.validator as it uses default targets)
+    def validate_single_metric(name, value):
+        if name not in TARGETS:
+            return True
+        low, high = TARGETS[name]
+        return low <= value <= high
 
     # Define metrics to validate with actual target ranges
     validation_metrics = [
