@@ -169,8 +169,7 @@ def print_debug_log(log_events):
             print("Fighter States:")
             for fighter_id, state in fighters.items():
                 fatigue_str = format_fatigue_level(state["fatigue_level"])
-                skip_activations = state.get('skip_activations', 0)
-                print(f"  {fighter_id}: HP={state['hp']:.1f} | Stamina={state['stamina']} | {fatigue_str} | 🛡️ Skip={skip_activations}")
+                print(f"  {fighter_id}: HP={state['hp']:.1f} | Stamina={state['stamina']} | {fatigue_str}")
             print()
 
         # Show attacks
@@ -195,14 +194,7 @@ def print_debug_log(log_events):
         #         probability = abs_event["probability"]
         #         print(f"  🔮 Fighter {fighter_id}: Absorption Event! ({resource_before:.3f} → {resource_after:.3f}, prob={probability:.3f})")
 
-        # Show skip protection events if any
-        if "skip_events" in event:
-            for skip_event in event["skip_events"]:
-                skip_user = skip_event["skip_user"]
-                target = skip_event["target"]
-                blocked_mechanic = skip_event["blocked_mechanic"]
-                print(f"🛡️ Fighter {skip_user}: Skip Protection! Bypassed {target}'s {blocked_mechanic}")
-                print(f"    ⚡ Mechanic '{blocked_mechanic}' was bypassed using defense advantage")
+        # Skip protection events display removed
 
         print()
 

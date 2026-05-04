@@ -57,12 +57,6 @@ CONFIG = {
     "stamina_cost_block_break": 4,    # Stamina cost for successful block break
 
     # ============================================================
-    # SKIP PROTECTION SYSTEM (DEFENSE-BASED)
-    # ============================================================
-    # Note: Skip protection now uses direct DEFENSE stat comparison
-    # No additional parameters needed - system uses max(0, defender_defense - attacker_defense)
-
-    # ============================================================
     # EHP SCALING
     # ============================================================
     "hp_scaling_base": 10.0,         # Base health multiplier

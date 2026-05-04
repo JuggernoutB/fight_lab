@@ -38,8 +38,6 @@ class Telemetry:
         # Absorption resource event tracking
         self.absorption_events = []
 
-        # Skip protection event tracking
-        self.skip_events = []
 
         self.stamina_samples = []
         self.momentum_log = []
@@ -117,12 +115,7 @@ class Telemetry:
             for abs_event in event["absorption_events"]:
                 self.absorption_events.append(abs_event)
 
-        # =========================
-        # PROCESS SKIP PROTECTION EVENTS
-        # =========================
-        if "skip_events" in event:
-            for skip_event in event["skip_events"]:
-                self.skip_events.append(skip_event)
+        # Skip events processing removed
 
         # =========================
         # STATE
@@ -226,15 +219,7 @@ class Telemetry:
             if event["fighter"] in absorption_events_by_fighter:
                 absorption_events_by_fighter[event["fighter"]] += 1
 
-        # -------------------------
-        # SKIP PROTECTION EVENTS
-        # -------------------------
-        skip_event_count = len(self.skip_events)
-        skip_events_by_fighter = {"A": 0, "B": 0}
-        for event in self.skip_events:
-            # Count by skip_user (who actually used skip protection), not by defender
-            if event["skip_user"] in skip_events_by_fighter:
-                skip_events_by_fighter[event["skip_user"]] += 1
+        # Skip protection events removed
 
         # -------------------------
         # NEW CRIT METRICS
@@ -272,10 +257,5 @@ class Telemetry:
                 "total": absorption_event_count,
                 "by_fighter": absorption_events_by_fighter.copy(),
                 "events": self.absorption_events.copy()
-            },
-            "skip_events": {
-                "total": skip_event_count,
-                "by_fighter": skip_events_by_fighter.copy(),
-                "events": self.skip_events.copy()
             }
         }

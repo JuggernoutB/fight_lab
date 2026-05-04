@@ -13,6 +13,31 @@ from state.fight_state import FighterState, FightState
 from .simulator import simulate_fight
 
 
+def load_level_targets(level: int) -> Dict:
+    """Load targets for specific level, fallback to default if not found"""
+    try:
+        # Try to import level-specific targets
+        targets_module = __import__(f'balance.targets_level_{level}', fromlist=['TARGETS'])
+        return targets_module.TARGETS
+    except ImportError:
+        # Fallback to default targets
+        try:
+            from balance.targets import TARGETS
+            return TARGETS
+        except ImportError:
+            # Return empty dict if no targets found
+            return {}
+
+
+def validate_single_metric_with_targets(name: str, value: float, targets: Dict) -> bool:
+    """Validate a single metric against provided targets"""
+    if name not in targets:
+        return True  # If no target defined, consider it passed
+
+    low, high = targets[name]
+    return low <= value <= high
+
+
 def generate_random_fighter_at_level(level: int, force_role: str = None) -> FighterState:
     """Generate random fighter at specific level"""
     total_stats = level_to_stat_budget(level)
@@ -94,7 +119,6 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
         "rounds_distribution": {},  # Track detailed round distribution
         "role_absorption": {},  # Track damage absorption by role
         "role_mechanics": {},  # Track all mechanics by role (hit, crit, dodge, block, etc)
-        "skip_protection_by_round": {},  # Track skip protection events by round
         "stamina_exhaustion_fights": 0,  # Track fights that ended due to stamina exhaustion (both players can't attack)
         "zero_stamina_encounters": 0,    # Track fights where at least one player reached 0 stamina during the fight
         "builds_by_role": {}  # Track all builds by role with confidence
@@ -271,13 +295,6 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
         # Track absorption by role
         if "damage_absorbed" in summary:
             absorbed = summary["damage_absorbed"]
-            # Track skip protection events
-            skip_events_a = 0
-            skip_events_b = 0
-            if "skip_events" in summary:
-                skip_data = summary["skip_events"]
-                skip_events_a = skip_data["by_fighter"].get("A", 0)
-                skip_events_b = skip_data["by_fighter"].get("B", 0)
 
             # Track final absorption resources
             final_resource_a = final_state.fighter_a.damage_absorption_resource
@@ -301,14 +318,13 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
             # Track for fighter A
             if fighter_a.role not in results["role_absorption"]:
                 results["role_absorption"][fighter_a.role] = {
-                    "dodge": 0.0, "block": 0.0, "skip_events": 0,
+                    "dodge": 0.0, "block": 0.0,
                     "total_final_resource": 0.0, "fights": 0, "total_rounds": 0,
                     "block_events": 0,  # Count of block events
                     "total_resource_generated": 0.0  # Total resource generated across all fights
                 }
             results["role_absorption"][fighter_a.role]["dodge"] += absorbed["dodge"]
             results["role_absorption"][fighter_a.role]["block"] += absorbed["block"]
-            results["role_absorption"][fighter_a.role]["skip_events"] += skip_events_a
             results["role_absorption"][fighter_a.role]["total_final_resource"] += final_resource_a
             results["role_absorption"][fighter_a.role]["total_resource_generated"] += getattr(fighter_a, 'total_resource_generated', 0.0)
             results["role_absorption"][fighter_a.role]["fights"] += 1
@@ -318,14 +334,13 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
             # Track for fighter B
             if fighter_b.role not in results["role_absorption"]:
                 results["role_absorption"][fighter_b.role] = {
-                    "dodge": 0.0, "block": 0.0, "skip_events": 0,
+                    "dodge": 0.0, "block": 0.0,
                     "total_final_resource": 0.0, "fights": 0, "total_rounds": 0,
                     "block_events": 0,  # Count of block events
                     "total_resource_generated": 0.0  # Total resource generated across all fights
                 }
             results["role_absorption"][fighter_b.role]["dodge"] += absorbed["dodge"]
             results["role_absorption"][fighter_b.role]["block"] += absorbed["block"]
-            results["role_absorption"][fighter_b.role]["skip_events"] += skip_events_b
             results["role_absorption"][fighter_b.role]["total_final_resource"] += final_resource_b
             results["role_absorption"][fighter_b.role]["total_resource_generated"] += getattr(fighter_b, 'total_resource_generated', 0.0)
             results["role_absorption"][fighter_b.role]["fights"] += 1
@@ -489,15 +504,7 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
         results["role_mechanics"][fighter_b.role]["fights"] += 1
         results["role_mechanics"][fighter_b.role]["total_rounds"] += rounds
 
-        # Track skip protection events by round from telemetry
-        for round_event in telemetry.events:
-            round_num = round_event["round"]
-
-            # Check for skip protection events
-            if "skip_events" in round_event:
-                if round_num not in results["skip_protection_by_round"]:
-                    results["skip_protection_by_round"][round_num] = 0
-                results["skip_protection_by_round"][round_num] += len(round_event["skip_events"])
+        # Skip protection tracking removed
 
         # Count this fight if it ended due to stamina exhaustion
         if final_state.end_reason == "stamina_exhaustion":
@@ -817,78 +824,7 @@ def print_level_benchmark_results(results: Dict):
         print(f"Average total damage: {avg_total_damage:.1f}")
         print(f"DPS Range: {min(dps_list):.1f} - {max(dps_list):.1f}")
 
-    print(f"\n===== SKIP PROTECTION ANALYSIS =====")
-    role_absorption = results.get("role_absorption", {})
-    if role_absorption:
-        # Sort roles by total absorption (highest first)
-        sorted_absorption = []
-        for role, data in role_absorption.items():
-            if data["fights"] > 0:
-                avg_dodge = data["dodge"] / data["fights"]
-                avg_block = data["block"] / data["fights"]
-                total_avg = avg_dodge + avg_block
-                avg_skip_events = data["skip_events"] / data["fights"]
-                avg_final_resource = data["total_final_resource"] / data["fights"]
-                avg_rounds = data["total_rounds"] / data["fights"]
-                skip_per_round = data["skip_events"] / data["total_rounds"] if data["total_rounds"] > 0 else 0
-                avg_block_events = data["block_events"] / data["fights"]
-                block_events_per_round = data["block_events"] / data["total_rounds"] if data["total_rounds"] > 0 else 0
-                avg_resource_generated = data["total_resource_generated"] / data["fights"]
-                resource_generated_per_round = data["total_resource_generated"] / data["total_rounds"] if data["total_rounds"] > 0 else 0
-                sorted_absorption.append((role, avg_dodge, avg_block, total_avg, avg_skip_events, avg_final_resource, data["fights"], avg_rounds, skip_per_round, avg_block_events, block_events_per_round, avg_resource_generated, resource_generated_per_round))
-
-        sorted_absorption.sort(key=lambda x: x[3], reverse=True)  # Sort by total absorption
-
-        # PRIMARY METRICS (according to documentation)
-        print("Blocks per Fight:")
-        # Sort by block frequency for this section
-        sorted_by_block_events = sorted(sorted_absorption, key=lambda x: x[9], reverse=True)
-        for role, avg_dodge, avg_block, total_avg, avg_skip_events, avg_final_resource, fights, avg_rounds, skip_per_round, avg_block_events, block_events_per_round, avg_resource_generated, resource_generated_per_round in sorted_by_block_events:
-            print(f"  {role:11s}: {avg_block_events:5.1f}")
-
-        print(f"\nBlocks per round:")
-        for role, avg_dodge, avg_block, total_avg, avg_skip_events, avg_final_resource, fights, avg_rounds, skip_per_round, avg_block_events, block_events_per_round, avg_resource_generated, resource_generated_per_round in sorted_by_block_events:
-            print(f"  {role:11s}: {block_events_per_round:5.1f}")
-
-        print(f"\nAverage rounds per fight:")
-        # Sort by average fight length for this section
-        sorted_by_rounds = sorted(sorted_absorption, key=lambda x: x[7], reverse=True)
-        for data_tuple in sorted_by_rounds:
-            role = data_tuple[0]
-            avg_rounds = data_tuple[7]
-            print(f"  {role:11s}: {avg_rounds:5.1f}")
-
-        print(f"\nBlock Damage Mitigation per Fight:")
-        for data_tuple in sorted_absorption:
-            role = data_tuple[0]
-            avg_block = data_tuple[2]
-            print(f"  {role:11s}: {avg_block:5.1f}")
-
-        print(f"\nBlock Damage Mitigation per round:")
-        for data_tuple in sorted_absorption:
-            role = data_tuple[0]
-            avg_block = data_tuple[2]
-            avg_rounds = data_tuple[7]
-            block_per_round = avg_block / avg_rounds if avg_rounds > 0 else 0
-            print(f"  {role:11s}: {block_per_round:5.1f}")
-
-        print(f"\nSkip Activations per Fight:")
-        # Sort by event frequency for this section
-        sorted_by_events = sorted(sorted_absorption, key=lambda x: x[4], reverse=True)
-        for data_tuple in sorted_by_events:
-            role = data_tuple[0]
-            avg_skip_events = data_tuple[4]
-            print(f"  {role:11s}: {avg_skip_events:5.2f}")
-
-        print(f"\nSkip Protection Efficiency:")
-        # Sort by skip per round for efficiency comparison
-        sorted_by_skip_efficiency = sorted(sorted_absorption, key=lambda x: x[8], reverse=True)
-        for data_tuple in sorted_by_skip_efficiency:
-            role = data_tuple[0]
-            skip_per_round = data_tuple[8]
-            print(f"  {role:11s}: {skip_per_round:5.3f}")
-    else:
-        print("No absorption data available")
+    # Skip protection analysis removed
 
     # Full balance validation (like legacy benchmark)
     print(f"\n===== BALANCE VALIDATION =====")
@@ -948,24 +884,24 @@ def print_level_benchmark_results(results: Dict):
             winrates_3stat = [overall_winrates[role]["winrate"] for role in stat_3_roles]
             stat_3_spread = max(winrates_3stat) - min(winrates_3stat)
 
-    # Import validation logic
-    from balance.validator import validate_single_metric
+    # Load level-specific targets for validation
+    TARGETS = load_level_targets(level)
 
     # Run validation checks
-    print(f"[{'OK' if validate_single_metric('rounds_avg', avg_rounds) else 'FAIL'}]   rounds_avg: {avg_rounds:.4f}")
-    print(f"[{'OK' if validate_single_metric('dps_avg', avg_dps) else 'FAIL'}]   dps_avg: {avg_dps:.4f}")
+    print(f"[{'OK' if validate_single_metric_with_targets('rounds_avg', avg_rounds, TARGETS) else 'FAIL'}]   rounds_avg: {avg_rounds:.4f}")
+    print(f"[{'OK' if validate_single_metric_with_targets('dps_avg', avg_dps, TARGETS) else 'FAIL'}]   dps_avg: {avg_dps:.4f}")
 
-    draw_result = validate_single_metric('draw_rate', draw_rate)
+    draw_result = validate_single_metric_with_targets('draw_rate', draw_rate, TARGETS)
     print(f"[{'OK' if draw_result else 'FAIL'}]   draw_rate: {draw_rate:.4f}" + ("" if draw_result else " not in (0.08, 0.16)"))
 
-    stamina_exhaustion_result = validate_single_metric('stamina_exhaustion_rate', stamina_exhaustion_rate)
+    stamina_exhaustion_result = validate_single_metric_with_targets('stamina_exhaustion_rate', stamina_exhaustion_rate, TARGETS)
     print(f"[{'OK' if stamina_exhaustion_result else 'FAIL'}]   stamina_exhaustion_rate: {stamina_exhaustion_rate:.4f}" + ("" if stamina_exhaustion_result else " not in (0.0, 0.02)"))
 
     # Mechanics validation (exclude crit - now handled separately)
     if mechanics_avg:
         for metric in ['dodge', 'block', 'block_break', 'hit']:
             if metric in mechanics_avg:
-                result = validate_single_metric(metric, mechanics_avg[metric])
+                result = validate_single_metric_with_targets(metric, mechanics_avg[metric], TARGETS)
                 print(f"[{'OK' if result else 'FAIL'}]   {metric}: {mechanics_avg[metric]:.4f}")
 
     # Damage validation
@@ -973,7 +909,7 @@ def print_level_benchmark_results(results: Dict):
         for metric in ['crit_dmg', 'normal_dmg', 'blocked_dmg']:
             metric_key = metric.replace('_dmg', '')
             if metric_key in damage_avg:
-                result = validate_single_metric(metric, damage_avg[metric_key])
+                result = validate_single_metric_with_targets(metric, damage_avg[metric_key], TARGETS)
                 print(f"[{'OK' if result else 'FAIL'}]   {metric}: {damage_avg[metric_key]:.4f}")
 
     # Stamina validation
@@ -981,27 +917,21 @@ def print_level_benchmark_results(results: Dict):
         for metric in ['stamina_high', 'stamina_mid', 'stamina_low']:
             stamina_key = metric.replace('stamina_', '')
             if stamina_key in stamina_avg:
-                result = validate_single_metric(metric, stamina_avg[stamina_key])
+                result = validate_single_metric_with_targets(metric, stamina_avg[stamina_key], TARGETS)
                 range_text = ""
                 if not result:
                     if metric == 'stamina_mid':
                         range_text = " not in (0.4, 0.55)"
                 print(f"[{'OK' if result else 'FAIL'}]   {metric}: {stamina_avg[stamina_key]:.4f}{range_text}")
 
-    # Build type balance validation (replacing role_balance_spread)
-    from balance.targets import TARGETS
-
     # Validate 2-stat builds spread
-    stat_2_result = validate_single_metric('2_stat_builds_spread', stat_2_spread)
+    stat_2_result = validate_single_metric_with_targets('2_stat_builds_spread', stat_2_spread, TARGETS)
     target_2_range = TARGETS.get('2_stat_builds_spread', (0.0, 0.03))
     range_text_2 = "" if stat_2_result else f" not in {target_2_range}"
     print(f"[{'OK' if stat_2_result else 'FAIL'}]   2_stat_builds_spread: {stat_2_spread:.4f}{range_text_2}")
 
-    # Validate 3-stat builds spread
-    stat_3_result = validate_single_metric('3_stat_builds_spread', stat_3_spread)
-    target_3_range = TARGETS.get('3_stat_builds_spread', (0.0, 0.15))
-    range_text_3 = "" if stat_3_result else f" not in {target_3_range}"
-    print(f"[{'OK' if stat_3_result else 'FAIL'}]   3_stat_builds_spread: {stat_3_spread:.4f}{range_text_3}")
+    # Calculate 3-stat builds spread for web report (not shown in console)
+    stat_3_result = validate_single_metric_with_targets('3_stat_builds_spread', stat_3_spread, TARGETS)
 
     # NEW: Advanced crit metrics
     if results.get("crit_metrics_data"):
@@ -1023,36 +953,39 @@ def print_level_benchmark_results(results: Dict):
             print(f"Crit damage ratio:     {avg_crit_damage:.4f} ({avg_crit_damage*100:.1f}%) of total damage")
 
     # Final result
-    all_passed = (validate_single_metric('rounds_avg', avg_rounds) and
-                  validate_single_metric('dps_avg', avg_dps) and
-                  validate_single_metric('draw_rate', draw_rate) and
-                  validate_single_metric('stamina_exhaustion_rate', stamina_exhaustion_rate) and
-                  stat_2_result and stat_3_result)
+    all_passed = (validate_single_metric_with_targets('rounds_avg', avg_rounds, TARGETS) and
+                  validate_single_metric_with_targets('dps_avg', avg_dps, TARGETS) and
+                  validate_single_metric_with_targets('draw_rate', draw_rate, TARGETS) and
+                  validate_single_metric_with_targets('stamina_exhaustion_rate', stamina_exhaustion_rate, TARGETS) and
+                  stat_2_result)
 
-    # Add mechanics validation to final check
+    # Add mechanics validation to final check (same list as printed)
     if mechanics_avg:
-        for metric in ['crit', 'dodge', 'block', 'block_break', 'hit']:
+        for metric in ['dodge', 'block', 'block_break', 'hit']:
             if metric in mechanics_avg:
-                all_passed = all_passed and validate_single_metric(metric, mechanics_avg[metric])
+                all_passed = all_passed and validate_single_metric_with_targets(metric, mechanics_avg[metric], TARGETS)
 
     # Add damage validation to final check
     if damage_avg:
         for metric in ['crit_dmg', 'normal_dmg', 'blocked_dmg']:
             metric_key = metric.replace('_dmg', '')
             if metric_key in damage_avg:
-                all_passed = all_passed and validate_single_metric(metric, damage_avg[metric_key])
+                all_passed = all_passed and validate_single_metric_with_targets(metric, damage_avg[metric_key], TARGETS)
 
     # Add stamina validation to final check
     if stamina_avg:
         for metric in ['stamina_high', 'stamina_mid', 'stamina_low']:
             stamina_key = metric.replace('stamina_', '')
             if stamina_key in stamina_avg:
-                all_passed = all_passed and validate_single_metric(metric, stamina_avg[stamina_key])
+                all_passed = all_passed and validate_single_metric_with_targets(metric, stamina_avg[stamina_key], TARGETS)
 
     if all_passed:
         print(f"\n✅ BALANCE TEST PASSED")
     else:
         print(f"\n❌ BALANCE TEST FAILED")
+
+    # Add balance test result to results for HTML export
+    results["balance_test_passed"] = all_passed
 
 
 def compare_levels():

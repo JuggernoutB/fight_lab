@@ -42,12 +42,8 @@ def simulate_fight(state, max_rounds=25, seed=None, action_mode="normal"):
     fight_state.round_id = 0
     fight_state.end_reason = None
 
-    # Initialize defense-based skip protection activations for the entire fight
-    # Each point of defense advantage gives 1 skip activation for the whole fight
     a = fight_state.fighter_a
     b = fight_state.fighter_b
-    a.skip_activations_remaining = 0# max(0, a.defense - b.defense - 3)  # A's defense advantage over B
-    b.skip_activations_remaining = 0#max(0, b.defense - a.defense - 3)  # B's defense advantage over A
 
     # Game log for replay/UI
     log = []
@@ -88,14 +84,12 @@ def process_round(state, rng, action_mode="normal"):
         "A": {
             "hp": a.hp,
             "stamina": a.stamina,
-            "fatigue_level": get_stamina_level(a.stamina),
-            "skip_activations": a.skip_activations_remaining
+            "fatigue_level": get_stamina_level(a.stamina)
         },
         "B": {
             "hp": b.hp,
             "stamina": b.stamina,
-            "fatigue_level": get_stamina_level(b.stamina),
-            "skip_activations": b.skip_activations_remaining
+            "fatigue_level": get_stamina_level(b.stamina)
         }
     }
 
@@ -107,34 +101,26 @@ def process_round(state, rng, action_mode="normal"):
     atk_zones_a, def_zones_a = to_zones(action_a)
     atk_zones_b, def_zones_b = to_zones(action_b)
 
-    # Combat resolution - defense-based skip protection
-    # CORRECTED: Attacker uses their skip activations to bypass defender's mechanics
-    res_a, action_costs_a, skip_events_a, a_skip_remaining_attack = process_attack(
+    # Combat resolution
+    res_a, action_costs_a, skip_events_a = process_attack(
         attacker={"attack": a.attack, "agility": a.agility},
         defender={"defense": b.defense, "agility": b.agility},
         attacker_stamina=a.stamina,
         defender_stamina=b.stamina,
         atk_zones=atk_zones_a,
         def_zones=def_zones_b,
-        attacker_fatigue_bonus=0.0,
-        defender_skip_activations=a.skip_activations_remaining  # A uses A's skip to bypass B's defense
+        attacker_fatigue_bonus=0.0
     )
 
-    res_b, action_costs_b, skip_events_b, b_skip_remaining_attack = process_attack(
+    res_b, action_costs_b, skip_events_b = process_attack(
         attacker={"attack": b.attack, "agility": b.agility},
         defender={"defense": a.defense, "agility": a.agility},
         attacker_stamina=b.stamina,
         defender_stamina=a.stamina,
         atk_zones=atk_zones_b,
         def_zones=def_zones_a,
-        attacker_fatigue_bonus=0.0,
-        defender_skip_activations=b.skip_activations_remaining  # B uses B's skip to bypass A's defense
+        attacker_fatigue_bonus=0.0
     )
-
-    # Update skip activations remaining after this round
-    # A spent activations when attacking B, B spent activations when attacking A
-    a.skip_activations_remaining = a_skip_remaining_attack  # A's remaining after attacking B
-    b.skip_activations_remaining = b_skip_remaining_attack  # B's remaining after attacking A
 
     # Build event log for this round
     round_attacks = []
@@ -176,30 +162,8 @@ def process_round(state, rng, action_mode="normal"):
         "fighters_pre_round": fighters_pre_round
     }
 
-    # Add skip events if any occurred
-    all_skip_events = []
-    if skip_events_a:
-        for event_type in skip_events_a:
-            all_skip_events.append({
-                "type": "skip_protection",
-                "skip_user": "A",  # A spent skip activations
-                "target": "B",     # A bypassed B's defensive mechanic
-                "defender": "B",   # For telemetry compatibility
-                "blocked_mechanic": event_type.replace("_skip", "")
-            })
-
-    if skip_events_b:
-        for event_type in skip_events_b:
-            all_skip_events.append({
-                "type": "skip_protection",
-                "skip_user": "B",  # B spent skip activations
-                "target": "A",     # B bypassed A's defensive mechanic
-                "defender": "A",   # For telemetry compatibility
-                "blocked_mechanic": event_type.replace("_skip", "")
-            })
-
-    if all_skip_events:
-        round_event["skip_events"] = all_skip_events
+    # Skip events removed (legacy compatibility maintained)
+    # skip_events_a and skip_events_b are now empty lists
 
     events.append(round_event)
 

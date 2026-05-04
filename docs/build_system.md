@@ -81,6 +81,7 @@ def classify_build_role(hp_stat, attack_stat, defense_stat, agility_stat):
     scores["HP_DEF"] = hp_n * 0.5 + def_n * 0.5
 
     # 1 stat extreme builds
+    #todo all to ATK, all to DEF, all to HP, all to AGI
 
     # UNIVERSAL: Balanced builds (high when stats are even)
     stat_range = max([hp_n, atk_n, def_n, agi_n]) - min([hp_n, atk_n, def_n, agi_n])

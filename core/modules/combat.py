@@ -20,12 +20,11 @@ def process_attack(
     atk_zones: List[str],
     def_zones: List[str],
     debug_mode: bool = False,
-    attacker_fatigue_bonus: float = 0.0,
-    defender_skip_activations: int = 0
-) -> tuple[Dict[str, Dict], Dict[str, int], Dict[str, any], int]:
+    attacker_fatigue_bonus: float = 0.0
+) -> tuple[Dict[str, Dict], Dict[str, int], Dict[str, any]]:
 
     if not atk_zones:
-        return {}, {}, {}, defender_skip_activations
+        return {}, {}, {}
 
     # === DATA NORMALIZATION (protect against dict typos) ===
     try:
@@ -55,12 +54,8 @@ def process_attack(
         "block_break": 0
     }
 
-    # Track skip protection events (list to allow multiple activations)
+    # Track events (legacy compatibility)
     skip_events = []
-
-    # NEW: Defense-based skip protection system
-    # Use skip activations remaining for the entire fight (passed from game engine)
-    skip_activations_remaining = defender_skip_activations
 
     for z in atk_zones:
 
@@ -81,12 +76,7 @@ def process_attack(
             # Calculate dodge chance
             dmg_temp, dodge_state = apply_dodge(raw_damage, atk_attack, def_agility, defender_stamina, atk_agility)
 
-            # Apply skip protection to dodge
-            if dodge_state == "dodge" and skip_activations_remaining > 0:
-                # Skip protection blocks the dodge
-                skip_events.append("dodge_skip")
-                skip_activations_remaining -= 1
-                dodge_state = "hit"  # Convert to normal hit
+            # Process dodge result directly
 
             # Process dodge result
             if dodge_state == "dodge":  # Full dodge only
@@ -125,11 +115,7 @@ def process_attack(
             attacker_fatigue_bonus
         )
 
-        # Apply skip protection to crit
-        if is_crit and skip_activations_remaining > 0:
-            is_crit = False  # Block the crit
-            skip_events.append("crit_skip")
-            skip_activations_remaining -= 1
+        # Apply crit effect
 
         # Apply crit multiplier to raw damage
         if is_crit:
@@ -148,11 +134,7 @@ def process_attack(
                 atk_agility, def_defense, attacker_stamina, attacker_fatigue_bonus
             )
 
-            # Apply skip protection to block break
-            if break_succeeded and skip_activations_remaining > 0:
-                break_succeeded = False  # Block the block break
-                skip_events.append("block_break_skip")
-                skip_activations_remaining -= 1
+            # Process block break result
 
             if break_succeeded:
                 action_costs["block_break"] += 1
@@ -216,4 +198,4 @@ def process_attack(
         total_absorbed_by_defender += absorbed_total
 
     # Return updated values
-    return results, action_costs, skip_events, skip_activations_remaining
+    return results, action_costs, skip_events

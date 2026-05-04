@@ -1,4 +1,4 @@
-# balance/targets.py
+# balance/targets_level_1.py
 
 TARGETS = {
 

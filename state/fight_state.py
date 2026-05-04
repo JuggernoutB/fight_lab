@@ -19,8 +19,6 @@ class FighterState:
         self.damage_taken_last = 0
         self.last_damage_taken = 0
 
-        # DEFENSE-BASED SKIP PROTECTION SYSTEM
-        self.skip_activations_remaining = 0   # Skip activations remaining for this fight
 
 
 class FightState:
