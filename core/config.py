@@ -50,8 +50,6 @@ CONFIG = {
     "attack_stamina_cost_per_zone": 6,  # Stamina cost per attack zone
     "defense_stamina_cost_per_zone": 3, # Stamina cost per defense zone
     "stamina_regen_per_round": 4,     # Stamina regenerated per round
-    "hp_stamina_regen_bonus": 0,      # Additional stamina regen per HP advantage point
-    "hp_stamina_regen_frequency": 4,  # How often HP bonus applies (1=every round, 2=every 2nd round, etc.)
 
     # Action-based stamina costs (for successful mechanics)
     "stamina_cost_dodge": 5,          # Stamina cost for successful dodge
