@@ -13,6 +13,7 @@ Usage:
   python main.py single configs/custom_single.json
   python main.py build              # Build analysis (default config)
   python main.py build configs/custom_build.json
+  python main.py test               # System test (levels 1-10, 100k fights each, AI mode)
 
 Action modes:
   normal  # Equal behavior: 50% 1-2 attack zones, 33.3% 0-2 defense zones (default)
@@ -24,6 +25,7 @@ Examples:
   python main.py single configs/compact_single.json  # Compact analysis
   python main.py build                               # Test default build
   python main.py build configs/tank_build.json       # Test custom build
+  python main.py test                                # Comprehensive system test
 """
 
 import sys
@@ -114,6 +116,114 @@ def run_build_mode(config_path=None):
 
     run_build(config_path)
 
+
+def run_system_test():
+    """Run comprehensive system test across all levels (1-10)"""
+    import os
+    from datetime import datetime
+    from simulation.level_benchmark import run_level_benchmark, print_level_benchmark_results
+    from output.html_export import export_benchmark_to_html
+
+    print("🔬 SYSTEM TEST MODE")
+    print("=" * 50)
+    print("Running comprehensive test across levels 1-10")
+    print("Each level: 100,000 fights with AI action mode")
+    print()
+
+    # Create test results directory
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    test_dir = f"output/test_{timestamp}"
+    os.makedirs(test_dir, exist_ok=True)
+    print(f"📁 Test reports will be saved to: {test_dir}")
+    print()
+
+    # Track test results
+    test_results = []
+    failed_levels = []
+
+    # Test each level from 1 to 10
+    for level in range(1, 11):
+        print(f"🎯 TESTING LEVEL {level}")
+        print("-" * 30)
+
+        try:
+            # Run level benchmark
+            results = run_level_benchmark(level, 100000, "ai")
+
+            # Print results (includes balance validation)
+            print_level_benchmark_results(results)
+
+            # Get balance test result
+            balance_passed = results.get("balance_test_passed", False)
+
+            # Generate HTML report in test directory
+            html_filename = f"level_{level}_100000_ai_{timestamp}.html"
+            html_path = os.path.join(test_dir, html_filename)
+            export_benchmark_to_html(results, level, 100000, "ai", html_path)
+
+            # Store test result
+            test_result = {
+                "level": level,
+                "passed": balance_passed,
+                "html_report": html_path
+            }
+            test_results.append(test_result)
+
+            if not balance_passed:
+                failed_levels.append(level)
+
+            status = "✅ PASSED" if balance_passed else "❌ FAILED"
+            print(f"\nLevel {level} balance test: {status}")
+            print(f"HTML report: {html_path}")
+
+        except Exception as e:
+            print(f"\n❌ ERROR testing level {level}: {e}")
+            failed_levels.append(level)
+            test_results.append({
+                "level": level,
+                "passed": False,
+                "error": str(e)
+            })
+
+        print("\n" + "=" * 50)
+        print()
+
+    # Print comprehensive summary
+    print("📊 SYSTEM TEST SUMMARY")
+    print("=" * 50)
+
+    total_levels = len(test_results)
+    passed_levels = [r for r in test_results if r.get("passed", False)]
+    passed_count = len(passed_levels)
+
+    print(f"Total levels tested: {total_levels}")
+    print(f"Levels passed: {passed_count}")
+    print(f"Levels failed: {len(failed_levels)}")
+    print()
+
+    if failed_levels:
+        print("❌ FAILED LEVELS:")
+        for level in failed_levels:
+            result = next((r for r in test_results if r["level"] == level), {})
+            if "error" in result:
+                print(f"  Level {level}: ERROR - {result['error']}")
+            else:
+                print(f"  Level {level}: Balance validation failed")
+        print()
+
+    # Overall verdict
+    all_passed = len(failed_levels) == 0
+    if all_passed:
+        print("🎉 OVERALL VERDICT: ✅ SYSTEM TEST PASSED")
+        print("All levels passed balance validation!")
+    else:
+        print("💥 OVERALL VERDICT: ❌ SYSTEM TEST FAILED")
+        print(f"{len(failed_levels)} out of {total_levels} levels failed balance validation.")
+
+    print(f"\n📁 All test reports saved in: {test_dir}")
+    print("\nTest completed!")
+
+
 def main():
     """Main CLI router"""
     args = sys.argv[1:] if len(sys.argv) > 1 else ["benchmark"]
@@ -197,9 +307,13 @@ def main():
                 print("Usage: build [config.json]")
                 sys.exit(1)
 
+        elif mode == "test":
+            # Comprehensive system test across all levels
+            run_system_test()
+
         else:
             print(f"❌ Unknown mode: {mode}")
-            print("Available modes: benchmark, benchmark_level, single, build")
+            print("Available modes: benchmark, benchmark_level, single, build, test")
             print("Use --help for more information")
             sys.exit(1)
 
