@@ -66,8 +66,8 @@ def generate_html_content(results: Dict, level: int, num_fights: int, action_mod
         </nav>
 
         {generate_overview_tab(results, level, num_fights, action_mode)}
-        {generate_roles_tab(results)}
-        {generate_balance_tab(results)}
+        {generate_roles_tab(results, level)}
+        {generate_balance_tab(results, level)}
         {generate_builds_tab(results)}
         {generate_combat_tab(results)}
     </div>
@@ -218,7 +218,7 @@ def generate_stamina_overview(results):
         </style>
     """
 
-def generate_roles_tab(results: Dict) -> str:
+def generate_roles_tab(results: Dict, level: int) -> str:
     """Generate roles and winrates tab"""
 
     # Extract role data directly from results
@@ -229,7 +229,7 @@ def generate_roles_tab(results: Dict) -> str:
     winrate_table_3stat = generate_winrate_matrix_table_filtered(results, "3stat")
 
     # Calculate build type spread metrics for display
-    build_spread_metrics = generate_build_spread_metrics(results)
+    build_spread_metrics = generate_build_spread_metrics(results, level)
 
     return f"""
         <div id="roles" class="tab-content">
@@ -252,7 +252,7 @@ def generate_roles_tab(results: Dict) -> str:
         </div>
     """
 
-def generate_balance_tab(results: Dict) -> str:
+def generate_balance_tab(results: Dict, level: int) -> str:
     """Generate balance analysis tab"""
 
     return f"""
@@ -260,7 +260,7 @@ def generate_balance_tab(results: Dict) -> str:
             <div class="card">
                 <h3>⚖️ Balance Validation</h3>
                 <div class="balance-grid">
-                    {generate_balance_metrics_html(results)}
+                    {generate_balance_metrics_html(results, level)}
                 </div>
             </div>
 
@@ -1056,7 +1056,7 @@ def categorize_roles(roles):
         "3stat": three_stat_builds | universal_builds
     }
 
-def generate_build_spread_metrics(results):
+def generate_build_spread_metrics(results, level: int):
     """Generate build spread metrics for HTML display"""
     role_analysis = results.get("role_analysis", {})
 
@@ -1087,14 +1087,10 @@ def generate_build_spread_metrics(results):
             stat_3_spread = max(winrates_3stat) - min(winrates_3stat)
         stat_3_roles_list = sorted(stat_3_roles)
 
-    # Import targets for validation
-    try:
-        from balance.targets import TARGETS
-        target_2 = TARGETS.get('2_stat_builds_spread', (0.0, 0.03))[1]
-        target_3 = TARGETS.get('3_stat_builds_spread', (0.0, 0.15))[1]
-    except:
-        target_2 = 0.03
-        target_3 = 0.15
+    # Load level-specific targets for validation
+    TARGETS = load_level_targets(level)
+    target_2 = TARGETS.get('2_stat_builds_spread', (0.0, 0.03))[1]
+    target_3 = TARGETS.get('3_stat_builds_spread', (0.0, 0.15))[1]
 
     # Generate HTML for 2-stat spread
     stat_2_status = "✅" if stat_2_spread <= target_2 else "❌"
@@ -1259,7 +1255,23 @@ def generate_winrate_matrix_table(results):
     """Generate winrate matrix table (original function for compatibility)"""
     return generate_winrate_matrix_table_filtered(results, "all")
 
-def generate_balance_metrics_html(results):
+def load_level_targets(level: int) -> Dict:
+    """Load targets for specific level, fallback to default if not found"""
+    try:
+        # Try to import level-specific targets
+        targets_module = __import__(f'balance.targets_level_{level}', fromlist=['TARGETS'])
+        return targets_module.TARGETS
+    except ImportError:
+        # Fallback to default targets
+        try:
+            from balance.targets import TARGETS
+            return TARGETS
+        except ImportError:
+            # Return empty dict if no targets found
+            return {}
+
+
+def generate_balance_metrics_html(results, level: int):
     """Generate balance validation metrics"""
 
     # Calculate metrics same way as console output
@@ -1291,7 +1303,7 @@ def generate_balance_metrics_html(results):
         for k, v in results["stamina_data"].items():
             stamina_avg[k] = v / total
 
-    # Calculate role balance spread
+    # Calculate role balance spread (legacy)
     role_analysis = results.get("role_analysis", {})
     role_balance_spread = 0.0
     if role_analysis:
@@ -1299,12 +1311,43 @@ def generate_balance_metrics_html(results):
         if len(winrates) >= 2:
             role_balance_spread = max(winrates) - min(winrates)
 
-    # Import validation logic
+    # Calculate build type balance spread (new metrics)
+    stat_2_spread = 0.0
+    stat_3_spread = 0.0
+
+    if role_analysis:
+        # Categorize roles into build types (same logic as console)
+        stat_2_roles = []
+        stat_3_roles = []
+
+        for role, data in role_analysis.items():
+            underscore_count = role.count('_')
+            if underscore_count == 1 or role == 'UNIVERSAL':  # 2-stat builds + Universal
+                stat_2_roles.append(data["winrate"])
+            elif underscore_count == 2:  # 3-stat builds
+                stat_3_roles.append(data["winrate"])
+
+        # Calculate spread for each category
+        if len(stat_2_roles) >= 2:
+            stat_2_spread = max(stat_2_roles) - min(stat_2_roles)
+        if len(stat_3_roles) >= 2:
+            stat_3_spread = max(stat_3_roles) - min(stat_3_roles)
+
+    # Load level-specific targets
+    TARGETS = load_level_targets(level)
+    if not TARGETS:
+        return "<p>Balance validator not available</p>"
+
+    # Import validation function
     try:
         from balance.validator import validate_single_metric
-        from balance.targets import TARGETS
     except ImportError:
-        return "<p>Balance validator not available</p>"
+        # Use internal validation if validator not available
+        def validate_single_metric(name, value):
+            if name not in TARGETS:
+                return True
+            low, high = TARGETS[name]
+            return low <= value <= high
 
     # Define metrics to validate with actual target ranges
     validation_metrics = [
@@ -1312,6 +1355,7 @@ def generate_balance_metrics_html(results):
         ("dps_avg", avg_dps, f"{TARGETS['dps_avg'][0]} - {TARGETS['dps_avg'][1]}"),
         ("draw_rate", draw_rate, f"{TARGETS['draw_rate'][0]} - {TARGETS['draw_rate'][1]}"),
         ("stamina_exhaustion_rate", stamina_exhaustion_rate, f"{TARGETS['stamina_exhaustion_rate'][0]} - {TARGETS['stamina_exhaustion_rate'][1]}"),
+        ("2_stat_builds_spread", stat_2_spread, f"{TARGETS['2_stat_builds_spread'][0]} - {TARGETS['2_stat_builds_spread'][1]}"),
     ]
 
     # Add mechanics validation
