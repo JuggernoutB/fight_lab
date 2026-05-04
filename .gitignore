@@ -67,3 +67,4 @@ docs/_build/
 # Output reports
 output/benchmark_*.html
 output/*.html
+output/test_*/
