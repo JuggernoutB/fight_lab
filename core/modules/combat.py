@@ -150,8 +150,7 @@ def process_attack(
         # =========================
         # STEP 5: Apply DEF (EHP mitigation)
         # =========================
-        from core.modules.ehp import apply_defense_reduction
-        final_damage_float = apply_defense_reduction(blocked_damage, def_defense)
+        final_damage_float = calc.apply_defense_reduction(blocked_damage, def_defense)
 
         # =========================
         # STEP 6: Final damage and absorption calculation

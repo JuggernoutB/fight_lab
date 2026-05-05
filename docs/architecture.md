@@ -91,8 +91,9 @@ fight_logicV15/
 
 ### EHP Calculator (`modules/ehp.py`)
 - **Назначение**: Effective Health Points модель
-- **Функции**: calculate_base_hp(), calculate_damage_output(), apply_defense_reduction()
+- **Класс**: EHPDamageCalculator с методами: calculate_base_hp(), calculate_damage_output(), calculate_defense_multiplier(), apply_defense_reduction()
 - **Ответственность**: Преобразование статов в игровые значения и применение защиты
+- **Совместимость**: Предоставляет convenience functions для обратной совместимости
 
 ## Game Layer (`game/`) - Frontend API
 
