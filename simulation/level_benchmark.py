@@ -892,10 +892,12 @@ def print_level_benchmark_results(results: Dict):
     print(f"[{'OK' if validate_single_metric_with_targets('dps_avg', avg_dps, TARGETS) else 'FAIL'}]   dps_avg: {avg_dps:.4f}")
 
     draw_result = validate_single_metric_with_targets('draw_rate', draw_rate, TARGETS)
-    print(f"[{'OK' if draw_result else 'FAIL'}]   draw_rate: {draw_rate:.4f}" + ("" if draw_result else " not in (0.08, 0.16)"))
+    draw_range = TARGETS.get('draw_rate', (0, 1))
+    print(f"[{'OK' if draw_result else 'FAIL'}]   draw_rate: {draw_rate:.4f}" + ("" if draw_result else f" not in {draw_range}"))
 
     stamina_exhaustion_result = validate_single_metric_with_targets('stamina_exhaustion_rate', stamina_exhaustion_rate, TARGETS)
-    print(f"[{'OK' if stamina_exhaustion_result else 'FAIL'}]   stamina_exhaustion_rate: {stamina_exhaustion_rate:.4f}" + ("" if stamina_exhaustion_result else " not in (0.0, 0.02)"))
+    stamina_range = TARGETS.get('stamina_exhaustion_rate', (0, 1))
+    print(f"[{'OK' if stamina_exhaustion_result else 'FAIL'}]   stamina_exhaustion_rate: {stamina_exhaustion_rate:.4f}" + ("" if stamina_exhaustion_result else f" not in {stamina_range}"))
 
     # Mechanics validation (exclude crit - now handled separately)
     if mechanics_avg:

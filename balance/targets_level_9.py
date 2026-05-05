@@ -20,7 +20,7 @@ TARGETS = {
     # =========================
     # STAMINA EXHAUSTION
     # =========================
-    "stamina_exhaustion_rate": (0.01, 0.05),
+    "stamina_exhaustion_rate": (0.00, 0.05),
 
     # =========================
     # MECHANICS DISTRIBUTION
