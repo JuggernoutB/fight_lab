@@ -12,6 +12,30 @@ from state.level_system import (
 from state.fight_state import FighterState, FightState
 from .simulator import simulate_fight
 
+# Target role distribution for balanced testing
+BALANCED_ROLE_DISTRIBUTION = {
+    # 2-stat builds (25% total)
+    "ATK_DEF": 0.04,      # 4%
+    "ATK_HP": 0.04,       # 4%
+    "ATK_AGI": 0.04,      # 4%
+    "AGI_DEF": 0.04,      # 4%
+    "AGI_HP": 0.04,       # 4%
+    "HP_DEF": 0.05,       # 5%
+
+    # 3-stat builds (20% total)
+    "ATK_HP_DEF": 0.025,  # 2.5%
+    "ATK_HP_AGI": 0.025,  # 2.5%
+    "ATK_DEF_AGI": 0.025, # 2.5%
+    "AGI_HP_DEF": 0.025,  # 2.5%
+    "AGI_HP_ATK": 0.025,  # 2.5%
+    "AGI_DEF_ATK": 0.025, # 2.5%
+    "DEF_HP_AGI": 0.025,  # 2.5%
+    "DEF_HP_ATK": 0.025,  # 2.5%
+
+    # Universal builds (55% - still dominant but not overwhelming)
+    "UNIVERSAL": 0.55,    # 55%
+}
+
 
 def load_level_targets(level: int) -> Dict:
     """Load targets for specific level, fallback to default if not found"""
@@ -76,6 +100,59 @@ def generate_random_fighter_at_level(level: int, force_role: str = None) -> Figh
     return fighter
 
 
+def generate_balanced_fighter_at_level(level: int) -> FighterState:
+    """
+    Generate fighter at specific level using balanced role distribution.
+
+    Uses BALANCED_ROLE_DISTRIBUTION to ensure variety in builds.
+    """
+    total_stats = level_to_stat_budget(level)
+
+    # Choose role based on balanced distribution weights
+    roles = list(BALANCED_ROLE_DISTRIBUTION.keys())
+    weights = list(BALANCED_ROLE_DISTRIBUTION.values())
+    chosen_role = random.choices(roles, weights=weights)[0]
+
+    # Generate stats according to role weights with some variance
+    role_weights = ROLE_WEIGHTS[chosen_role]
+    base_stats = distribute_stats_by_weights(total_stats, role_weights)
+
+    # Add small random variance to prevent identical builds
+    # Use less variance for 3-stat builds to maintain their distinct nature
+    is_three_stat = len([role_part for role_part in chosen_role.split('_') if role_part in ['ATK', 'DEF', 'AGI', 'HP']]) == 3
+
+    if is_three_stat:
+        variance_budget = min(1, total_stats // 20)  # Very little variance for 3-stat builds
+    else:
+        variance_budget = min(2, total_stats // 12)  # Moderate variance for others
+
+    for _ in range(variance_budget):
+        # Move 1 point from one stat to another
+        source_stat = random.choice(["hp", "atk", "def", "agi"])
+        target_stat = random.choice(["hp", "atk", "def", "agi"])
+
+        if source_stat != target_stat and base_stats[source_stat] > 3:  # Keep minimum 3
+            base_stats[source_stat] -= 1
+            base_stats[target_stat] += 1
+
+    # Create fighter
+    from state.fighter_factory import create_fighter, classify_build_role
+
+    fighter = create_fighter(
+        hp_stat=base_stats["hp"],
+        attack_stat=base_stats["atk"],
+        defense_stat=base_stats["def"],
+        agility_stat=base_stats["agi"],
+        role=None  # Let classifier determine the role
+    )
+
+    # Classify the actual role (might differ from intended due to variance)
+    role, confidence = classify_build_role(base_stats["hp"], base_stats["atk"], base_stats["def"], base_stats["agi"])
+    fighter.role = role
+
+    return fighter
+
+
 def generate_level_matched_fighters(level: int) -> Tuple[FighterState, FighterState]:
     """Generate two fighters with identical level/stat budget"""
     fighter_a = generate_random_fighter_at_level(level)
@@ -96,9 +173,31 @@ def generate_level_matched_fighters(level: int) -> Tuple[FighterState, FighterSt
     return fighter_a, fighter_b
 
 
-def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "normal") -> Dict:
+def generate_balanced_level_matched_fighters(level: int) -> Tuple[FighterState, FighterState]:
+    """Generate two fighters with balanced role distribution"""
+    fighter_a = generate_balanced_fighter_at_level(level)
+    fighter_b = generate_balanced_fighter_at_level(level)
+
+    # Verify fairness
+    hp_a = getattr(fighter_a, 'hp_stat', 0)
+    total_a = hp_a + fighter_a.attack + fighter_a.defense + fighter_a.agility
+
+    hp_b = getattr(fighter_b, 'hp_stat', 0)
+    total_b = hp_b + fighter_b.attack + fighter_b.defense + fighter_b.agility
+
+    expected = level_to_stat_budget(level)
+
+    if total_a != expected or total_b != expected:
+        raise RuntimeError(f"Level fairness violation: Level {level} should have {expected} stats, got A={total_a}, B={total_b}")
+
+    return fighter_a, fighter_b
+
+
+def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "normal", use_balanced: bool = False) -> Dict:
     """Run benchmark at specific level"""
+    generation_type = "Balanced Role Distribution" if use_balanced else "Random Distribution"
     print(f"📊 LEVEL {level} BENCHMARK - {level_to_stat_budget(level)} stat points")
+    print(f"Generation: {generation_type}")
     print(f"Running {num_fights} fights...")
     print("=" * 50)
 
@@ -154,7 +253,10 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
             print(f"Progress: {i}/{num_fights}")
 
         # Generate level-matched fighters
-        fighter_a, fighter_b = generate_level_matched_fighters(level)
+        if use_balanced:
+            fighter_a, fighter_b = generate_balanced_level_matched_fighters(level)
+        else:
+            fighter_a, fighter_b = generate_level_matched_fighters(level)
 
         # Initialize resource generation tracking for this fight
         fighter_a.total_resource_generated = 0.0

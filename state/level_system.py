@@ -51,6 +51,94 @@ ROLE_WEIGHTS = {
         "atk": 0.25,   # 25% into ATK
         "def": 0.25,   # 25% into DEF
         "agi": 0.25    # 25% into AGI
+    },
+
+    # 2-stat builds (50/50 distribution)
+    "ATK_DEF": {
+        "atk": 0.40,   # 40% into ATK
+        "def": 0.40,   # 40% into DEF
+        "hp": 0.10,    # 10% into HP
+        "agi": 0.10    # 10% into AGI
+    },
+    "ATK_HP": {
+        "atk": 0.40,   # 40% into ATK
+        "hp": 0.40,    # 40% into HP
+        "def": 0.10,   # 10% into DEF
+        "agi": 0.10    # 10% into AGI
+    },
+    "ATK_AGI": {
+        "atk": 0.40,   # 40% into ATK
+        "agi": 0.40,   # 40% into AGI
+        "hp": 0.10,    # 10% into HP
+        "def": 0.10    # 10% into DEF
+    },
+    "AGI_DEF": {
+        "agi": 0.40,   # 40% into AGI
+        "def": 0.40,   # 40% into DEF
+        "atk": 0.10,   # 10% into ATK
+        "hp": 0.10     # 10% into HP
+    },
+    "AGI_HP": {
+        "agi": 0.40,   # 40% into AGI
+        "hp": 0.40,    # 40% into HP
+        "atk": 0.10,   # 10% into ATK
+        "def": 0.10    # 10% into DEF
+    },
+    "HP_DEF": {
+        "hp": 0.40,    # 40% into HP
+        "def": 0.40,   # 40% into DEF
+        "atk": 0.10,   # 10% into ATK
+        "agi": 0.10    # 10% into AGI
+    },
+
+    # 3-stat builds (33.3/33.3/33.3 distribution for main stats)
+    "ATK_HP_DEF": {
+        "atk": 0.33,   # 33% into ATK
+        "hp": 0.33,    # 33% into HP
+        "def": 0.33,   # 33% into DEF
+        "agi": 0.01    # 1% into AGI (minimal)
+    },
+    "ATK_HP_AGI": {
+        "atk": 0.33,   # 33% into ATK
+        "hp": 0.33,    # 33% into HP
+        "agi": 0.33,   # 33% into AGI
+        "def": 0.01    # 1% into DEF (minimal)
+    },
+    "ATK_DEF_AGI": {
+        "atk": 0.33,   # 33% into ATK
+        "def": 0.33,   # 33% into DEF
+        "agi": 0.33,   # 33% into AGI
+        "hp": 0.01     # 1% into HP (minimal)
+    },
+    "AGI_HP_DEF": {
+        "agi": 0.33,   # 33% into AGI
+        "hp": 0.33,    # 33% into HP
+        "def": 0.33,   # 33% into DEF
+        "atk": 0.01    # 1% into ATK (minimal)
+    },
+    "AGI_HP_ATK": {
+        "agi": 0.33,   # 33% into AGI
+        "hp": 0.33,    # 33% into HP
+        "atk": 0.33,   # 33% into ATK
+        "def": 0.01    # 1% into DEF (minimal)
+    },
+    "AGI_DEF_ATK": {
+        "agi": 0.33,   # 33% into AGI
+        "def": 0.33,   # 33% into DEF
+        "atk": 0.33,   # 33% into ATK
+        "hp": 0.01     # 1% into HP (minimal)
+    },
+    "DEF_HP_AGI": {
+        "def": 0.33,   # 33% into DEF
+        "hp": 0.33,    # 33% into HP
+        "agi": 0.33,   # 33% into AGI
+        "atk": 0.01    # 1% into ATK (minimal)
+    },
+    "DEF_HP_ATK": {
+        "def": 0.33,   # 33% into DEF
+        "hp": 0.33,    # 33% into HP
+        "atk": 0.33,   # 33% into ATK
+        "agi": 0.01    # 1% into AGI (minimal)
     }
 }
 

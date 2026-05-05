@@ -59,7 +59,7 @@ def run_benchmark():
         print("\n✅ BALANCE TEST PASSED")
 
 
-def run_level_benchmark(level=9, num_fights=5000, action_mode="normal"):
+def run_level_benchmark(level=9, num_fights=5000, action_mode="normal", use_balanced=False):
     """Run level-based benchmark mode"""
     from simulation.level_benchmark import run_level_benchmark, print_level_benchmark_results
 
@@ -68,10 +68,11 @@ def run_level_benchmark(level=9, num_fights=5000, action_mode="normal"):
     print(f"Level: {level}")
     print(f"Fights: {num_fights}")
     print(f"Action Mode: {action_mode}")
+    print(f"Generation: {'Balanced' if use_balanced else 'Random'}")
     print()
 
     # Run level benchmark
-    results = run_level_benchmark(level, num_fights, action_mode)
+    results = run_level_benchmark(level, num_fights, action_mode, use_balanced)
 
     # Print results (includes BALANCE VALIDATION)
     print_level_benchmark_results(results)
@@ -276,7 +277,12 @@ def main():
                     print(f"❌ Action mode must be 'normal' or 'ai': {args[3]}")
                     sys.exit(1)
 
-            run_level_benchmark(level, num_fights, action_mode)
+            # Check for balanced generation flag
+            use_balanced = False
+            if len(args) >= 5 and args[4].lower() == "balanced":
+                use_balanced = True
+
+            run_level_benchmark(level, num_fights, action_mode, use_balanced)
 
         elif mode == "single":
             # Parse single mode arguments
