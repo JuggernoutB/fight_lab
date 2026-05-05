@@ -72,4 +72,11 @@ CONFIG = {
     # DEFENSE (EHP INTEGRATION)
     # ============================================================
     "defense_effectiveness": 0.35,
+
+    # ============================================================
+    # DAMAGE VARIANCE
+    # ============================================================
+    "damage_variance_enabled": True,      # Enable damage variance RNG
+    "damage_variance_min": 0.8,          # Minimum damage multiplier (90%)
+    "damage_variance_max": 1.2,          # Maximum damage multiplier (110%)
 }

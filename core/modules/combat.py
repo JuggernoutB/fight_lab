@@ -9,7 +9,7 @@ from .fatigue import get_fatigue_multiplier
 from .crit import calc_crit
 from .dodge import apply_dodge
 from .block import apply_block, block_break
-from .rounding import round_damage_probabilistic
+from .rounding import round_damage_probabilistic, apply_damage_variance
 
 
 def process_attack(
@@ -153,17 +153,22 @@ def process_attack(
         final_damage_float = calc.apply_defense_reduction(blocked_damage, def_defense)
 
         # =========================
-        # STEP 6: Final damage and absorption calculation
+        # STEP 6: Apply damage variance (RNG)
         # =========================
-        final_damage = round_damage_probabilistic(final_damage_float)
+        final_damage_with_variance = apply_damage_variance(final_damage_float)
+
+        # =========================
+        # STEP 7: Final damage and absorption calculation
+        # =========================
+        final_damage = round_damage_probabilistic(final_damage_with_variance)
 
         # Calculate total absorbed damage (KEY CHANGE: total absorption)
-        absorbed_total = raw_damage - final_damage_float  # Before rounding
+        absorbed_total = raw_damage - final_damage_with_variance  # Before rounding
 
         # Split absorption between block and defense for tracking
         if is_blocked:
             block_absorbed = max(0.0, raw_damage - blocked_damage)
-            defense_absorbed = max(0.0, blocked_damage - final_damage_float)
+            defense_absorbed = max(0.0, blocked_damage - final_damage_with_variance)
         else:
             block_absorbed = 0.0
             defense_absorbed = absorbed_total
@@ -186,6 +191,7 @@ def process_attack(
                 "raw": raw_damage,
                 "mitigated": absorbed_total,
                 "damage_before_rounding": final_damage_float,
+                "damage_with_variance": final_damage_with_variance,
                 "is_crit": is_crit,
                 "is_blocked": is_blocked,
                 "is_dodged": False  # Already handled above for full dodge

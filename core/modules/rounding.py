@@ -2,6 +2,7 @@
 
 import random
 import math
+from ..config import CONFIG
 
 def round_hp_to_int(hp_value: float) -> int:
     """
@@ -14,6 +15,33 @@ def round_hp_to_int(hp_value: float) -> int:
         Integer HP value (≥0.5 rounds up, <0.5 rounds down)
     """
     return round(hp_value)
+
+def apply_damage_variance(damage_value: float) -> float:
+    """
+    Apply random variance to damage before rounding.
+
+    Multiplies damage by a random factor within configured range.
+
+    Args:
+        damage_value: Float damage value to apply variance to
+
+    Returns:
+        Float damage value with variance applied
+    """
+    if not CONFIG["damage_variance_enabled"]:
+        return damage_value
+
+    if damage_value <= 0:
+        return damage_value
+
+    # Generate random multiplier between min and max variance
+    variance_multiplier = random.uniform(
+        CONFIG["damage_variance_min"],
+        CONFIG["damage_variance_max"]
+    )
+
+    return damage_value * variance_multiplier
+
 
 def round_damage_probabilistic(damage_value: float) -> int:
     """
