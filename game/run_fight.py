@@ -131,12 +131,12 @@ def _create_fighter(config):
     fighter_type = config.get("type", "balanced")
     role = config.get("role", "BRUISER")
 
-    # Validate role
-    valid_roles = ["BRUISER", "ASSASSIN", "TANK", "SKIRMISHER", "UNIVERSAL"]
-    if role not in valid_roles:
-        raise ValueError(f"Invalid role '{role}'. Must be one of: {valid_roles}")
-
     if fighter_type == "balanced":
+        # Validate role only for balanced creation
+        valid_roles = ["BRUISER", "ASSASSIN", "TANK", "SKIRMISHER", "UNIVERSAL"]
+        if role not in valid_roles:
+            raise ValueError(f"Invalid role '{role}' for balanced fighter. Must be one of: {valid_roles}")
+
         level = config.get("level", 12)  # Default level 12
         if level != 12:
             # Use existing level system (same as benchmark)
@@ -146,6 +146,11 @@ def _create_fighter(config):
             # Use default balanced creation
             return create_fighter_balanced(role)
     elif fighter_type == "random":
+        # Validate role only for random creation
+        valid_roles = ["BRUISER", "ASSASSIN", "TANK", "SKIRMISHER", "UNIVERSAL"]
+        if role not in valid_roles:
+            raise ValueError(f"Invalid role '{role}' for random fighter. Must be one of: {valid_roles}")
+
         return create_fighter_random(role)
     elif fighter_type == "custom" and "stats" in config:
         # Custom fighter creation with validation

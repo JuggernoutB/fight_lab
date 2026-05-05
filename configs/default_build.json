@@ -1,24 +1,24 @@
 {
   "seed": 42,
-  "iterations": 5000,
+  "iterations": 10000,
   "fighter_a": {
     "type": "custom",
-    "role": "BRUISER",
+    "role": "HP_ATK_AGI",
     "stats": {
-      "hp": 4,
-      "attack": 4,
-      "defense": 4,
-      "agility": 4
+      "hp": 12,
+      "attack": 7,
+      "defense": 6,
+      "agility": 7
     }
   },
   "fighter_b": {
     "type": "custom",
-    "role": "ASSASSIN",
+    "role": "AGI_HP_DEF",
     "stats": {
-      "hp": 6,
-      "attack": 4,
-      "defense": 3,
-      "agility": 3
+      "hp": 8,
+      "attack": 5,
+      "defense": 8,
+      "agility": 11
     }
   }
 }
