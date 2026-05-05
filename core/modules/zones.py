@@ -4,8 +4,8 @@ ZONES = ["head", "chest", "abdomen", "hips", "legs"]
 
 ZONE_MULTIPLIERS = {
     "head": 1.0,
-    "chest": 1.0,
-    "abdomen": 1.0,
-    "hips": 1.0,
-    "legs": 1.0,
+    "chest": 0.9,
+    "abdomen": 0.9,
+    "hips": 0.9,
+    "legs": 0.95,
 }

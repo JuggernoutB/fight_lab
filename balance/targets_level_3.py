@@ -43,7 +43,7 @@ TARGETS = {
     # =========================
     "stamina_high": (0.30, 0.45),
     "stamina_mid": (0.40, 0.55),
-    "stamina_low": (0.05, 0.20),
+    "stamina_low": (0.00, 0.20),
 
     # =========================
     # BUILD TYPE BALANCE

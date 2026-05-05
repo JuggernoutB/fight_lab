@@ -61,10 +61,10 @@ CONFIG = {
     # ============================================================
     "hp_scaling_base": 10.0,         # Base health multiplier
     "hp_scaling_constant": 24,        # Constant added to health stat
-    "hp_scaling_exponent": 0.68,      # Exponent for health scaling curve
+    "hp_scaling_exponent": 0.65,      # Exponent for health scaling curve
     "damage_scaling_base": 1.4,      # Base damage multiplier
     "damage_scaling_constant": 50.0,    # Constant added to attack stat
-    "damage_scaling_exponent": 0.55,  # Exponent for damage scaling curve
+    "damage_scaling_exponent": 0.56,  # Exponent for damage scaling curve
     "defense_scaling_multiplier": 40.0, # Defense stat divider for EHP calculation
     "defense_scaling_exponent": 1.1, # Exponent for defense scaling curve
 

@@ -39,9 +39,9 @@ STAMINA_NORMAL_THRESHOLD = CONFIG["stamina_fresh_threshold"]
 def get_stamina_level(stamina: int) -> int:
     """
     Determine fatigue level based on current stamina
-    0 = Fresh (>60 stamina)
-    1 = Tired (30-60 stamina)
-    2 = Exhausted (<30 stamina)
+    0 = Fresh
+    1 = Tired
+    2 = Exhausted
     """
     if stamina > CONFIG["stamina_fresh_threshold"]:
         return FATIGUE_LEVEL_FRESH
