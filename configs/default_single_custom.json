@@ -5,7 +5,7 @@
   "level": 5,
   "fighter_a": {
     "type": "custom",
-    "role": "Атакующий_Билд_AGI_ATK",
+    "role": "Мой_Супер_Атакующий_Билд",
     "stats": {
       "hp": 8,
       "attack": 15,
@@ -15,7 +15,7 @@
   },
   "fighter_b": {
     "type": "custom",
-    "role": "Защитный_Билд_HP_DEF",
+    "role": "Защитный_Танк_2023",
     "stats": {
       "hp": 14,
       "attack": 6,

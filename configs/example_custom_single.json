@@ -1,0 +1,26 @@
+{
+  "seed": 123,
+  "mode": "standard",
+  "log_level": "compact",
+  "level": 10,
+  "fighter_a": {
+    "type": "custom",
+    "role": "Критический_Убийца_v2.1",
+    "stats": {
+      "hp": 5,
+      "attack": 18,
+      "defense": 3,
+      "agility": 16
+    }
+  },
+  "fighter_b": {
+    "type": "custom",
+    "role": "Неубиваемый_Танк_2024",
+    "stats": {
+      "hp": 18,
+      "attack": 3,
+      "defense": 18,
+      "agility": 3
+    }
+  }
+}

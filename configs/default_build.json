@@ -3,22 +3,22 @@
   "iterations": 10000,
   "fighter_a": {
     "type": "custom",
-    "role": "HP_ATK_AGI",
+    "role": "DEF_AGI",
     "stats": {
-      "hp": 12,
-      "attack": 7,
-      "defense": 6,
-      "agility": 7
+      "hp": 3,
+      "attack": 3,
+      "defense": 8,
+      "agility": 8
     }
   },
   "fighter_b": {
     "type": "custom",
-    "role": "AGI_HP_DEF",
+    "role": "ATK_DEF_AGI",
     "stats": {
-      "hp": 8,
-      "attack": 5,
-      "defense": 8,
-      "agility": 11
+      "hp": 3,
+      "attack": 9,
+      "defense": 5,
+      "agility": 5
     }
   }
 }
