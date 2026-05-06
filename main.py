@@ -13,6 +13,8 @@ Usage:
   python main.py single configs/custom_single.json
   python main.py build              # Build analysis (default config)
   python main.py build configs/custom_build.json
+  python main.py item               # Item effectiveness testing (default config)
+  python main.py item configs/custom_item.json
   python main.py test               # System test (levels 1-10, 100k fights each, AI mode)
 
 Action modes:
@@ -25,6 +27,8 @@ Examples:
   python main.py single configs/compact_single.json  # Compact analysis
   python main.py build                               # Test default build
   python main.py build configs/tank_build.json       # Test custom build
+  python main.py item                                # Test item effectiveness
+  python main.py item configs/wooden_sword_test.json # Test specific item
   python main.py test                                # Comprehensive system test
 """
 
@@ -116,6 +120,25 @@ def run_build_mode(config_path=None):
     print("=" * 50)
 
     run_build(config_path)
+
+
+def run_item_mode(config_path=None):
+    """Run item effectiveness testing mode"""
+    from modes.run_item import run_item
+
+    # Determine config path
+    if config_path is None:
+        config_path = "configs/default_item.json"
+
+    # Validate config file exists
+    if not os.path.exists(config_path):
+        print(f"❌ Config file not found: {config_path}")
+        sys.exit(1)
+
+    print(f"⚔️ ITEM EFFECTIVENESS TEST - {config_path}")
+    print("=" * 50)
+
+    run_item(config_path)
 
 
 def run_system_test():
@@ -325,13 +348,30 @@ def main():
                 print("Usage: build [config.json]")
                 sys.exit(1)
 
+        elif mode == "item":
+            # Parse item mode arguments
+            if len(args) == 1:
+                # Default item mode
+                run_item_mode()
+            elif len(args) == 2:
+                if args[1].endswith('.json'):
+                    # Custom config
+                    run_item_mode(args[1])
+                else:
+                    print(f"❌ Item config must be a .json file: {args[1]}")
+                    sys.exit(1)
+            else:
+                print("❌ Too many arguments for item mode")
+                print("Usage: item [config.json]")
+                sys.exit(1)
+
         elif mode == "test":
             # Comprehensive system test across all levels
             run_system_test()
 
         else:
             print(f"❌ Unknown mode: {mode}")
-            print("Available modes: benchmark, benchmark_level, single, build, test")
+            print("Available modes: benchmark, benchmark_level, single, build, item, test")
             print("Use --help for more information")
             sys.exit(1)
 

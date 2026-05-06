@@ -23,7 +23,7 @@ class CombatModifiers:
     legs_protection: float = 0.0
 
     # Combat modifiers
-    damage_base: float = 0.0           # Flat damage bonus
+    damage_base: float = 0.0           # Damage multiplier bonus (0.01 = +1%)
     crit_chance: float = 0.0           # Additional crit chance (+10% = 0.1)
     block_break_chance: float = 0.0    # Additional block break chance
     dodge_chance: float = 0.0          # Additional dodge chance

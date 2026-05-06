@@ -42,9 +42,9 @@ def process_attack(
     # BASE (no fatigue yet)
     base = calc.calculate_damage_output(atk_attack)
 
-    # Apply equipment damage bonus
+    # Apply equipment damage multiplier (percentage bonus)
     if attacker_modifiers:
-        base += attacker_modifiers.damage_base
+        base *= (1.0 + attacker_modifiers.damage_base)
 
     base /= len(atk_zones)
 

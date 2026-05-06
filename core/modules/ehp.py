@@ -27,16 +27,4 @@ class EHPDamageCalculator:
         return damage / (1 + defense_mult)
 
 
-# Convenience functions for backward compatibility
-#def calculate_defense_multiplier(defense_stat: int) -> float:
-#    """Calculate defense multiplier for damage reduction"""
-#    calculator = EHPDamageCalculator()
-#    return calculator.calculate_defense_multiplier(defense_stat)
-
-
-#def apply_defense_reduction(damage: float, defense_stat: int) -> float:
-#    """Apply defense-based damage reduction (hidden EHP implementation)"""
-#    calculator = EHPDamageCalculator()
-#    return calculator.apply_defense_reduction(damage, defense_stat)
-
 
