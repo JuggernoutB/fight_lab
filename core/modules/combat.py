@@ -4,7 +4,7 @@ import random
 from typing import Dict, List
 from ..config import CONFIG
 from .ehp import EHPDamageCalculator
-from .zones import ZONE_MULTIPLIERS
+from .zones import get_zone_multiplier
 from .fatigue import get_fatigue_multiplier
 from .crit import calc_crit
 from .dodge import apply_dodge
@@ -20,7 +20,9 @@ def process_attack(
     atk_zones: List[str],
     def_zones: List[str],
     debug_mode: bool = False,
-    attacker_fatigue_bonus: float = 0.0
+    attacker_fatigue_bonus: float = 0.0,
+    attacker_modifiers=None,
+    defender_modifiers=None
 ) -> tuple[Dict[str, Dict], Dict[str, int], Dict[str, any]]:
 
     if not atk_zones:
@@ -39,6 +41,11 @@ def process_attack(
 
     # BASE (no fatigue yet)
     base = calc.calculate_damage_output(atk_attack)
+
+    # Apply equipment damage bonus
+    if attacker_modifiers:
+        base += attacker_modifiers.damage_base
+
     base /= len(atk_zones)
 
     # apply fatigue ONCE
@@ -60,9 +67,10 @@ def process_attack(
     for z in atk_zones:
 
         # =========================
-        # STEP 1: Base damage calculation
+        # STEP 1: Base damage calculation with zone protection
         # =========================
-        raw_damage = base * ZONE_MULTIPLIERS[z]   # true pre-mitigation snapshot
+        zone_multiplier = get_zone_multiplier(z, defender_modifiers)
+        raw_damage = base * zone_multiplier   # damage after zone protection
 
         # =========================
         # STEP 2: Roll dodge (with skip protection)
@@ -74,7 +82,7 @@ def process_attack(
 
         if not is_blocked:
             # Calculate dodge chance
-            dmg_temp, dodge_state = apply_dodge(raw_damage, atk_attack, def_agility, defender_stamina, atk_agility)
+            dmg_temp, dodge_state = apply_dodge(raw_damage, atk_attack, def_agility, defender_stamina, atk_agility, defender_modifiers)
 
             # Process dodge result directly
 
@@ -112,7 +120,8 @@ def process_attack(
             atk_agility,
             def_defense,
             attacker_stamina,
-            attacker_fatigue_bonus
+            attacker_fatigue_bonus,
+            attacker_modifiers
         )
 
         # Apply crit effect
@@ -120,7 +129,11 @@ def process_attack(
         # Apply crit multiplier to raw damage
         if is_crit:
             action_costs["crit"] += 1
-            raw_damage *= CONFIG["crit_damage_multiplier"]
+            crit_multiplier = CONFIG["crit_damage_multiplier"]
+            # Apply equipment crit power bonus
+            if attacker_modifiers:
+                crit_multiplier += attacker_modifiers.crit_power
+            raw_damage *= crit_multiplier
 
         # =========================
         # STEP 4: Apply block (if zone is defended)
@@ -131,7 +144,7 @@ def process_attack(
         if is_blocked:
             # Check block break with skip protection
             break_succeeded = block_break(
-                atk_agility, def_defense, attacker_stamina, attacker_fatigue_bonus
+                atk_agility, def_defense, attacker_stamina, attacker_fatigue_bonus, attacker_modifiers
             )
 
             # Process block break result
@@ -141,7 +154,7 @@ def process_attack(
                 blocked_damage = raw_damage * CONFIG["block_break_damage_ratio"]
                 event = "crit_block_break" if is_crit else "block_break"
             else:
-                blocked_damage = apply_block(raw_damage, atk_attack, def_defense, defender_stamina)
+                blocked_damage = apply_block(raw_damage, atk_attack, def_defense, defender_stamina, defender_modifiers)
                 event = "crit_block" if is_crit else "block"
         else:
             # No block, full damage goes through
