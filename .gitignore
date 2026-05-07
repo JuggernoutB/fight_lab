@@ -68,3 +68,6 @@ docs/_build/
 output/benchmark_*.html
 output/*.html
 output/test_*/
+
+# Temporary item testing configs
+temp_item_configs/

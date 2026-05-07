@@ -1,7 +1,6 @@
 {
   "level": 5,
-  "item_id": "wooden_sword",
+  "item_id": "steel_sword",
   "battles_per_opponent": 500,
-  "seed": 42,
   "action_mode": "normal"
 }

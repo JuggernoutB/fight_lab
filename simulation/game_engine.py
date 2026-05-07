@@ -102,6 +102,12 @@ def process_round(state, rng, action_mode="normal"):
     atk_zones_b, def_zones_b = to_zones(action_b)
 
     # Combat resolution
+    # Get combat modifiers from fighters (if any)
+    attacker_mods_a = getattr(a, '_combat_modifiers', None)
+    defender_mods_b = getattr(b, '_combat_modifiers', None)
+    attacker_mods_b = getattr(b, '_combat_modifiers', None)
+    defender_mods_a = getattr(a, '_combat_modifiers', None)
+
     res_a, action_costs_a, skip_events_a = process_attack(
         attacker={"attack": a.attack, "agility": a.agility},
         defender={"defense": b.defense, "agility": b.agility},
@@ -109,7 +115,9 @@ def process_round(state, rng, action_mode="normal"):
         defender_stamina=b.stamina,
         atk_zones=atk_zones_a,
         def_zones=def_zones_b,
-        attacker_fatigue_bonus=0.0
+        attacker_fatigue_bonus=0.0,
+        attacker_modifiers=attacker_mods_a,
+        defender_modifiers=defender_mods_b
     )
 
     res_b, action_costs_b, skip_events_b = process_attack(
@@ -119,7 +127,9 @@ def process_round(state, rng, action_mode="normal"):
         defender_stamina=a.stamina,
         atk_zones=atk_zones_b,
         def_zones=def_zones_a,
-        attacker_fatigue_bonus=0.0
+        attacker_fatigue_bonus=0.0,
+        attacker_modifiers=attacker_mods_b,
+        defender_modifiers=defender_mods_a
     )
 
     # Build event log for this round

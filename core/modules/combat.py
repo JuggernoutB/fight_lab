@@ -171,9 +171,23 @@ def process_attack(
         final_damage_with_variance = apply_damage_variance(final_damage_float)
 
         # =========================
+        # STEP 6.5: Apply final damage modifiers (items)
+        # =========================
+        if attacker_modifiers and attacker_modifiers.damage_final != 0.0:
+            final_damage_with_variance *= (1.0 + attacker_modifiers.damage_final)
+
+        # =========================
         # STEP 7: Final damage and absorption calculation
         # =========================
         final_damage = round_damage_probabilistic(final_damage_with_variance)
+
+        # =========================
+        # STEP 7.5: Apply absolute damage modifiers (flat bonus to integer damage)
+        # =========================
+        if attacker_modifiers and attacker_modifiers.damage_absolute != 0.0:
+            final_damage += int(attacker_modifiers.damage_absolute)
+            # Ensure damage doesn't go below 0
+            final_damage = max(0, final_damage)
 
         # Calculate total absorbed damage (KEY CHANGE: total absorption)
         absorbed_total = raw_damage - final_damage_with_variance  # Before rounding

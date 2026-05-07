@@ -49,12 +49,18 @@ def run_build(config_path):
         # Use incremental seed for reproducibility
         fight_seed = seed + i if seed else None
 
+        # Create fighter configs with verbose equipment disabled for bulk runs
+        fighter_a_config = fighter_a.copy()
+        fighter_b_config = fighter_b.copy()
+        fighter_a_config['_verbose_equipment'] = False
+        fighter_b_config['_verbose_equipment'] = False
+
         options = {
             "seed": fight_seed,
             "include_detailed_log": False
         }
 
-        result = run_fight(fighter_a, fighter_b, options)
+        result = run_fight(fighter_a_config, fighter_b_config, options)
 
         # Track results
         winner = result["winner"]
@@ -107,6 +113,12 @@ def print_build_comparison_info(fighter_a, fighter_b, iterations, seed):
         stats_a = fighter_a["stats"]
         print(f"Fighter A ({fighter_a['role']}):")
         print(f"  HP={stats_a['hp']} | ATK={stats_a['attack']} | DEF={stats_a['defense']} | AGI={stats_a['agility']}")
+        # Show equipment if present
+        if "equipment" in fighter_a:
+            equipment_a = fighter_a["equipment"]
+            equipped_items_a = [f"{slot}: {item}" for slot, item in equipment_a.items() if item is not None]
+            if equipped_items_a:
+                print(f"  Equipment: {', '.join(equipped_items_a)}")
     else:
         print(f"Fighter A: {fighter_a['type']} {fighter_a['role']}")
 
@@ -115,6 +127,12 @@ def print_build_comparison_info(fighter_a, fighter_b, iterations, seed):
         stats_b = fighter_b["stats"]
         print(f"Fighter B ({fighter_b['role']}):")
         print(f"  HP={stats_b['hp']} | ATK={stats_b['attack']} | DEF={stats_b['defense']} | AGI={stats_b['agility']}")
+        # Show equipment if present
+        if "equipment" in fighter_b:
+            equipment_b = fighter_b["equipment"]
+            equipped_items_b = [f"{slot}: {item}" for slot, item in equipment_b.items() if item is not None]
+            if equipped_items_b:
+                print(f"  Equipment: {', '.join(equipped_items_b)}")
     else:
         print(f"Fighter B: {fighter_b['type']} {fighter_b['role']}")
 

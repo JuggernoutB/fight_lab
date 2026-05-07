@@ -7,6 +7,7 @@ Provides simplified interface for Telegram mini app integration
 from state.fight_state import FightState
 from state.fighter_factory import create_fighter_balanced, create_fighter_random
 from simulation.game_engine import simulate_fight as engine_simulate_fight
+from items import get_item, Equipment, assemble_fighter_from_state
 
 
 def run_fight(fighter_a_config, fighter_b_config, options=None):
@@ -160,13 +161,58 @@ def _create_fighter(config):
         # Validate stats
         _validate_stats(stats)
 
-        return create_fighter(
+        # Create base fighter
+        base_fighter = create_fighter(
             hp_stat=stats.get("hp", 12),
             attack_stat=stats.get("attack", 12),
             defense_stat=stats.get("defense", 12),
             agility_stat=stats.get("agility", 12),
             role=role
         )
+
+        # Check if equipment is specified
+        if "equipment" in config:
+            equipment_config = config["equipment"]
+            equipment = Equipment()
+
+            # Process each equipment slot
+            for slot_name, item_id in equipment_config.items():
+                if item_id is not None:
+                    try:
+                        item = get_item(item_id)
+                        # Validate slot matches
+                        if item.slot.value != slot_name:
+                            print(f"⚠️  Warning: Item '{item_id}' is for slot '{item.slot.value}' but specified in '{slot_name}' slot")
+                            continue
+                        equipment = equipment.equip_item(item)
+                        # Only print in single/debug mode, not in bulk operations
+                        if config.get('_verbose_equipment', True):
+                            print(f"✅ Equipped {item.name} in {slot_name} slot")
+                    except ValueError as e:
+                        print(f"❌ Failed to equip item '{item_id}' in {slot_name}: {e}")
+                        continue
+
+            # Apply equipment to fighter if any items were equipped
+            if equipment.get_items():
+                final_stats, final_modifiers = assemble_fighter_from_state(base_fighter, equipment)
+
+                # Create new fighter with modified stats
+                final_fighter = create_fighter(
+                    hp_stat=final_stats.hp,
+                    attack_stat=final_stats.attack,
+                    defense_stat=final_stats.defense,
+                    agility_stat=final_stats.agility,
+                    role=role
+                )
+
+                # Store modifiers in fighter for combat system
+                final_fighter._combat_modifiers = final_modifiers
+                if config.get('_verbose_equipment', True):
+                    print(f"🎯 Applied modifiers: {final_modifiers}")
+
+                return final_fighter
+
+        return base_fighter
     else:
         # Default to balanced
         return create_fighter_balanced(role)

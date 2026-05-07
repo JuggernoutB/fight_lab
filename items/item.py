@@ -58,6 +58,8 @@ class Item:
             "legs_protection",
             # Combat modifiers
             "damage_base",
+            "damage_final",
+            "damage_absolute",
             "crit_chance",
             "block_break_chance",
             "dodge_chance",

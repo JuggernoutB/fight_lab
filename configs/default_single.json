@@ -11,6 +11,15 @@
       "attack": 15,
       "defense": 6,
       "agility": 11
+    },
+    "equipment": {
+      "helm": null,
+      "cuirass": null,
+      "midplate": null,
+      "waistguard": null,
+      "greaves": null,
+      "main_hand": "absolute_sword",
+      "off_hand": null
     }
   },
   "fighter_b": {
@@ -21,6 +30,15 @@
       "attack": 6,
       "defense": 12,
       "agility": 8
+    },
+    "equipment": {
+      "helm": null,
+      "cuirass": null,
+      "midplate": null,
+      "waistguard": null,
+      "greaves": null,
+      "main_hand": null,
+      "off_hand": null
     }
   }
 }

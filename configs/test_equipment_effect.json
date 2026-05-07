@@ -1,14 +1,14 @@
 {
   "seed": 42,
-  "iterations": 10000,
+  "iterations": 1000,
   "fighter_a": {
     "type": "custom",
-    "role": "DEF_AGI",
+    "role": "Equal_Build_A",
     "stats": {
-      "hp": 3,
-      "attack": 3,
-      "defense": 8,
-      "agility": 8
+      "hp": 6,
+      "attack": 6,
+      "defense": 6,
+      "agility": 6
     },
     "equipment": {
       "helm": null,
@@ -16,18 +16,18 @@
       "midplate": null,
       "waistguard": null,
       "greaves": null,
-      "main_hand": "wooden_sword",
+      "main_hand": "steel_sword",
       "off_hand": null
     }
   },
   "fighter_b": {
     "type": "custom",
-    "role": "ATK_DEF_AGI",
+    "role": "Equal_Build_B",
     "stats": {
-      "hp": 3,
-      "attack": 9,
-      "defense": 5,
-      "agility": 5
+      "hp": 6,
+      "attack": 6,
+      "defense": 6,
+      "agility": 6
     },
     "equipment": {
       "helm": null,
