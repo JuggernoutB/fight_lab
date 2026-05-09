@@ -20,37 +20,37 @@ def create_wooden_sword() -> Item:
 
 def create_iron_sword() -> Item:
       """
-      Create Iron Sword - improved weapon with +5% final damage
+      Create Iron Sword - improved weapon with +5% base damage
 
       Design philosophy:
-      - Moderate final damage boost
+      - Moderate base damage boost
       - Tier 2 weapon for mid-game
       """
       return Item(
           name="Iron Sword",
           slot=EquipmentSlot.MAIN_HAND,
-          modifiers={"damage_final": 0.05}  # +5% final damage multiplier
+          modifiers={"damage_base": 0.05}  # +5% base damage multiplier
       )
 
 
 def create_steel_sword() -> Item:
       """
-      Create Steel Sword - powerful weapon with +15% final damage
+      Create Steel Sword - powerful weapon with +15% base damage
 
       Design philosophy:
-      - Strong final damage boost
+      - Strong base damage boost
       - Tier 3 weapon for late-game testing
       """
       return Item(
           name="Steel Sword",
           slot=EquipmentSlot.MAIN_HAND,
-          modifiers={"damage_final": 0.15}  # +15% final damage multiplier
+          modifiers={"damage_base": 0.15}  # +15% base damage multiplier
       )
 
 
 def create_super_sword() -> Item:
       """
-      Create Super Sword - extreme weapon with +100% final damage for testing
+      Create Super Sword - extreme weapon with +100% base damage for testing
 
       Design philosophy:
       - Testing extreme damage modifiers
@@ -59,22 +59,22 @@ def create_super_sword() -> Item:
       return Item(
           name="Super Sword",
           slot=EquipmentSlot.MAIN_HAND,
-          modifiers={"damage_final": 1.0}  # +100% final damage multiplier
+          modifiers={"damage_base": 1.0}  # +100% base damage multiplier
       )
 
 
 def create_absolute_sword() -> Item:
       """
-      Create Absolute Sword - weapon with flat +3 damage after rounding
+      Create Absolute Sword - weapon with +50% base damage
 
       Design philosophy:
-      - Testing absolute damage modifier
-      - Guaranteed damage increase regardless of base damage
+      - High-tier base damage boost
+      - Strong weapon for late-game testing
       """
       return Item(
           name="Absolute Sword",
           slot=EquipmentSlot.MAIN_HAND,
-          modifiers={"damage_absolute": 13.0}  # +3 flat damage after rounding
+          modifiers={"damage_base": 0.50}  # +50% base damage multiplier
       )
 
 

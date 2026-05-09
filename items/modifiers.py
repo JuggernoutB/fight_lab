@@ -24,8 +24,6 @@ class CombatModifiers:
 
     # Combat modifiers
     damage_base: float = 0.0           # Base damage multiplier bonus (0.01 = +1%)
-    damage_final: float = 0.0          # Final damage multiplier bonus (0.01 = +1%)
-    damage_absolute: float = 0.0       # Absolute damage bonus after rounding (+1 = +1 damage)
     crit_chance: float = 0.0           # Additional crit chance (+10% = 0.1)
     block_break_chance: float = 0.0    # Additional block break chance
     dodge_chance: float = 0.0          # Additional dodge chance
@@ -46,8 +44,6 @@ class CombatModifiers:
 
             # Combat modifiers
             damage_base=self.damage_base + other.damage_base,
-            damage_final=self.damage_final + other.damage_final,
-            damage_absolute=self.damage_absolute + other.damage_absolute,
             crit_chance=self.crit_chance + other.crit_chance,
             block_break_chance=self.block_break_chance + other.block_break_chance,
             dodge_chance=self.dodge_chance + other.dodge_chance,
@@ -107,8 +103,6 @@ class CombatModifiers:
         # Combat modifiers
         combat = {
             "dmg_base": self.damage_base,
-            "dmg_final": self.damage_final,
-            "dmg_abs": self.damage_absolute,
             "crit_ch": self.crit_chance,
             "bb_ch": self.block_break_chance,
             "dodge_ch": self.dodge_chance,
@@ -141,8 +135,6 @@ def modifiers_from_item_dict(item_modifiers: Dict[str, float]) -> CombatModifier
 
         # Combat modifiers
         damage_base=item_modifiers.get("damage_base", 0.0),
-        damage_final=item_modifiers.get("damage_final", 0.0),
-        damage_absolute=item_modifiers.get("damage_absolute", 0.0),
         crit_chance=item_modifiers.get("crit_chance", 0.0),
         block_break_chance=item_modifiers.get("block_break_chance", 0.0),
         dodge_chance=item_modifiers.get("dodge_chance", 0.0),
