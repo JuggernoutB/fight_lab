@@ -49,8 +49,38 @@ def get_stamina_level(stamina: int) -> int:
         return FATIGUE_LEVEL_TIRED
     return FATIGUE_LEVEL_EXHAUSTED
 
-def get_fatigue_multiplier(stamina: int, mechanic: str) -> float:
-    """Get fatigue multiplier for specific combat mechanic"""
+def get_fatigue_multiplier(stamina: int, mechanic: str, modifiers=None) -> float:
+    """
+    Get fatigue multiplier for specific combat mechanic with fatigue_efficiency support
+
+    How fatigue_efficiency works:
+    - Does NOT give stamina or reduce costs directly
+    - Instead REDUCES the penalty from fatigue states
+    - Formula: penalty = 1.0 - base_multiplier
+              reduced_penalty = penalty * (1 - fatigue_efficiency)
+              final_multiplier = 1.0 - reduced_penalty
+
+    Example: TIRED base_multiplier = 0.75, fatigue_efficiency = 0.20
+             penalty = 0.25
+             reduced_penalty = 0.25 * 0.8 = 0.20
+             final_multiplier = 0.80
+
+    Safe range for fatigue_efficiency: 0.02-0.10
+    """
     level = get_stamina_level(stamina)
     fatigue_effects = get_fatigue_effects()
-    return fatigue_effects[level].get(mechanic, 1.0)
+    base_multiplier = fatigue_effects[level].get(mechanic, 1.0)
+
+    # Apply fatigue_efficiency if provided
+    if modifiers and hasattr(modifiers, 'fatigue_efficiency') and modifiers.fatigue_efficiency != 0.0:
+        # Safety clamp: prevent fatigue_efficiency >= 1.0 (would eliminate penalty completely)
+        safe_efficiency = max(0.0, min(0.99, modifiers.fatigue_efficiency))
+
+        # Calculate penalty reduction
+        penalty = 1.0 - base_multiplier
+        reduced_penalty = penalty * (1.0 - safe_efficiency)
+        final_multiplier = 1.0 - reduced_penalty
+
+        return final_multiplier
+
+    return base_multiplier

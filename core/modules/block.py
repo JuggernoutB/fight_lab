@@ -12,7 +12,7 @@ def apply_block(dmg: float, atk: int, defense: int, defender_stamina: int, defen
     if defender_modifiers:
         base_reduction += defender_modifiers.block_power
 
-    fatigue_multiplier = get_fatigue_multiplier(defender_stamina, 'block')
+    fatigue_multiplier = get_fatigue_multiplier(defender_stamina, 'block', defender_modifiers)
     effective_reduction = base_reduction * fatigue_multiplier
 
     return dmg * (1 - effective_reduction)
@@ -25,7 +25,7 @@ def block_break(agility: int, defense: int, attacker_stamina: int, attacker_fati
     if attacker_modifiers:
         base_chance += attacker_modifiers.block_break_chance
 
-    fatigue_multiplier = get_fatigue_multiplier(attacker_stamina, 'block_break')
+    fatigue_multiplier = get_fatigue_multiplier(attacker_stamina, 'block_break', attacker_modifiers)
     effective_chance = base_chance * fatigue_multiplier
 
     effective_chance += attacker_fatigue_bonus

@@ -49,7 +49,7 @@ def process_attack(
     base /= len(atk_zones)
 
     # apply fatigue ONCE
-    base *= get_fatigue_multiplier(attacker_stamina, "attack")
+    base *= get_fatigue_multiplier(attacker_stamina, "attack", attacker_modifiers)
 
     results = {}
     total_absorbed_by_defender = 0.0  # Track total damage absorbed by defender

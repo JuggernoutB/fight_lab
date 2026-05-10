@@ -78,13 +78,66 @@ def create_absolute_sword() -> Item:
       )
 
 
+def create_endurance_ring() -> Item:
+      """
+      Create Endurance Ring - accessory with light fatigue resistance
+
+      Design philosophy:
+      - Noticeable but not overpowered fatigue efficiency (+2%)
+      - Perfect for testing fatigue_efficiency mechanics
+      - Sustained pressure advantage without direct DPS boost
+      """
+      return Item(
+          name="Endurance Ring",
+          slot=EquipmentSlot.OFF_HAND,
+          modifiers={"fatigue_efficiency": 0.02}  # 2% fatigue penalty reduction
+      )
+
+
+def create_stamina_amulet() -> Item:
+      """
+      Create Stamina Amulet - powerful fatigue resistance item
+
+      Design philosophy:
+      - Strong fatigue efficiency (+5%) for meaningful impact
+      - Tank/Bruiser style equipment for long fights
+      - Significant sustained performance improvement
+      """
+      return Item(
+          name="Stamina Amulet",
+          slot=EquipmentSlot.OFF_HAND,
+          modifiers={"fatigue_efficiency": 0.05}  # 5% fatigue penalty reduction
+      )
+
+
+def create_marathon_boots() -> Item:
+      """
+      Create Marathon Boots - very strong endurance equipment
+
+      Design philosophy:
+      - Very strong fatigue efficiency (+10%) for extreme testing
+      - Demonstrates upper limit of balanced fatigue_efficiency
+      - Shows maximum sustainable advantage without breaking balance
+      """
+      return Item(
+          name="Marathon Boots",
+          slot=EquipmentSlot.GREAVES,
+          modifiers={"fatigue_efficiency": 0.10}  # 10% fatigue penalty reduction
+      )
+
+
 # Item catalog for easy access
 ITEM_CATALOG = {
+    # Damage weapons
     "wooden_sword": create_wooden_sword(),
     "iron_sword": create_iron_sword(),
     "steel_sword": create_steel_sword(),
     "super_sword": create_super_sword(),
     "absolute_sword": create_absolute_sword(),
+    # Fatigue efficiency items
+    "endurance_ring": create_endurance_ring(),
+    "stamina_amulet": create_stamina_amulet(),
+    "marathon_boots": create_marathon_boots(),
 }
 
 

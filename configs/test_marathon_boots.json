@@ -1,0 +1,42 @@
+{
+  "seed": 42,
+  "iterations": 2000,
+  "fighter_a": {
+    "type": "custom",
+    "role": "Marathon_Runner",
+    "stats": {
+      "hp": 6,
+      "attack": 6,
+      "defense": 6,
+      "agility": 6
+    },
+    "equipment": {
+      "helm": null,
+      "cuirass": null,
+      "midplate": null,
+      "waistguard": null,
+      "greaves": "marathon_boots",
+      "main_hand": null,
+      "off_hand": null
+    }
+  },
+  "fighter_b": {
+    "type": "custom",
+    "role": "Regular_Fighter",
+    "stats": {
+      "hp": 6,
+      "attack": 6,
+      "defense": 6,
+      "agility": 6
+    },
+    "equipment": {
+      "helm": null,
+      "cuirass": null,
+      "midplate": null,
+      "waistguard": null,
+      "greaves": null,
+      "main_hand": null,
+      "off_hand": null
+    }
+  }
+}

@@ -17,7 +17,7 @@ def apply_dodge(dmg: float, atk_attack: int, def_agility: int, defender_stamina:
         base_chance += defender_modifiers.dodge_chance
 
     # Apply fatigue to dodge chance
-    fatigue_multiplier = get_fatigue_multiplier(defender_stamina, 'dodge')
+    fatigue_multiplier = get_fatigue_multiplier(defender_stamina, 'dodge', defender_modifiers)
     chance = base_chance * fatigue_multiplier
 
     roll = random.random()
