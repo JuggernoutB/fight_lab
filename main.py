@@ -15,6 +15,8 @@ Usage:
   python main.py build configs/custom_build.json
   python main.py item               # Item effectiveness testing (default config)
   python main.py item configs/custom_item.json
+  python main.py modifier_test      # Modifier effectiveness testing (comprehensive analysis)
+  python main.py modifier_test configs/custom_modifier.json
   python main.py test               # System test (levels 1-10, 100k fights each, AI mode)
 
 Action modes:
@@ -29,6 +31,8 @@ Examples:
   python main.py build configs/tank_build.json       # Test custom build
   python main.py item                                # Test item effectiveness
   python main.py item configs/wooden_sword_test.json # Test specific item
+  python main.py modifier_test                       # Test all modifiers comprehensively
+  python main.py modifier_test configs/custom_modifier.json # Custom modifier test config
   python main.py test                                # Comprehensive system test
 """
 
@@ -139,6 +143,28 @@ def run_item_mode(config_path=None):
     print("=" * 50)
 
     run_item(config_path)
+
+
+def run_modifier_test_mode(config_path=None):
+    """Run comprehensive modifier effectiveness testing mode"""
+    from modes.run_modifier_test import run_modifier_test
+
+    # Use default config if none provided
+    if config_path is None:
+        config_path = "configs/default_modifier_test.json"
+
+    # Validate config file exists
+    if not os.path.exists(config_path):
+        print(f"❌ Config file not found: {config_path}")
+        sys.exit(1)
+
+    print(f"🔬 MODIFIER EFFECTIVENESS TEST - {config_path}")
+    print("=" * 50)
+    print("Comprehensive analysis of all modifier values vs winrate delta")
+    print("⚠️ This is a long test - testing 100+ modifier configurations")
+    print()
+
+    run_modifier_test(config_path)
 
 
 def run_system_test():
@@ -365,13 +391,30 @@ def main():
                 print("Usage: item [config.json]")
                 sys.exit(1)
 
+        elif mode == "modifier_test":
+            # Parse modifier_test mode arguments
+            if len(args) == 1:
+                # Default modifier_test mode
+                run_modifier_test_mode()
+            elif len(args) == 2:
+                if args[1].endswith('.json'):
+                    # Custom config
+                    run_modifier_test_mode(args[1])
+                else:
+                    print(f"❌ Modifier test config must be a .json file: {args[1]}")
+                    sys.exit(1)
+            else:
+                print("❌ Too many arguments for modifier_test mode")
+                print("Usage: modifier_test [config.json]")
+                sys.exit(1)
+
         elif mode == "test":
             # Comprehensive system test across all levels
             run_system_test()
 
         else:
             print(f"❌ Unknown mode: {mode}")
-            print("Available modes: benchmark, benchmark_level, single, build, item, test")
+            print("Available modes: benchmark, benchmark_level, single, build, item, modifier_test, test")
             print("Use --help for more information")
             sys.exit(1)
 

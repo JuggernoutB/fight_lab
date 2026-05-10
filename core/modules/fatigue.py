@@ -73,10 +73,10 @@ def get_fatigue_multiplier(stamina: int, mechanic: str, modifiers=None) -> float
 
     # Apply fatigue_efficiency if provided
     if modifiers and hasattr(modifiers, 'fatigue_efficiency') and modifiers.fatigue_efficiency != 0.0:
-        # Safety clamp: prevent fatigue_efficiency >= 1.0 (would eliminate penalty completely)
-        safe_efficiency = max(0.0, min(0.99, modifiers.fatigue_efficiency))
+        # Safety clamp: allow negative values but prevent extreme positive values >= 1.0
+        safe_efficiency = max(-0.99, min(0.99, modifiers.fatigue_efficiency))
 
-        # Calculate penalty reduction
+        # Calculate penalty reduction (or increase for negative values)
         penalty = 1.0 - base_multiplier
         reduced_penalty = penalty * (1.0 - safe_efficiency)
         final_multiplier = 1.0 - reduced_penalty

@@ -15,7 +15,7 @@ def create_wooden_sword() -> Item:
     return Item(
         name="Wooden Sword",
         slot=EquipmentSlot.MAIN_HAND,
-        modifiers={"damage_base": 0.01}  # +1% damage multiplier
+        modifiers={"block_break_chance": 0.1}
     )
 
 def create_iron_sword() -> Item:

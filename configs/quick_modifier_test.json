@@ -1,0 +1,15 @@
+{
+  "level": 5,
+  "battles_per_test": 100,
+  "opponent_pool_size": 5,
+  "action_mode": "normal",
+  "modifiers_to_test": {
+    "damage_base": [0.01, 0.05, 0.1],
+    "crit_chance": [0.01, 0.05],
+    "fatigue_efficiency": [-0.05, 0.05]
+  },
+  "output": {
+    "generate_html": true,
+    "html_filename": "quick_modifier_test.html"
+  }
+}
