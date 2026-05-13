@@ -176,15 +176,6 @@ def print_debug_log(log_events):
             event_str = format_event(event_type, damage, absorbed)
             print(f"Attack {i+1}: {attacker} → {defender} ({zone}) → {event_str}")
 
-        # Show absorption events if any (DISABLED for cleaner log)
-        # if "absorption_events" in event:
-        #     print("Absorption Events:")
-        #     for abs_event in event["absorption_events"]:
-        #         fighter_id = abs_event["fighter"]
-        #         resource_before = abs_event["resource_before"]
-        #         resource_after = abs_event["resource_after"]
-        #         probability = abs_event["probability"]
-        #         print(f"  🔮 Fighter {fighter_id}: Absorption Event! ({resource_before:.3f} → {resource_after:.3f}, prob={probability:.3f})")
 
         # Skip protection events display removed
 

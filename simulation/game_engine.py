@@ -108,7 +108,7 @@ def process_round(state, rng, action_mode="normal"):
     attacker_mods_b = getattr(b, '_combat_modifiers', None)
     defender_mods_a = getattr(a, '_combat_modifiers', None)
 
-    res_a, action_costs_a, skip_events_a = process_attack(
+    res_a, action_costs_a, _ = process_attack(
         attacker={"attack": a.attack, "agility": a.agility},
         defender={"defense": b.defense, "agility": b.agility},
         attacker_stamina=a.stamina,
@@ -120,7 +120,7 @@ def process_round(state, rng, action_mode="normal"):
         defender_modifiers=defender_mods_b
     )
 
-    res_b, action_costs_b, skip_events_b = process_attack(
+    res_b, action_costs_b, _ = process_attack(
         attacker={"attack": b.attack, "agility": b.agility},
         defender={"defense": a.defense, "agility": a.agility},
         attacker_stamina=b.stamina,
@@ -172,8 +172,7 @@ def process_round(state, rng, action_mode="normal"):
         "fighters_pre_round": fighters_pre_round
     }
 
-    # Skip events removed (legacy compatibility maintained)
-    # skip_events_a and skip_events_b are now empty lists
+    # Skip events removed completely
 
     events.append(round_event)
 

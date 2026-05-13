@@ -321,34 +321,26 @@ def generate_combat_tab(results: Dict) -> str:
         <div id="combat" class="tab-content">
             <div class="grid-2">
                 <div class="card">
-                    <h3>🛡️ Skip Protection Analysis</h3>
-                    {generate_skip_protection_table(results)}
-                </div>
-
-                <div class="card">
                     <h3>💥 Critical Hit Analysis</h3>
                     {generate_mechanics_table(results, "crit")}
                 </div>
-            </div>
 
-            <div class="grid-2">
                 <div class="card">
                     <h3>🎯 Hit Analysis</h3>
                     {generate_mechanics_table(results, "hit")}
                 </div>
-
-                <div class="card">
-                    <h3>🦘 Dodge Analysis</h3>
-                    {generate_mechanics_table(results, "dodge")}
-                </div>
             </div>
 
             <div class="grid-2">
                 <div class="card">
+                    <h3>🦘 Dodge Analysis</h3>
+                    {generate_mechanics_table(results, "dodge")}
+                </div>
+
+                <div class="card">
                     <h3>🛡️ Block Analysis</h3>
                     {generate_mechanics_table(results, "block")}
                 </div>
-
             </div>
 
             <div class="card">
@@ -1577,52 +1569,6 @@ def generate_damage_table(results):
         </style>
     """
 
-def generate_skip_protection_table(results):
-    """Generate skip protection analysis table"""
-    role_absorption = results.get("role_absorption", {})
-
-    if not role_absorption:
-        return "<p>No skip protection data available</p>"
-
-    rows = ""
-    for role in sorted(role_absorption.keys()):
-        data = role_absorption[role]
-        fights = data.get("fights", 1)
-        skip_events = data.get("skip_events", 0)
-        avg_per_fight = skip_events / fights if fights > 0 else 0
-
-        # Calculate efficiency (skip events per round)
-        total_rounds = data.get("total_rounds", 1)
-        efficiency = skip_events / total_rounds if total_rounds > 0 else 0
-
-        rows += f"""
-            <tr>
-                <td><strong>{role}</strong></td>
-                <td>{avg_per_fight:.2f}</td>
-                <td>{efficiency:.3f}</td>
-                <td>{skip_events}</td>
-                <td>{fights}</td>
-            </tr>
-        """
-
-    return f"""
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Role</th>
-                        <th>Skip per Fight</th>
-                        <th>Efficiency</th>
-                        <th>Total Skip Events</th>
-                        <th>Fights</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {rows}
-                </tbody>
-            </table>
-        </div>
-    """
 
 def generate_crit_analysis(results):
     """Generate critical hit analysis"""

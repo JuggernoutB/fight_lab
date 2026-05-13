@@ -60,8 +60,6 @@ def process_attack(
         "crit": 0,
     }
 
-    # Track events (legacy compatibility)
-    skip_events = []
 
     for z in atk_zones:
 
@@ -72,7 +70,7 @@ def process_attack(
         raw_damage = base * zone_multiplier   # damage after zone protection
 
         # =========================
-        # STEP 2: Roll dodge (with skip protection)
+        # STEP 2: Roll dodge
         # =========================
         is_dodged = False
 
@@ -205,4 +203,4 @@ def process_attack(
         total_absorbed_by_defender += absorbed_total
 
     # Return updated values
-    return results, action_costs, skip_events
+    return results, action_costs, []

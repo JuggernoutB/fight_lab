@@ -216,7 +216,6 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
         "dps_data": [],  # Track DPS values
         "total_damage_data": [],  # Track total damage values
         "rounds_distribution": {},  # Track detailed round distribution
-        "role_absorption": {},  # Track damage absorption by role
         "role_mechanics": {},  # Track all mechanics by role (hit, crit, dodge, block, etc)
         "stamina_exhaustion_fights": 0,  # Track fights that ended due to stamina exhaustion (both players can't attack)
         "zero_stamina_encounters": 0,    # Track fights where at least one player reached 0 stamina during the fight
@@ -417,37 +416,6 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
                         elif attacker == "B":
                             block_events_a += 1  # A blocked B's attack
 
-            # Track for fighter A
-            if fighter_a.role not in results["role_absorption"]:
-                results["role_absorption"][fighter_a.role] = {
-                    "dodge": 0.0, "block": 0.0,
-                    "total_final_resource": 0.0, "fights": 0, "total_rounds": 0,
-                    "block_events": 0,  # Count of block events
-                    "total_resource_generated": 0.0  # Total resource generated across all fights
-                }
-            results["role_absorption"][fighter_a.role]["dodge"] += absorbed["dodge"]
-            results["role_absorption"][fighter_a.role]["block"] += absorbed["block"]
-            results["role_absorption"][fighter_a.role]["total_final_resource"] += final_resource_a
-            results["role_absorption"][fighter_a.role]["total_resource_generated"] += getattr(fighter_a, 'total_resource_generated', 0.0)
-            results["role_absorption"][fighter_a.role]["fights"] += 1
-            results["role_absorption"][fighter_a.role]["total_rounds"] += rounds
-            results["role_absorption"][fighter_a.role]["block_events"] += block_events_a
-
-            # Track for fighter B
-            if fighter_b.role not in results["role_absorption"]:
-                results["role_absorption"][fighter_b.role] = {
-                    "dodge": 0.0, "block": 0.0,
-                    "total_final_resource": 0.0, "fights": 0, "total_rounds": 0,
-                    "block_events": 0,  # Count of block events
-                    "total_resource_generated": 0.0  # Total resource generated across all fights
-                }
-            results["role_absorption"][fighter_b.role]["dodge"] += absorbed["dodge"]
-            results["role_absorption"][fighter_b.role]["block"] += absorbed["block"]
-            results["role_absorption"][fighter_b.role]["total_final_resource"] += final_resource_b
-            results["role_absorption"][fighter_b.role]["total_resource_generated"] += getattr(fighter_b, 'total_resource_generated', 0.0)
-            results["role_absorption"][fighter_b.role]["fights"] += 1
-            results["role_absorption"][fighter_b.role]["total_rounds"] += rounds
-            results["role_absorption"][fighter_b.role]["block_events"] += block_events_b
 
         # NEW: Track all mechanics by role
         summary = telemetry.summary()

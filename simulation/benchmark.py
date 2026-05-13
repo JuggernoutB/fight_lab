@@ -142,8 +142,6 @@ def run_benchmark(n=NUM_FIGHTS, use_level_system=False, level=9):
     dps_list = []
     total_damage_list = []
 
-    # Track absorption by role
-    role_absorption = defaultdict(lambda: {"dodge": 0.0, "block": 0.0, "fights": 0})
 
     # Round distribution tracking
     rounds_distribution = defaultdict(int)
@@ -340,16 +338,6 @@ def run_benchmark(n=NUM_FIGHTS, use_level_system=False, level=9):
         for k, v in summary["stamina_distribution"].items():
             global_stamina_distribution[k] += v
 
-        # Track absorption by role
-        if "damage_absorbed" in summary:
-            absorbed = summary["damage_absorbed"]
-            role_absorption[a.role]["dodge"] += absorbed["dodge"]
-            role_absorption[a.role]["block"] += absorbed["block"]
-            role_absorption[a.role]["fights"] += 1
-
-            role_absorption[b.role]["dodge"] += absorbed["dodge"]
-            role_absorption[b.role]["block"] += absorbed["block"]
-            role_absorption[b.role]["fights"] += 1
 
         if i == 0:
             print("Sample summary:", summary)
@@ -512,27 +500,6 @@ def run_benchmark(n=NUM_FIGHTS, use_level_system=False, level=9):
     print(f"Average total damage: {avg_total_damage:.1f}")
     print(f"DPS Range: {min(dps_list):.1f} - {max(dps_list):.1f}")
 
-    print("\n===== DAMAGE ABSORPTION ANALYSIS =====")
-    if role_absorption:
-        print("Block damage absorption per fight by role (used for resource conversion):")
-
-        # Sort roles by block absorption only (highest first)
-        sorted_absorption = []
-        for role, data in role_absorption.items():
-            if data["fights"] > 0:
-                avg_block = data["block"] / data["fights"]
-                sorted_absorption.append((role, avg_block, data["fights"]))
-
-        sorted_absorption.sort(key=lambda x: x[1], reverse=True)  # Sort by block absorption
-
-        for role, avg_block, fights in sorted_absorption:
-            print(f"  {role:11s}: {avg_block:5.1f} block damage absorbed per fight from {fights} fights")
-
-        print()
-        print("Note: Only blocked damage contributes to absorption resource conversion.")
-        print("      Dodge damage is tracked separately but not used for events.")
-    else:
-        print("No absorption data available")
 
     # =========================
     # RETURN DATA FOR VALIDATION

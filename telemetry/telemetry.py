@@ -33,8 +33,6 @@ class Telemetry:
             "block": 0.0,      # Damage absorbed by blocking
         }
 
-        # Absorption resource event tracking
-        self.absorption_events = []
 
 
         self.stamina_samples = []
@@ -109,9 +107,6 @@ class Telemetry:
         # =========================
         # PROCESS ABSORPTION EVENTS
         # =========================
-        if "absorption_events" in event:
-            for abs_event in event["absorption_events"]:
-                self.absorption_events.append(abs_event)
 
         # Skip events processing removed
 
@@ -211,11 +206,6 @@ class Telemetry:
         # -------------------------
         # ABSORPTION EVENTS
         # -------------------------
-        absorption_event_count = len(self.absorption_events)
-        absorption_events_by_fighter = {"A": 0, "B": 0}
-        for event in self.absorption_events:
-            if event["fighter"] in absorption_events_by_fighter:
-                absorption_events_by_fighter[event["fighter"]] += 1
 
         # Skip protection events removed
 
@@ -251,9 +241,4 @@ class Telemetry:
             "crit_metrics": crit_metrics,  # NEW
             "stamina_distribution": stamina_distribution_normalized,
             "damage_absorbed": self.damage_absorbed.copy(),
-            "absorption_events": {
-                "total": absorption_event_count,
-                "by_fighter": absorption_events_by_fighter.copy(),
-                "events": self.absorption_events.copy()
-            }
         }
