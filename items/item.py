@@ -19,32 +19,36 @@ class EquipmentSlot(Enum):
 @dataclass
 class Item:
     """
-    Data-driven item with modifiers
+    Data-driven item with modifiers and level
 
     Examples:
-        # Heavy helm with head protection
+        # Heavy helm with head protection (level 3)
         Item(
             name="Steel Helm",
             slot=EquipmentSlot.HELM,
+            level=3,
             modifiers={"head_protection": 0.05}
         )
 
-        # Critical damage sword
+        # Critical damage sword (level 2)
         Item(
             name="Keen Blade",
             slot=EquipmentSlot.MAIN_HAND,
+            level=2,
             modifiers={"crit_power": 0.2, "damage_base": 2.0}
         )
 
-        # Nimble boots with negative defense
+        # Nimble boots with negative defense (level 1)
         Item(
             name="Swift Boots",
             slot=EquipmentSlot.GREAVES,
+            level=1,
             modifiers={"dodge_chance": 0.15, "legs_protection": -0.02}
         )
     """
     name: str
     slot: EquipmentSlot
+    level: int
     modifiers: Dict[str, float]
 
     def __post_init__(self):

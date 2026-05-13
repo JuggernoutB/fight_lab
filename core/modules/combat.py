@@ -151,7 +151,14 @@ def process_attack(
 
             if break_succeeded:
                 action_costs["block_break"] += 1
-                blocked_damage = raw_damage * CONFIG["block_break_damage_ratio"]
+                # Apply base block break damage ratio
+                base_ratio = CONFIG["block_break_damage_ratio"]
+                # Apply equipment block break power bonus (increases damage through)
+                if attacker_modifiers:
+                    base_ratio += attacker_modifiers.block_break_power
+                # Clamp to reasonable range (can't exceed 100% or go negative)
+                effective_ratio = max(0.0, min(1.0, base_ratio))
+                blocked_damage = raw_damage * effective_ratio
                 event = "crit_block_break" if is_crit else "block_break"
             else:
                 blocked_damage = apply_block(raw_damage, atk_attack, def_defense, defender_stamina, defender_modifiers)

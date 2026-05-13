@@ -9,7 +9,7 @@ from items.catalog import ITEM_CATALOG
 from game.run_fight import run_fight
 
 
-def create_test_item(modifier_name: str, modifier_value: float, slot: EquipmentSlot = EquipmentSlot.MAIN_HAND) -> Item:
+def create_test_item(modifier_name: str, modifier_value: float, slot: EquipmentSlot = EquipmentSlot.MAIN_HAND, level: int = 2) -> Item:
     """Create a temporary test item with a single modifier"""
     item_name = f"Test_{modifier_name}_{modifier_value}"
     modifiers = {modifier_name: modifier_value}
@@ -17,6 +17,7 @@ def create_test_item(modifier_name: str, modifier_value: float, slot: EquipmentS
     return Item(
         name=item_name,
         slot=slot,
+        level=level,
         modifiers=modifiers
     )
 
@@ -154,7 +155,9 @@ def run_modifier_test(config_path: str):
 
     # First, establish baseline (no modifier)
     print("📊 Establishing baseline (no modifiers)...")
-    baseline_winrate, baseline_status = run_single_modifier_test('damage_base', 0.0, level, battles_per_test)
+    # Use first modifier type for baseline to ensure consistent comparison
+    first_modifier = list(modifiers_to_test.keys())[0] if modifiers_to_test else 'damage_base'
+    baseline_winrate, baseline_status = run_single_modifier_test(first_modifier, 0.0, level, battles_per_test)
 
     if baseline_status != "SUCCESS":
         print(f"❌ Failed to establish baseline: {baseline_status}")

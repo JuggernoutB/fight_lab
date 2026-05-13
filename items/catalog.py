@@ -15,7 +15,8 @@ def create_wooden_sword() -> Item:
     return Item(
         name="Wooden Sword",
         slot=EquipmentSlot.MAIN_HAND,
-        modifiers={"block_break_chance": 0.1}
+        level=2,
+        modifiers={"block_break_chance": 0.1}  # +10% block break chance (демонстрация)
     )
 
 def create_iron_sword() -> Item:
@@ -29,6 +30,7 @@ def create_iron_sword() -> Item:
       return Item(
           name="Iron Sword",
           slot=EquipmentSlot.MAIN_HAND,
+          level=2,
           modifiers={"damage_base": 0.05}  # +5% base damage multiplier
       )
 
@@ -44,6 +46,7 @@ def create_steel_sword() -> Item:
       return Item(
           name="Steel Sword",
           slot=EquipmentSlot.MAIN_HAND,
+          level=2,
           modifiers={"damage_base": 0.15}  # +15% base damage multiplier
       )
 
@@ -59,6 +62,7 @@ def create_super_sword() -> Item:
       return Item(
           name="Super Sword",
           slot=EquipmentSlot.MAIN_HAND,
+          level=2,
           modifiers={"damage_base": 1.0}  # +100% base damage multiplier
       )
 
@@ -74,6 +78,7 @@ def create_absolute_sword() -> Item:
       return Item(
           name="Absolute Sword",
           slot=EquipmentSlot.MAIN_HAND,
+          level=2,
           modifiers={"damage_base": 0.50}  # +50% base damage multiplier
       )
 
@@ -90,6 +95,7 @@ def create_endurance_ring() -> Item:
       return Item(
           name="Endurance Ring",
           slot=EquipmentSlot.OFF_HAND,
+          level=2,
           modifiers={"fatigue_efficiency": 0.02}  # 2% fatigue penalty reduction
       )
 
@@ -106,6 +112,7 @@ def create_stamina_amulet() -> Item:
       return Item(
           name="Stamina Amulet",
           slot=EquipmentSlot.OFF_HAND,
+          level=2,
           modifiers={"fatigue_efficiency": 0.05}  # 5% fatigue penalty reduction
       )
 
@@ -122,8 +129,43 @@ def create_marathon_boots() -> Item:
       return Item(
           name="Marathon Boots",
           slot=EquipmentSlot.GREAVES,
+          level=2,
           modifiers={"fatigue_efficiency": 0.10}  # 10% fatigue penalty reduction
       )
+
+
+def create_block_breaker_sword() -> Item:
+    """
+    Create Block Breaker Sword - weapon focused on breaking through blocks
+
+    Design philosophy:
+    - High block break chance for testing defensive opponents
+    - Specialized weapon against heavily armored targets
+    - Tests block_break_chance modifier effectiveness
+    """
+    return Item(
+        name="Block Breaker Sword",
+        slot=EquipmentSlot.MAIN_HAND,
+        level=2,
+        modifiers={"block_break_chance": 0.05}  # +5% block break chance
+    )
+
+
+def create_master_block_breaker() -> Item:
+    """
+    Create Master Block Breaker - extreme block breaking weapon
+
+    Design philosophy:
+    - Very high block break chance for extreme testing
+    - Shows maximum effectiveness of block_break_chance
+    - Tests upper limits of block breaking mechanics
+    """
+    return Item(
+        name="Master Block Breaker",
+        slot=EquipmentSlot.MAIN_HAND,
+        level=2,
+        modifiers={"block_break_chance": 0.15}  # +15% block break chance
+    )
 
 
 # Item catalog for easy access
@@ -138,6 +180,9 @@ ITEM_CATALOG = {
     "endurance_ring": create_endurance_ring(),
     "stamina_amulet": create_stamina_amulet(),
     "marathon_boots": create_marathon_boots(),
+    # Block break weapons
+    "block_breaker_sword": create_block_breaker_sword(),
+    "master_block_breaker": create_master_block_breaker(),
 }
 
 

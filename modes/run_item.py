@@ -25,24 +25,24 @@ def run_item(config_path):
     with open(config_path, 'r', encoding='utf-8') as f:
         config = json.load(f)
 
-    # Ignore level from config - we test all levels 2-10
     item_id = config.get('item_id', 'wooden_sword')
     battles_per_opponent = config.get('battles_per_opponent', 50)
     action_mode = config.get('action_mode', 'normal')
 
-    print(f"🗡️ MULTI-LEVEL ITEM EFFECTIVENESS TEST")
-    print(f"=" * 60)
-    print(f"📦 Item: {item_id}")
-    print(f"📊 Levels: 2-10 (comprehensive analysis)")
-    print(f"⚔️ Battles per opponent: {battles_per_opponent:,}")
-    print(f"🎲 Action mode: {action_mode}")
-    print()
-
     # Get the item being tested
     try:
         item = get_item(item_id)
+        item_level = item.level
+        print(f"🗡️ ITEM EFFECTIVENESS TEST")
+        print(f"=" * 60)
+        print(f"📦 Item: {item.name}")
+        print(f"🎚️ Item Level: {item_level}")
+        print(f"⚔️ Battles per opponent: {battles_per_opponent:,}")
+        print(f"🎲 Action mode: {action_mode}")
+        print()
         print(f"✅ Item loaded: {item.name}")
         print(f"   Slot: {item.slot.value}")
+        print(f"   Level: {item_level}")
         print(f"   Modifiers: {item.modifiers}")
     except ValueError as e:
         print(f"❌ Error loading item '{item_id}': {e}")
@@ -51,15 +51,15 @@ def run_item(config_path):
     print()
     print(f"🎯 TESTING METHODOLOGY")
     print(f"=" * 60)
-    print(f"• Test fighters: UNIVERSAL builds per level")
-    print(f"• Opponent pool: 100 random builds per level")
-    print(f"• Battles: {battles_per_opponent} per opponent per level")
+    print(f"• Test fighters: UNIVERSAL builds at level {item_level}")
+    print(f"• Opponent pool: 100 random builds at level {item_level}")
+    print(f"• Battles: {battles_per_opponent} per opponent")
     print(f"• Method: Build mode orchestration")
     print(f"• Metric: Winrate delta (with item - without item)")
     print()
 
-    # Test across levels 2-10
-    levels_to_test = range(2, 11)  # 2, 3, 4, 5, 6, 7, 8, 9, 10
+    # Test only at item level
+    levels_to_test = [item_level]
     level_results = []
 
     total_planned_battles = len(levels_to_test) * 100 * battles_per_opponent * 2
@@ -139,7 +139,14 @@ def run_item(config_path):
             print()
 
         # Print comprehensive results
-        print_multi_level_results(item, level_results, battles_per_opponent)
+        if len(level_results) == 1:
+            # Single level result
+            result = level_results[0]
+            print_item_test_results(item, result['winrate_without'], result['winrate_with'],
+                                   result['delta'], result['battles'], opponent_count=100)
+        else:
+            # Multi-level results (shouldn't happen now, but kept for compatibility)
+            print_multi_level_results(item, level_results, battles_per_opponent)
 
     finally:
         # Clean up temporary files
