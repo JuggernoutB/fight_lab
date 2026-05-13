@@ -349,10 +349,6 @@ def generate_combat_tab(results: Dict) -> str:
                     {generate_mechanics_table(results, "block")}
                 </div>
 
-                <div class="card">
-                    <h3>💥 Block Break Analysis</h3>
-                    {generate_mechanics_table(results, "block_break")}
-                </div>
             </div>
 
             <div class="card">
@@ -533,7 +529,6 @@ def generate_net_value_table(results: Dict):
         total_damage = data.get("total_damage", 0.0)
         total_prevented = data.get("total_prevented", 0.0)
         crit_bonus = data.get("crit_bonus_damage", 0.0)
-        block_break_bonus = data.get("block_break_bonus", 0.0)
 
         # Calculate metrics
         damage_per_fight = total_damage / fights if fights > 0 else 0
@@ -1355,7 +1350,7 @@ def generate_balance_metrics_html(results, level: int):
     ]
 
     # Add mechanics validation
-    for mechanic in ['dodge', 'block', 'block_break', 'hit']:
+    for mechanic in ['dodge', 'block', 'hit']:
         if mechanic in mechanics_avg and mechanic in TARGETS:
             low, high = TARGETS[mechanic]
             validation_metrics.append((mechanic, mechanics_avg[mechanic], f"{low} - {high}"))
@@ -1463,7 +1458,7 @@ def generate_old_mechanics_table(results):
         return "<p>No mechanics data available</p>"
 
     rows = ""
-    for mechanic in ['hit', 'crit', 'dodge', 'block', 'block_break', 'crit_block', 'crit_block_break']:
+    for mechanic in ['hit', 'crit', 'dodge', 'block', 'crit_block']:
         if mechanic in mechanics_avg:
             value = mechanics_avg[mechanic]
             percentage = value * 100
@@ -1476,8 +1471,6 @@ def generate_old_mechanics_table(results):
                 color_class = "success"
             elif mechanic in ['dodge', 'block']:
                 color_class = "info"
-            elif mechanic in ['block_break']:
-                color_class = "warning"
 
             # Format display name
             display_name = mechanic.replace('_', ' ').title()

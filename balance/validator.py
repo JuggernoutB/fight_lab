@@ -50,7 +50,6 @@ def validate(results, summary, rounds_list, n):
     # MECHANICS
     # =========================
     total_mechanics = sum(summary["mechanics"].values())
-    for k in ["crit", "dodge", "block", "block_break", "hit"]:
         if k in TARGETS and total_mechanics > 0:
             rate = summary["mechanics"].get(k, 0) / total_mechanics
             low, high = TARGETS[k]

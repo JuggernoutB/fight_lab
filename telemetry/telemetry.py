@@ -9,10 +9,8 @@ class Telemetry:
             "crit": 0,
             "dodge": 0,
             "block": 0,
-            "block_break": 0,
             "hit": 0,
             "crit_block": 0,
-            "crit_block_break": 0,
         }
 
         # NEW: Separate crit tracking for proper metrics
@@ -90,7 +88,7 @@ class Telemetry:
             # Categorize damage for compatibility
             if "crit" in event_type:
                 self.damage_types["crit"] += damage
-            elif event_type in ["block", "block_break", "crit_block", "crit_block_break"]:
+            elif event_type in ["block", "crit_block"]:
                 self.damage_types["blocked"] += damage
             else:
                 self.damage_types["normal"] += damage

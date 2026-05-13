@@ -8,7 +8,7 @@ from .zones import get_zone_multiplier
 from .fatigue import get_fatigue_multiplier
 from .crit import calc_crit
 from .dodge import apply_dodge
-from .block import apply_block, block_break
+from .block import apply_block
 from .rounding import round_damage_probabilistic, apply_damage_variance
 
 
@@ -58,7 +58,6 @@ def process_attack(
     action_costs = {
         "dodge": 0,
         "crit": 0,
-        "block_break": 0
     }
 
     # Track events (legacy compatibility)
@@ -142,27 +141,9 @@ def process_attack(
         event = "hit"  # Default event
 
         if is_blocked:
-            # Check block break with skip protection
-            break_succeeded = block_break(
-                atk_agility, def_defense, attacker_stamina, attacker_fatigue_bonus, attacker_modifiers
-            )
-
-            # Process block break result
-
-            if break_succeeded:
-                action_costs["block_break"] += 1
-                # Apply base block break damage ratio
-                base_ratio = CONFIG["block_break_damage_ratio"]
-                # Apply equipment block break power bonus (increases damage through)
-                if attacker_modifiers:
-                    base_ratio += attacker_modifiers.block_break_power
-                # Clamp to reasonable range (can't exceed 100% or go negative)
-                effective_ratio = max(0.0, min(1.0, base_ratio))
-                blocked_damage = raw_damage * effective_ratio
-                event = "crit_block_break" if is_crit else "block_break"
-            else:
-                blocked_damage = apply_block(raw_damage, atk_attack, def_defense, defender_stamina, defender_modifiers)
-                event = "crit_block" if is_crit else "block"
+            # Apply block damage reduction
+            blocked_damage = apply_block(raw_damage, atk_attack, def_defense, defender_stamina, defender_modifiers)
+            event = "crit_block" if is_crit else "block"
         else:
             # No block, full damage goes through
             event = "crit" if is_crit else "hit"

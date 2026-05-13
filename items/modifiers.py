@@ -27,7 +27,6 @@ class CombatModifiers:
     crit_chance: float = 0.0           # Additional crit chance (+10% = 0.1)
     dodge_chance: float = 0.0          # Additional dodge chance
     crit_power: float = 0.0            # Additional crit multiplier (base 1.5x + modifier)
-    block_break_power: float = 0.0     # Additional block break power
     block_power: float = 0.0           # Additional block effectiveness
     fatigue_efficiency: float = 0.0    # Fatigue resistance (affects tired/exhausted multipliers)
 
@@ -46,7 +45,6 @@ class CombatModifiers:
             crit_chance=self.crit_chance + other.crit_chance,
             dodge_chance=self.dodge_chance + other.dodge_chance,
             crit_power=self.crit_power + other.crit_power,
-            block_break_power=self.block_break_power + other.block_break_power,
             block_power=self.block_power + other.block_power,
             fatigue_efficiency=self.fatigue_efficiency + other.fatigue_efficiency
         )
@@ -104,7 +102,6 @@ class CombatModifiers:
             "crit_ch": self.crit_chance,
             "dodge_ch": self.dodge_chance,
             "crit_pow": self.crit_power,
-            "bb_pow": self.block_break_power,
             "block_pow": self.block_power,
             "fatigue_eff": self.fatigue_efficiency
         }
@@ -135,7 +132,6 @@ def modifiers_from_item_dict(item_modifiers: Dict[str, float]) -> CombatModifier
         crit_chance=item_modifiers.get("crit_chance", 0.0),
         dodge_chance=item_modifiers.get("dodge_chance", 0.0),
         crit_power=item_modifiers.get("crit_power", 0.0),
-        block_break_power=item_modifiers.get("block_break_power", 0.0),
         block_power=item_modifiers.get("block_power", 0.0),
         fatigue_efficiency=item_modifiers.get("fatigue_efficiency", 0.0)
     )

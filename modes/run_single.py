@@ -19,12 +19,6 @@ def format_event(event_type, damage, absorbed=None):
     """Format event with visual highlights for key moments"""
     if event_type == "crit":
         return f"💥 CRIT {damage:.1f}"
-    elif event_type == "block_break":
-        absorbed_text = ""
-        if absorbed and (absorbed.get("block", 0) > 0 or absorbed.get("dodge", 0) > 0):
-            total_absorbed = absorbed.get("block", 0) + absorbed.get("dodge", 0)
-            absorbed_text = f" / -{total_absorbed:.1f}"
-        return f"🧱❌ BREAK {damage:.1f}{absorbed_text}"
     elif event_type == "dodge":
         return "💨 DODGE"
     elif event_type == "block":
@@ -145,8 +139,6 @@ def print_release_log(log_events):
                 print(f"  {attacker} attacks {defender} ({zone}) - DODGED!")
             elif event_type == "block":
                 print(f"  {attacker} attacks {defender} ({zone}) - BLOCKED for {damage:.0f} damage")
-            elif event_type == "block_break":
-                print(f"  {attacker} BREAKS {defender}'s block ({zone}) for {damage:.0f} damage")
             elif event_type == "crit":
                 print(f"  {attacker} CRITS {defender} ({zone}) for {damage:.0f} damage!")
             elif event_type == "hit":

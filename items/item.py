@@ -65,7 +65,6 @@ class Item:
             "crit_chance",
             "dodge_chance",
             "crit_power",
-            "block_break_power",
             "block_power",
             "fatigue_efficiency"
         }

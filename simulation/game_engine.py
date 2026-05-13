@@ -204,13 +204,11 @@ def process_round(state, rng, action_mode="normal"):
 
     # Fighter A action costs
     stamina_cost_a = (action_costs_a["dodge"] * config["stamina_cost_dodge"] +
-                     action_costs_a["crit"] * config["stamina_cost_crit"] +
-                     action_costs_a["block_break"] * config["stamina_cost_block_break"])
+                     action_costs_a["crit"] * config["stamina_cost_crit"])
 
     # Fighter B action costs
     stamina_cost_b = (action_costs_b["dodge"] * config["stamina_cost_dodge"] +
-                     action_costs_b["crit"] * config["stamina_cost_crit"] +
-                     action_costs_b["block_break"] * config["stamina_cost_block_break"])
+                     action_costs_b["crit"] * config["stamina_cost_crit"])
 
     # Apply costs (cannot go below 0)
     a.stamina = max(0, a.stamina - stamina_cost_a)

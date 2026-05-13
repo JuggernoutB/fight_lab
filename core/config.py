@@ -27,11 +27,6 @@ CONFIG = {
     "def_diff_block_scale": 0.065,    # Defense difference scaling for blocking
     "min_block_reduction": 0.18,       # Minimum block damage reduction
     "max_block_reduction": 0.7,       # Maximum block damage reduction
-    "base_block_break_chance": 0.15,  # Base block break chance
-    "agi_block_break_scale": 0.020,    # Agility scaling for block break
-    "min_block_break_chance": 0.15,   # Minimum block break chance
-    "max_block_break_chance": 0.30,    # Maximum block break chance
-    "block_break_damage_ratio": 0.75,  # Damage ratio when block is broken
 
     # ============================================================
     # FATIGUE SYSTEM
@@ -54,7 +49,6 @@ CONFIG = {
     # Action-based stamina costs (for successful mechanics)
     "stamina_cost_dodge": 4,          # Stamina cost for successful dodge
     "stamina_cost_crit": 4,           # Stamina cost for successful critical hit
-    "stamina_cost_block_break": 4,    # Stamina cost for successful block break
 
     # ============================================================
     # EHP SCALING

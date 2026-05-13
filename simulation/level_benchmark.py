@@ -458,10 +458,10 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
         # Track mechanics for fighter A
         if fighter_a.role not in results["role_mechanics"]:
             results["role_mechanics"][fighter_a.role] = {
-                "hit": 0, "crit": 0, "dodge": 0, "block": 0, "block_break": 0,
+                "hit": 0, "crit": 0, "dodge": 0, "block": 0,
                 "crit_damage": 0.0, "total_damage": 0.0,
                 "block_prevented": 0.0, "dodge_prevented": 0.0, "total_prevented": 0.0,
-                "crit_bonus_damage": 0.0, "block_break_bonus": 0.0,
+                "crit_bonus_damage": 0.0,
                 "net_value": 0.0,
                 "fights": 0, "total_rounds": 0
             }
@@ -469,25 +469,25 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
         # Track mechanics for fighter B
         if fighter_b.role not in results["role_mechanics"]:
             results["role_mechanics"][fighter_b.role] = {
-                "hit": 0, "crit": 0, "dodge": 0, "block": 0, "block_break": 0,
+                "hit": 0, "crit": 0, "dodge": 0, "block": 0,
                 "crit_damage": 0.0, "total_damage": 0.0,
                 "block_prevented": 0.0, "dodge_prevented": 0.0, "total_prevented": 0.0,
-                "crit_bonus_damage": 0.0, "block_break_bonus": 0.0,
+                "crit_bonus_damage": 0.0,
                 "net_value": 0.0,
                 "fights": 0, "total_rounds": 0
             }
 
         # Count mechanics by tracking attacks in telemetry
-        fighter_a_mechanics = {"hit": 0, "crit": 0, "dodge": 0, "block": 0, "block_break": 0}
-        fighter_b_mechanics = {"hit": 0, "crit": 0, "dodge": 0, "block": 0, "block_break": 0}
+        fighter_a_mechanics = {"hit": 0, "crit": 0, "dodge": 0, "block": 0}
+        fighter_b_mechanics = {"hit": 0, "crit": 0, "dodge": 0, "block": 0}
         fighter_a_damage = {"crit": 0.0, "total": 0.0}
         fighter_b_damage = {"crit": 0.0, "total": 0.0}
 
         # NEW: Track damage prevention and bonus damage
         fighter_a_prevention = {"block": 0.0, "dodge": 0.0}
         fighter_b_prevention = {"block": 0.0, "dodge": 0.0}
-        fighter_a_bonus = {"crit": 0.0, "block_break": 0.0}
-        fighter_b_bonus = {"crit": 0.0, "block_break": 0.0}
+        fighter_a_bonus = {"crit": 0.0}
+        fighter_b_bonus = {"crit": 0.0}
 
         for event in telemetry.events:
             for attack in event.get("attacks", []):
@@ -512,7 +512,7 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
                         fighter_b_damage["crit"] += damage
 
                 # For defensive actions (block, dodge), track for defender
-                if event_type in ["block", "dodge", "block_break"]:
+                if event_type in ["block", "dodge", ]:
                     defender = "B" if attacker == "A" else "A"
                     if defender == "A":
                         fighter_a_mechanics[event_type] += 1
@@ -552,17 +552,6 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
                     elif attacker == "B":
                         fighter_b_bonus["crit"] += crit_bonus
 
-                # Calculate block break bonus (extra damage through breaking blocks)
-                if event_type == "block_break":
-                    # Block break allows 85% damage instead of reduced damage
-                    # Bonus = actual_damage - what_would_be_if_blocked
-                    # For simplicity, estimate bonus as percentage of damage
-                    block_break_bonus = damage * 0.15  # Rough estimate
-
-                    if attacker == "A":
-                        fighter_a_bonus["block_break"] += block_break_bonus
-                    elif attacker == "B":
-                        fighter_b_bonus["block_break"] += block_break_bonus
 
         # Update role mechanics for fighter A
         for mech, count in fighter_a_mechanics.items():
@@ -575,7 +564,6 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
         results["role_mechanics"][fighter_a.role]["dodge_prevented"] += fighter_a_prevention["dodge"]
         results["role_mechanics"][fighter_a.role]["total_prevented"] += fighter_a_prevention["block"] + fighter_a_prevention["dodge"]
         results["role_mechanics"][fighter_a.role]["crit_bonus_damage"] += fighter_a_bonus["crit"]
-        results["role_mechanics"][fighter_a.role]["block_break_bonus"] += fighter_a_bonus["block_break"]
 
         # Calculate net value (damage dealt + damage prevented)
         damage_dealt = fighter_a_damage["total"]
@@ -596,7 +584,6 @@ def run_level_benchmark(level: int, num_fights: int = 5000, action_mode: str = "
         results["role_mechanics"][fighter_b.role]["dodge_prevented"] += fighter_b_prevention["dodge"]
         results["role_mechanics"][fighter_b.role]["total_prevented"] += fighter_b_prevention["block"] + fighter_b_prevention["dodge"]
         results["role_mechanics"][fighter_b.role]["crit_bonus_damage"] += fighter_b_bonus["crit"]
-        results["role_mechanics"][fighter_b.role]["block_break_bonus"] += fighter_b_bonus["block_break"]
 
         # Calculate net value (damage dealt + damage prevented)
         damage_dealt = fighter_b_damage["total"]
@@ -1003,7 +990,7 @@ def print_level_benchmark_results(results: Dict):
 
     # Mechanics validation (exclude crit - now handled separately)
     if mechanics_avg:
-        for metric in ['dodge', 'block', 'block_break', 'hit']:
+        for metric in ['dodge', 'block', 'hit']:
             if metric in mechanics_avg:
                 result = validate_single_metric_with_targets(metric, mechanics_avg[metric], TARGETS)
                 print(f"[{'OK' if result else 'FAIL'}]   {metric}: {mechanics_avg[metric]:.4f}")
@@ -1065,7 +1052,7 @@ def print_level_benchmark_results(results: Dict):
 
     # Add mechanics validation to final check (same list as printed)
     if mechanics_avg:
-        for metric in ['dodge', 'block', 'block_break', 'hit']:
+        for metric in ['dodge', 'block', 'hit']:
             if metric in mechanics_avg:
                 all_passed = all_passed and validate_single_metric_with_targets(metric, mechanics_avg[metric], TARGETS)
 

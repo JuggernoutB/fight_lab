@@ -14,22 +14,19 @@ def get_fatigue_effects():
             'attack': CONFIG["fresh_multiplier"],
             'crit': CONFIG["fresh_multiplier"],
             'dodge': CONFIG["fresh_multiplier"],
-            'block': CONFIG["fresh_multiplier"],
-            'block_break': CONFIG["fresh_multiplier"]
+            'block': CONFIG["fresh_multiplier"]
         },
         FATIGUE_LEVEL_TIRED: {
             'attack': CONFIG["tired_multiplier"],
             'crit': CONFIG["tired_multiplier"],
             'dodge': CONFIG["tired_multiplier"],
-            'block': CONFIG["tired_multiplier"],
-            'block_break': CONFIG["tired_multiplier"]
+            'block': CONFIG["tired_multiplier"]
         },
         FATIGUE_LEVEL_EXHAUSTED: {
             'attack': CONFIG["exhausted_multiplier"],
             'crit': CONFIG["exhausted_multiplier"],
             'dodge': CONFIG["exhausted_multiplier"],
-            'block': CONFIG["exhausted_multiplier"],
-            'block_break': CONFIG["exhausted_multiplier"]
+            'block': CONFIG["exhausted_multiplier"]
         }
     }
 

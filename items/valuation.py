@@ -48,14 +48,12 @@ class ItemValuationSystem:
             "damage_base": 100.0,         # Direct damage multiplier
             "crit_chance": 150.0,         # Crit very valuable
             "crit_power": 120.0,          # Crit power strong but conditional
-            "block_break_chance": 90.0,   # Useful vs defensive enemies
 
             # Defensive modifiers (survival value)
             "dodge_chance": 130.0,        # Dodge very valuable
             "block_power": 75.0,          # Block decent but conditional
 
             # Utility modifiers
-            "block_break_power": 50.0,    # Situational value
             "fatigue_efficiency": 85.0    # Stamina management value
         }
 
@@ -101,7 +99,7 @@ class ItemValuationSystem:
         """Categorize modifiers into offense/defense/utility"""
         categories = {"offense": 0.0, "defense": 0.0, "utility": 0.0}
 
-        offense_modifiers = {"damage_base", "crit_chance", "crit_power", "block_break_chance", "block_break_power"}
+        offense_modifiers = {"damage_base", "crit_chance", "crit_power"}
         defense_modifiers = {"head_protection", "chest_protection", "abdomen_protection",
                            "hips_protection", "legs_protection", "dodge_chance", "block_power"}
         utility_modifiers = {"fatigue_efficiency"}
