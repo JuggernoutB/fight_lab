@@ -16,7 +16,7 @@ def create_wooden_sword() -> Item:
         name="Wooden Sword",
         slot=EquipmentSlot.MAIN_HAND,
         level=2,
-        modifiers={"block_break_chance": 0.1}  # +10% block break chance (демонстрация)
+        modifiers={"damage_base": 0.01}  # +1% base damage
     )
 
 def create_iron_sword() -> Item:
@@ -136,35 +136,35 @@ def create_marathon_boots() -> Item:
 
 def create_block_breaker_sword() -> Item:
     """
-    Create Block Breaker Sword - weapon focused on breaking through blocks
+    Create Block Breaker Sword - weapon with enhanced critical power
 
     Design philosophy:
-    - High block break chance for testing defensive opponents
-    - Specialized weapon against heavily armored targets
-    - Tests block_break_chance modifier effectiveness
+    - High critical power for testing against defensive opponents
+    - Specialized weapon for burst damage
+    - Focus on crit effectiveness rather than block breaking
     """
     return Item(
-        name="Block Breaker Sword",
+        name="Critical Sword",
         slot=EquipmentSlot.MAIN_HAND,
         level=2,
-        modifiers={"block_break_chance": 0.05}  # +5% block break chance
+        modifiers={"crit_power": 0.25}  # +25% critical power
     )
 
 
-def create_master_block_breaker() -> Item:
+def create_master_critical_sword() -> Item:
     """
-    Create Master Block Breaker - extreme block breaking weapon
+    Create Master Critical Sword - extreme critical weapon
 
     Design philosophy:
-    - Very high block break chance for extreme testing
-    - Shows maximum effectiveness of block_break_chance
-    - Tests upper limits of block breaking mechanics
+    - Very high critical chance for extreme testing
+    - Shows maximum effectiveness of crit_chance
+    - Tests upper limits of critical mechanics
     """
     return Item(
-        name="Master Block Breaker",
+        name="Master Critical Sword",
         slot=EquipmentSlot.MAIN_HAND,
         level=2,
-        modifiers={"block_break_chance": 0.15}  # +15% block break chance
+        modifiers={"crit_chance": 0.15}  # +15% critical chance
     )
 
 
@@ -180,9 +180,9 @@ ITEM_CATALOG = {
     "endurance_ring": create_endurance_ring(),
     "stamina_amulet": create_stamina_amulet(),
     "marathon_boots": create_marathon_boots(),
-    # Block break weapons
-    "block_breaker_sword": create_block_breaker_sword(),
-    "master_block_breaker": create_master_block_breaker(),
+    # Critical weapons
+    "critical_sword": create_block_breaker_sword(),
+    "master_critical_sword": create_master_critical_sword(),
 }
 
 

@@ -18,12 +18,11 @@ def apply_block(dmg: float, atk: int, defense: int, defender_stamina: int, defen
     return dmg * (1 - effective_reduction)
 
 def block_break(agility: int, defense: int, attacker_stamina: int, attacker_fatigue_bonus: float = 0.0, attacker_modifiers=None) -> bool:
-    base_chance = max(CONFIG["min_block_break_chance"], min(CONFIG["max_block_break_chance"],
-                     CONFIG["base_block_break_chance"] + (agility - defense) * CONFIG["agi_block_break_scale"]))
+    # Calculate base chance from stats
+    base_chance = CONFIG["base_block_break_chance"] + (agility - defense) * CONFIG["agi_block_break_scale"]
 
-    # Apply equipment block break chance bonus
-    if attacker_modifiers:
-        base_chance += attacker_modifiers.block_break_chance
+    # Apply min/max limits
+    base_chance = max(CONFIG["min_block_break_chance"], min(CONFIG["max_block_break_chance"], base_chance))
 
     fatigue_multiplier = get_fatigue_multiplier(attacker_stamina, 'block_break', attacker_modifiers)
     effective_chance = base_chance * fatigue_multiplier

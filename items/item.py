@@ -63,7 +63,6 @@ class Item:
             # Combat modifiers
             "damage_base",
             "crit_chance",
-            "block_break_chance",
             "dodge_chance",
             "crit_power",
             "block_break_power",
