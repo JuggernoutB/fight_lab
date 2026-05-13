@@ -63,6 +63,7 @@ def generate_html_content(results: Dict, level: int, num_fights: int, action_mod
             <button class="tab-button" onclick="openTab(event, 'balance')">⚖️ Balance Analysis</button>
             <button class="tab-button" onclick="openTab(event, 'builds')">🏗️ Builds by Role</button>
             <button class="tab-button" onclick="openTab(event, 'combat')">⚡ Mechanics Analysis</button>
+            <button class="tab-button" onclick="openTab(event, 'hp_analysis')">💖 HP Analysis</button>
         </nav>
 
         {generate_overview_tab(results, level, num_fights, action_mode)}
@@ -70,6 +71,7 @@ def generate_html_content(results: Dict, level: int, num_fights: int, action_mod
         {generate_balance_tab(results, level)}
         {generate_builds_tab(results)}
         {generate_combat_tab(results)}
+        {generate_hp_analysis_tab()}
     </div>
 
     <script>
@@ -354,6 +356,87 @@ def generate_combat_tab(results: Dict) -> str:
             </div>
 
         </div>
+    """
+
+def generate_hp_analysis_tab() -> str:
+    """Generate HP Analysis tab with HP stat to HP points conversion table"""
+    from core.modules.ehp import EHPDamageCalculator
+
+    calc = EHPDamageCalculator()
+
+    # Generate table rows for HP stat 3-50
+    rows = ""
+    for hp_stat in range(3, 51):
+        hp_points = calc.calculate_base_hp(hp_stat)
+
+        # Add visual indicator for common HP stat values
+        highlight_class = ""
+        if hp_stat % 5 == 0:  # Every 5th row highlighted
+            highlight_class = " class='highlight'"
+
+        rows += f"""
+            <tr{highlight_class}>
+                <td><strong>{hp_stat}</strong></td>
+                <td>{hp_points:.1f}</td>
+            </tr>
+        """
+
+    return f"""
+        <div id="hp_analysis" class="tab-content">
+            <div class="card">
+                <h3>💖 HP Stat to HP Points Conversion</h3>
+                <p>This table shows the relationship between HP stat (3-50) and actual HP points in combat.</p>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>HP Stat</th>
+                                <th>HP Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="info-panel">
+                    <h4>📐 HP Calculation Formula</h4>
+                    <p><code>HP = hp_scaling_base × (hp_stat + hp_scaling_constant)^hp_scaling_exponent</code></p>
+                    <p><strong>Current Parameters:</strong></p>
+                    <ul>
+                        <li>hp_scaling_base: 10.0</li>
+                        <li>hp_scaling_constant: 25</li>
+                        <li>hp_scaling_exponent: 0.66</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <style>
+        .table-wrapper tbody tr.highlight {{
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }}
+        .info-panel {{
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }}
+        .info-panel h4 {{
+            margin-top: 0;
+            color: #007bff;
+        }}
+        .info-panel code {{
+            background-color: #e9ecef;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }}
+        </style>
     """
 
 def generate_mechanics_table(results: Dict, mechanic_type: str):
