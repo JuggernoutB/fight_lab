@@ -8,7 +8,7 @@ CONFIG = {
     # ============================================================
     "base_crit_chance": 0.15,         # Base crit chance
     "agi_diff_crit_scale": 0.02,     # Agility difference scaling for crit
-    "crit_damage_multiplier": 1.9,    # Damage multiplier for crits
+    "crit_damage_multiplier": 2.0,    # Damage multiplier for crits
     "min_crit_chance": 0.15,         # Minimum possible crit chance
     "max_crit_chance": 0.30,          # Maximum possible crit chance
 
@@ -53,10 +53,9 @@ CONFIG = {
     # ============================================================
     # EHP SCALING
     # ============================================================
-    "hp_scaling_base": 10.0,         # Base health multiplier
-    "hp_scaling_constant": 25,        # Constant added to health stat
-    "hp_scaling_exponent": 0.66,      # Exponent for health scaling curve
-    "damage_scaling_base": 1.4,      # Base damage multiplier
+    "hp_scaling_base": 80.0,         # Base health
+    "hp_scaling_constant": 2,        # Constant added to health stat
+    "damage_scaling_base": 1.3,      # Base damage multiplier
     "damage_scaling_constant": 51.0,    # Constant added to attack stat
     "damage_scaling_exponent": 0.57,  # Exponent for damage scaling curve
     "defense_scaling_multiplier": 40.0, # Defense stat divider for EHP calculation

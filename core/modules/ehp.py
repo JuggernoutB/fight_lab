@@ -7,10 +7,10 @@ class EHPDamageCalculator:
     Effective Health Points damage calculator.
     Handles all HP, damage, and defense calculations.
     """
-
+   
     def calculate_base_hp(self, hp_stat: int) -> float:
         """Calculate base HP from HP stat"""
-        return CONFIG["hp_scaling_base"] * ((hp_stat + CONFIG["hp_scaling_constant"]) ** CONFIG["hp_scaling_exponent"])
+        return CONFIG["hp_scaling_base"] + hp_stat * CONFIG["hp_scaling_constant"]
 
     def calculate_damage_output(self, attack_stat: int) -> float:
         """Calculate damage output from attack stat"""
